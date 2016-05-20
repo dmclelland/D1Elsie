@@ -53,7 +53,7 @@ public abstract class Aggregate<ID extends Id> {
     }
 
 
-    protected void addToUncommitted(AggregateEvent e) {
+    void addToUncommitted(AggregateEvent e) {
         uncommittedEvents.add(e);
     }
 
