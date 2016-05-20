@@ -11,6 +11,7 @@ import org.reflections.Reflections;
 import javax.lang.model.element.Modifier;
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.HashSet;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -60,6 +61,8 @@ public class CommandHandlerGenerator {
 
         Set<Class<? extends AbstractCommandHandler>> commandHandlers = reflections.getSubTypesOf(AbstractCommandHandler.class);
 
+        Set<String> commands = new HashSet<>();
+
         int counter = 0;
         for (Class<? extends AbstractCommandHandler> commandHandlerClass : commandHandlers) {
 
@@ -71,6 +74,11 @@ public class CommandHandlerGenerator {
 
                     if (m.getParameterTypes().length == 1 && Command.class.isAssignableFrom(m.getParameterTypes()[0])) {
                         Class command = m.getParameterTypes()[0];
+
+                        if(commands.contains(command.getSimpleName()))
+                            throw new IllegalStateException(command.getSimpleName() + " has more than one handler");
+                        else
+                            commands.add(command.getSimpleName());
 
                         invokeBuilder.beginControlFlow("if (command.getName().equals($S))",command.getSimpleName());
                         invokeBuilder.addStatement("commandHandler$L.$L(($T)command)",counter, m.getName(),command);

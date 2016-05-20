@@ -31,6 +31,9 @@ public abstract class AbstractDirectMethodInvoker implements AnnotatedMethodInvo
             //register all annotated methods
             for (Method m : Utils.methodsOf(commandHandler.getClass())) {
                 if (m.isAnnotationPresent(com.dmc.d1.cqrs.annotations.CommandHandler.class)) {
+                    if(commandToHandler.containsKey(m.getParameterTypes()[0].getSimpleName()))
+                        throw new IllegalStateException(m.getParameterTypes()[0].getSimpleName() + " has more than one handler");
+
                     if (m.getParameterTypes().length == 1 && Command.class.isAssignableFrom(m.getParameterTypes()[0])) {
                         commandToHandler.put(m.getParameterTypes()[0].getSimpleName(), commandHandler);
                     } else {

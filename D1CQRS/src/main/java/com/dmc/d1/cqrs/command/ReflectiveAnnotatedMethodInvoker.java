@@ -17,9 +17,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class ReflectiveAnnotatedMethodInvoker implements AnnotatedMethodInvoker{
 
-    private Map<String, AnnotatedCommandMethod> annotatedCommandMethods = new HashMap<>();
-
     private static final Logger LOG = LoggerFactory.getLogger(ReflectiveAnnotatedMethodInvoker.class);
+    private Map<String, AnnotatedCommandMethod> annotatedCommandMethods = new HashMap<>();
 
     public ReflectiveAnnotatedMethodInvoker(List<? extends AbstractCommandHandler> commandHandlers){
         buildCommandMethods(commandHandlers);
@@ -31,6 +30,9 @@ public class ReflectiveAnnotatedMethodInvoker implements AnnotatedMethodInvoker{
             //register all annotated methods
             for (Method m : Utils.methodsOf(commandHandler.getClass())) {
                 if (m.isAnnotationPresent(com.dmc.d1.cqrs.annotations.CommandHandler.class)) {
+                    if(annotatedCommandMethods.containsKey(m.getParameterTypes()[0].getSimpleName()))
+                        throw new IllegalStateException(m.getParameterTypes()[0].getSimpleName() + " has more than one handler");
+
                     if (m.getParameterTypes().length == 1 && Command.class.isAssignableFrom(m.getParameterTypes()[0])) {
                         annotatedCommandMethods.put(m.getParameterTypes()[0].getSimpleName(), new AnnotatedCommandMethod(commandHandler, m));
                     } else {
