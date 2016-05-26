@@ -5,6 +5,7 @@ import com.dmc.d1.algo.aggregate.WaveAggregate;
 import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.annotations.CommandHandler;
 import com.dmc.d1.cqrs.command.AbstractCommandHandler;
+import com.dmc.d1.cqrs.command.AnnotatedMethodInvokerStrategy;
 import com.dmc.d1.domain.WaveId;
 
 /**
@@ -12,8 +13,10 @@ import com.dmc.d1.domain.WaveId;
  */
 public class WaveCommandHandler extends AbstractCommandHandler<WaveId, WaveAggregate> {
 
-    public WaveCommandHandler(AggregateRepository repository) {
-        super(repository);
+
+    public WaveCommandHandler(AggregateRepository repository, AnnotatedMethodInvokerStrategy strategy) {
+        super(repository, strategy);
+
     }
 
     @CommandHandler
@@ -37,5 +40,6 @@ public class WaveCommandHandler extends AbstractCommandHandler<WaveId, WaveAggre
     public void handle(ResumeWaveCommand command) {
 
     }
+
 
 }

@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -15,79 +14,52 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Created by davidclelland on 18/05/2016.
  */
-public class ReflectiveAnnotatedMethodInvoker implements AnnotatedMethodInvoker{
+public class ReflectiveAnnotatedMethodInvoker implements AnnotatedMethodInvoker {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReflectiveAnnotatedMethodInvoker.class);
-    private Map<String, AnnotatedCommandMethod> annotatedCommandMethods = new HashMap<>();
 
-    public ReflectiveAnnotatedMethodInvoker(List<? extends AbstractCommandHandler> commandHandlers){
-        buildCommandMethods(commandHandlers);
+    private final AbstractCommandHandler commandHandler;
+
+    private final Map<String, Method> annotatedCommandMethods = new HashMap<>();
+
+    public ReflectiveAnnotatedMethodInvoker(AbstractCommandHandler commandHandler) {
+        this.commandHandler = checkNotNull(commandHandler);
+        buildCommandMethods(commandHandler);
     }
 
-    private void buildCommandMethods(List<? extends AbstractCommandHandler> commandHandlers) {
+    private void buildCommandMethods(AbstractCommandHandler commandHandler) {
 
-        for (AbstractCommandHandler commandHandler : commandHandlers) {
-            //register all annotated methods
-            for (Method m : Utils.methodsOf(commandHandler.getClass())) {
-                if (m.isAnnotationPresent(com.dmc.d1.cqrs.annotations.CommandHandler.class)) {
-                    if(annotatedCommandMethods.containsKey(m.getParameterTypes()[0].getSimpleName()))
-                        throw new IllegalStateException(m.getParameterTypes()[0].getSimpleName() + " has more than one handler");
+        //register all annotated methods
+        for (Method m : Utils.methodsOf(commandHandler.getClass())) {
+            if (m.isAnnotationPresent(com.dmc.d1.cqrs.annotations.CommandHandler.class)) {
+                if (annotatedCommandMethods.containsKey(m.getParameterTypes()[0].getSimpleName()))
+                    throw new IllegalStateException(m.getParameterTypes()[0].getSimpleName() + " has more than one handler");
 
-                    if (m.getParameterTypes().length == 1 && Command.class.isAssignableFrom(m.getParameterTypes()[0])) {
-                        annotatedCommandMethods.put(m.getParameterTypes()[0].getSimpleName(), new AnnotatedCommandMethod(commandHandler, m));
-                    } else {
-                        throw new IllegalStateException("A command handler must have a single argument of type " + Command.class.getName());
-                    }
+                if (m.getParameterTypes().length == 1 && Command.class.isAssignableFrom(m.getParameterTypes()[0])) {
+                    annotatedCommandMethods.put(m.getParameterTypes()[0].getSimpleName(), m);
+                } else {
+                    throw new IllegalStateException("A command handler must have a single argument of type " + Command.class.getName());
                 }
             }
         }
     }
 
     @Override
-    public void invoke(Command command) {
+    public void invoke(Command command, AbstractCommandHandler handler) {
 
-        AnnotatedCommandMethod commandMethod = annotatedCommandMethods.get(command.getName());
+        Method commandMethod = annotatedCommandMethods.get(command.getName());
 
         if (commandMethod == null) {
             LOG.error("No corresponding method command handler exists for " + command.toString());
             return;
         }
 
-        AbstractCommandHandler handler =  commandMethod.getCommandHandler();
-
         try {
-            commandMethod.invoke(command);
-            handler.commitAggregate(command.getAggregateId());
-        } catch (Exception e) {
-            //rollback aggregate if any error
-            handler.rollbackAggregate(command.getAggregateId());
-            LOG.error("Unable to process command {} ", command.toString(), e);
+            commandMethod.invoke(commandHandler, command);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(e.getTargetException());
         }
     }
-
-    private static class AnnotatedCommandMethod {
-
-        private final AbstractCommandHandler commandHandler;
-        private final Method method;
-
-        AnnotatedCommandMethod(AbstractCommandHandler commandHandler, Method method){
-            this.commandHandler = checkNotNull(commandHandler);
-            this.method = checkNotNull(method);
-        }
-
-        void invoke(Command command){
-            try {
-                method.invoke(commandHandler, command);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            } catch (InvocationTargetException e) {
-                throw new RuntimeException(e.getTargetException());
-            }
-        }
-
-        public AbstractCommandHandler getCommandHandler() {
-            return commandHandler;
-        }
-    }
-
 }

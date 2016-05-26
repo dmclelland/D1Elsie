@@ -13,15 +13,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class AggregateRepository<ID extends Id, A extends Aggregate> {
 
-    private Map<Id, A> cache  = new HashMap<>();
     private final AggregateEventStore aggregateEventStore;
+    private Map<Id, A> cache  = new HashMap<>();
 
     public AggregateRepository(AggregateEventStore aggregateEventStore){
+
         this.aggregateEventStore = checkNotNull(aggregateEventStore);
     }
 
     public A create(A aggregate){
 
+        //create aggregate event handler
         cache.put(aggregate.getId(), aggregate);
         return aggregate;
     }
@@ -42,5 +44,4 @@ public class AggregateRepository<ID extends Id, A extends Aggregate> {
         Iterable<AggregateEvent> events = aggregateEventStore.get(id);
         aggregate.rollback(events);
     }
-
 }

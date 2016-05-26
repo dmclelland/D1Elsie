@@ -1,7 +1,6 @@
 package com.dmc.d1.algo;
 
 import com.dmc.d1.algo.aggregate.WaveAggregate;
-import com.dmc.d1.algo.command.DirectAnnotatedMethodInvoker;
 import com.dmc.d1.algo.command.WaveCommandHandler;
 import com.dmc.d1.cqrs.AggregateEventStore;
 import com.dmc.d1.cqrs.AggregateRepository;
@@ -31,8 +30,8 @@ public class AlgoConfiguration {
     }
 
     @Bean
-    WaveCommandHandler waveCommandHandler(AggregateRepository<WaveId, WaveAggregate> waveAggregateAggregateRepository) {
-        return new WaveCommandHandler(waveAggregateAggregateRepository);
+    WaveCommandHandler waveCommandHandler(AggregateRepository<WaveId, WaveAggregate> waveAggregateRepository) {
+        return new WaveCommandHandler(waveAggregateRepository, AnnotatedMethodInvokerStrategy.GENERATED);
     }
 
     @Bean
@@ -43,12 +42,7 @@ public class AlgoConfiguration {
     }
 
     @Bean
-    AnnotatedMethodInvoker annotatedMethodInvoker(List<? extends AbstractCommandHandler> commandHandlers){
-        return new DirectAnnotatedMethodInvoker(commandHandlers);
-    }
-
-    @Bean
-    CommandBus commandBus(AnnotatedMethodInvoker annotatedMethodInvoker) {
-        return new SimpleCommandBus(annotatedMethodInvoker);
+    CommandBus commandBus(List<? extends AbstractCommandHandler> commandHandlers) {
+        return new SimpleCommandBus(commandHandlers);
     }
 }

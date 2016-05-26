@@ -1,22 +1,23 @@
 package com.dmc.d1.cqrs.testdomain.command;
 
 import com.dmc.d1.cqrs.AggregateRepository;
-import com.dmc.d1.cqrs.testdomain.Aggregate2;
-import com.dmc.d1.cqrs.testdomain.MyId;
 import com.dmc.d1.cqrs.annotations.CommandHandler;
 import com.dmc.d1.cqrs.command.AbstractCommandHandler;
+import com.dmc.d1.cqrs.command.AnnotatedMethodInvokerStrategy;
+import com.dmc.d1.cqrs.testdomain.Aggregate2;
+import com.dmc.d1.cqrs.testdomain.MyId;
 
 /**
  * Created by davidclelland on 17/05/2016.
  */
-public class MyCommandHandler2 extends AbstractCommandHandler<MyId, Aggregate2>{
+public class MyCommandHandler2 extends AbstractCommandHandler<MyId, Aggregate2> {
 
-    public MyCommandHandler2(AggregateRepository repository) {
-        super(repository);
+    public MyCommandHandler2(AggregateRepository repository, AnnotatedMethodInvokerStrategy strategy) {
+        super(repository, strategy);
     }
 
     @CommandHandler
-    public void handle(CreateAggregate2Command command){
+    public void handle(CreateAggregate2Command command) {
 
         Aggregate2 aggregate = new Aggregate2(command.getAggregateId());
         createAggregate(aggregate);
@@ -25,11 +26,11 @@ public class MyCommandHandler2 extends AbstractCommandHandler<MyId, Aggregate2>{
     }
 
     @CommandHandler
-    public void handle(UpdateAggregate2Command command){
+    public void handle(UpdateAggregate2Command command) {
         Aggregate2 aggregate = getAggregate(command.getAggregateId());
         aggregate.doSomething(command.getStr1(), command.getStr2());
 
-        if(true)
+        if (true)
             throw new RuntimeException("Unexpected");
     }
 }

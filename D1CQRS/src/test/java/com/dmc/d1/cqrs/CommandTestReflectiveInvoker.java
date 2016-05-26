@@ -1,9 +1,6 @@
 package com.dmc.d1.cqrs;
 
-import com.dmc.d1.cqrs.command.AbstractCommandHandler;
-import com.dmc.d1.cqrs.command.CommandBus;
-import com.dmc.d1.cqrs.command.ReflectiveAnnotatedMethodInvoker;
-import com.dmc.d1.cqrs.command.SimpleCommandBus;
+import com.dmc.d1.cqrs.command.*;
 import com.dmc.d1.cqrs.testdomain.Aggregate1;
 import com.dmc.d1.cqrs.testdomain.Aggregate2;
 import com.dmc.d1.cqrs.testdomain.MyId;
@@ -32,10 +29,10 @@ public class CommandTestReflectiveInvoker {
     public void setup(){
         List<AbstractCommandHandler> lst = new ArrayList<>();
 
-        lst.add(new MyCommandHandler1(repo1));
-        lst.add(new MyCommandHandler2(repo2));
+        lst.add(new MyCommandHandler1(repo1, AnnotatedMethodInvokerStrategy.REFLECTIVE));
+        lst.add(new MyCommandHandler2(repo2, AnnotatedMethodInvokerStrategy.REFLECTIVE));
 
-        bus = new SimpleCommandBus(new ReflectiveAnnotatedMethodInvoker(lst));
+        bus = new SimpleCommandBus(lst);
     }
 
     @Test

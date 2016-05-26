@@ -66,8 +66,4 @@ public abstract class Aggregate<ID extends Id> {
     }
 
     protected abstract ID getId();
-
-
-
-
 }
