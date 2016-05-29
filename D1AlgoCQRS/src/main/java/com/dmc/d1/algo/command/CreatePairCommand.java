@@ -16,9 +16,13 @@ public class CreatePairCommand implements Command {
         this.pairId = pairId;
     }
 
-    @Override
-    public PairId getAggregateId() {
+    public PairId getPairId() {
         return pairId;
+    }
+
+    @Override
+    public String getAggregateId() {
+        return pairId.toString();
     }
 
     @Override

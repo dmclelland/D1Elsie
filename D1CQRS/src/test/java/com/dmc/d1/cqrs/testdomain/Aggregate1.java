@@ -9,7 +9,7 @@ import com.dmc.d1.cqrs.annotations.EventHandler;
  * Created by davidclelland on 17/05/2016.
  */
 @com.dmc.d1.cqrs.annotations.Aggregate
-public class Aggregate1 extends Aggregate<MyId> {
+public class Aggregate1 extends Aggregate {
 
     private int i1;
     private int i2;
@@ -21,8 +21,8 @@ public class Aggregate1 extends Aggregate<MyId> {
 
 
     @Override
-    protected MyId getId() {
-        return id;
+    protected String getId() {
+        return id.toString();
     }
 
     @Override

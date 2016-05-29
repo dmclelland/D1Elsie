@@ -16,9 +16,13 @@ public class PauseWaveCommand implements Command {
         this.waveId = waveId;
     }
 
-    @Override
-    public WaveId getAggregateId() {
+    public WaveId getWaveId() {
         return waveId;
+    }
+
+    @Override
+    public String getAggregateId() {
+        return waveId.toString();
     }
 
     @Override

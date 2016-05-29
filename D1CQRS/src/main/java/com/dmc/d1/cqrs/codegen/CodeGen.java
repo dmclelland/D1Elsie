@@ -7,6 +7,8 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class CodeGen {
 
+
+
     public static void main(String[] args) {
         checkState(args.length==4);
 
@@ -23,10 +25,7 @@ public class CodeGen {
                         generatedPackageName);
 
                 generator.generate();
-
             }
-
-
         } catch (Exception e) {
           throw new RuntimeException("Unable to generate code", e);
         }

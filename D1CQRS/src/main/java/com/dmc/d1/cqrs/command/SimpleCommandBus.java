@@ -1,9 +1,7 @@
 package com.dmc.d1.cqrs.command;
 
+import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.Utils;
-import com.dmc.d1.cqrs.annotations.CommandHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -15,16 +13,16 @@ import java.util.Map;
  */
 public class SimpleCommandBus implements CommandBus {
 
-    private Map<String, AbstractCommandHandler> commandToHandler = new HashMap<>();
+    private Map<String, AbstractCommandHandler<? extends Aggregate>> commandToHandler = new HashMap<>();
 
-    public SimpleCommandBus(List<? extends AbstractCommandHandler> commandHandlers){
+    public SimpleCommandBus(List<? extends AbstractCommandHandler<? extends Aggregate>> commandHandlers){
         buildCommandToHandler(commandHandlers);
     }
 
-    private void buildCommandToHandler(List<? extends AbstractCommandHandler> commandHandlers) {
+    private void buildCommandToHandler(List<? extends AbstractCommandHandler<? extends Aggregate>> commandHandlers) {
 
         //if multiple handlers for the same command then this is an error
-        for (AbstractCommandHandler commandHandler : commandHandlers) {
+        for (AbstractCommandHandler<? extends Aggregate> commandHandler : commandHandlers) {
             //register all annotated methods
             for (Method m : Utils.methodsOf(commandHandler.getClass())) {
                 if (m.isAnnotationPresent(com.dmc.d1.cqrs.annotations.CommandHandler.class)) {
@@ -44,7 +42,7 @@ public class SimpleCommandBus implements CommandBus {
     //TODO locking policy needs to be established
     @Override
     public void dispatch(Command command) {
-        AbstractCommandHandler handler =  commandToHandler.get(command.getName());
+        AbstractCommandHandler<? extends Aggregate> handler =  commandToHandler.get(command.getName());
         if(handler==null)
             throw new IllegalStateException("No command handler registered for command " + command.getName());
 

@@ -3,7 +3,7 @@ package com.dmc.d1.cqrs.codegen;
 import com.dmc.d1.cqrs.Utils;
 import com.dmc.d1.cqrs.annotations.CommandHandler;
 import com.dmc.d1.cqrs.command.AbstractCommandHandler;
-import com.dmc.d1.cqrs.command.AnnotatedMethodInvoker;
+import com.dmc.d1.cqrs.command.AnnotatedCommandHandlerInvoker;
 import com.dmc.d1.cqrs.command.Command;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -14,6 +14,7 @@ import org.reflections.Reflections;
 import javax.lang.model.element.Modifier;
 import java.io.File;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -50,7 +51,6 @@ public class CommandHandlerGenerator {
 
         for (Class<? extends AbstractCommandHandler> commandHandlerClass : commandHandlers) {
 
-
             MethodSpec.Builder invokeBuilder = MethodSpec.methodBuilder("invoke")
                     .addModifiers(Modifier.PUBLIC)
                     .returns(void.class)
@@ -83,8 +83,11 @@ public class CommandHandlerGenerator {
             MethodSpec invoke = invokeBuilder.build();
             String className = commandHandlerClass.getSimpleName() + "AnnotatedMethodInvoker";
 
+            ParameterizedType aggregateType = (ParameterizedType) commandHandlerClass.getGenericSuperclass(); // OtherClass<String>
+            Class<?> aggregateClass = (Class<?>) aggregateType.getActualTypeArguments()[0];
+
             TypeSpec directAnnotatedMethodInvoker = TypeSpec.classBuilder(className)
-                    .addSuperinterface(ParameterizedTypeName.get(AnnotatedMethodInvoker.class, commandHandlerClass))
+                    .addSuperinterface(ParameterizedTypeName.get(AnnotatedCommandHandlerInvoker.class, aggregateClass, commandHandlerClass))
                     .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                     .addMethod(invoke)
                     .build();

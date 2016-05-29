@@ -13,7 +13,7 @@ import java.util.Set;
 /**
  * Created by davidclelland on 16/05/2016.
  */
-class ReflectiveAggregateEventHandler implements AggregateEventHandler {
+class ReflectiveAnnotatedEventHandlerInvoker implements AnnotatedEventHandlerInvoker {
 
     private final static Map<String, Method> HANDLERS = new HashMap<>();
 

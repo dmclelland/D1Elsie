@@ -1,4 +1,4 @@
-package com.dmc.d1.cqrs.command;
+package com.dmc.d1.cqrs;
 
 /**
  * Created by davidclelland on 26/05/2016.

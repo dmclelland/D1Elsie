@@ -1,6 +1,8 @@
 package com.dmc.d1.cqrs;
 
-import com.dmc.d1.cqrs.command.*;
+import com.dmc.d1.cqrs.command.AbstractCommandHandler;
+import com.dmc.d1.cqrs.command.CommandBus;
+import com.dmc.d1.cqrs.command.SimpleCommandBus;
 import com.dmc.d1.cqrs.testdomain.Aggregate1;
 import com.dmc.d1.cqrs.testdomain.Aggregate2;
 import com.dmc.d1.cqrs.testdomain.MyId;
@@ -22,12 +24,12 @@ public class CommandTestDirectInvoker {
     CommandBus bus;
 
     AggregateEventStore aes = new InMemoryAggregateEventStore();
-    AggregateRepository<MyId,Aggregate1> repo1 = new AggregateRepository(aes);
-    AggregateRepository<MyId,Aggregate2> repo2 = new AggregateRepository(aes);
+    AggregateRepository<Aggregate1> repo1 = new AggregateRepository(aes, Integer.class, AnnotatedMethodInvokerStrategy.GENERATED);
+    AggregateRepository<Aggregate2> repo2 = new AggregateRepository(aes, Aggregate2.class, AnnotatedMethodInvokerStrategy.GENERATED);
 
     @Before
-    public void setup(){
-        List<AbstractCommandHandler> lst = new ArrayList<>();
+    public void setup() {
+        List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
 
         lst.add(new MyCommandHandler1(repo1, AnnotatedMethodInvokerStrategy.GENERATED));
         lst.add(new MyCommandHandler2(repo2, AnnotatedMethodInvokerStrategy.GENERATED));
@@ -36,21 +38,21 @@ public class CommandTestDirectInvoker {
     }
 
     @Test
-    public void testCreateAndUpdateCommand(){
+    public void testCreateAndUpdateCommand() {
         MyId id = new MyId("testId1");
 
-        CreateAggregate1Command command = new CreateAggregate1Command(id, 3 ,5);
+        CreateAggregate1Command command = new CreateAggregate1Command(id, 3, 5);
         bus.dispatch(command);
 
-        Aggregate1 aggregate = repo1.find(id);
+        Aggregate1 aggregate = repo1.find(id.toString());
 
         assertEquals(aggregate.getI1(), 3);
         assertEquals(aggregate.getI2(), 5);
 
-        UpdateAggregate1Command command2 = new UpdateAggregate1Command(id, 6 ,9);
+        UpdateAggregate1Command command2 = new UpdateAggregate1Command(id, 6, 9);
         bus.dispatch(command2);
 
-        aggregate = repo1.find(id);
+        aggregate = repo1.find(id.toString());
 
         assertEquals(aggregate.getI1(), 6);
         assertEquals(aggregate.getI2(), 9);
@@ -58,28 +60,28 @@ public class CommandTestDirectInvoker {
         //aggregate  committed ->  events should be in AggregateEventStore
         //should be 4 all together 2 for the create and 2 for the update
 
-        assertEquals(4,aes.getAll().size());
+        assertEquals(4, aes.getAll().size());
     }
 
 
     @Test
-    public void rollbackTest(){
+    public void rollbackTest() {
 
         MyId id = new MyId("testId2");
 
-        CreateAggregate2Command command = new CreateAggregate2Command(id, "Hello","Goodbye");
+        CreateAggregate2Command command = new CreateAggregate2Command(id, "Hello", "Goodbye");
         bus.dispatch(command);
 
-        Aggregate2 aggregate = repo2.find(id);
+        Aggregate2 aggregate = repo2.find(id.toString());
 
         assertEquals(aggregate.getS1(), "Hello");
         assertEquals(aggregate.getS2(), "Goodbye");
 
         //command2 handler throws an exception - should rollback
-        UpdateAggregate2Command command2 = new UpdateAggregate2Command(id, "Blimey","Where am I");
+        UpdateAggregate2Command command2 = new UpdateAggregate2Command(id, "Blimey", "Where am I");
         bus.dispatch(command2);
 
-        aggregate = repo2.find(id);
+        aggregate = repo2.find(id.toString());
 
         //events which have been stored in the event store get replayed, overwriting the old values
         assertEquals(aggregate.getS1(), "Hello");

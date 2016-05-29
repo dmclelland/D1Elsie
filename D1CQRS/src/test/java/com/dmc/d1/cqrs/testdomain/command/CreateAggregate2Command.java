@@ -20,6 +20,10 @@ public class CreateAggregate2Command implements Command {
         this.str2 = str2;
     }
 
+    public MyId getId() {
+        return id;
+    }
+
     @Override
     public String getName() {
         return simpleClassName;
@@ -31,8 +35,8 @@ public class CreateAggregate2Command implements Command {
     }
 
     @Override
-    public MyId getAggregateId() {
-        return id;
+    public String getAggregateId() {
+        return id.toString();
     }
 
     public String getStr1() {

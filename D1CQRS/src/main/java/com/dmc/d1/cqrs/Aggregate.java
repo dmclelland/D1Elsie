@@ -2,7 +2,6 @@ package com.dmc.d1.cqrs;
 
 
 import com.dmc.d1.cqrs.event.AggregateEvent;
-import com.dmc.d1.domain.Id;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,19 +11,16 @@ import java.util.List;
 /**
  * Created by davidclelland on 16/05/2016.
  */
-public abstract class Aggregate<ID extends Id> {
+public abstract class Aggregate {
 
     private static final Logger LOG = LoggerFactory.getLogger(Aggregate.class);
-
-    private final static AggregateEventHandler EVENT_HANDLER = new ReflectiveAggregateEventHandler();
-
     private final List<AggregateEvent> uncommittedEvents = new ArrayList<>();
+    private AnnotatedEventHandlerInvoker eventHandler;
 
     public void apply(AggregateEvent event) {
         applyAggregateEvent(event);
         //TODO apply to external event handlers
     }
-
 
     public void replay(AggregateEvent event) {
         applyAggregateEvent(event);
@@ -33,7 +29,6 @@ public abstract class Aggregate<ID extends Id> {
     //to rollback reset and replay the events
     void rollback( Iterable<AggregateEvent> events) {
         clearUncommittedEvents();
-
         rollbackAggregateToInitialState();
 
         for(AggregateEvent event : events) {
@@ -41,17 +36,15 @@ public abstract class Aggregate<ID extends Id> {
         }
     }
 
-
     protected abstract void rollbackAggregateToInitialState();
 
     private void applyAggregateEvent(AggregateEvent event) {
         try {
-            EVENT_HANDLER.invoke(event, this);
+            eventHandler.invoke(event, this);
         } catch (Exception e) {
             LOG.error("Unable to apply event {} ", event.toString(), e);
         }
     }
-
 
     void addToUncommitted(AggregateEvent e) {
         uncommittedEvents.add(e);
@@ -65,5 +58,9 @@ public abstract class Aggregate<ID extends Id> {
         uncommittedEvents.clear();
     }
 
-    protected abstract ID getId();
+    void setEventHandler(AnnotatedEventHandlerInvoker eventHandler) {
+        this.eventHandler = eventHandler;
+    }
+
+    protected abstract String getId();
 }

@@ -6,7 +6,7 @@ import com.dmc.d1.domain.WaveId;
 /**
  * Created by davidclelland on 18/05/2016.
  */
-public class WaveAggregate extends Aggregate<WaveId>{
+public class WaveAggregate extends Aggregate {
 
     private WaveId waveId;
 
@@ -21,7 +21,7 @@ public class WaveAggregate extends Aggregate<WaveId>{
     }
 
     @Override
-    protected WaveId getId() {
-        return waveId;
+    protected String getId() {
+        return waveId.toString();
     }
 }

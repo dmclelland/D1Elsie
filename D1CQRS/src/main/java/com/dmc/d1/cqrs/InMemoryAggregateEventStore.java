@@ -1,7 +1,6 @@
 package com.dmc.d1.cqrs;
 
 import com.dmc.d1.cqrs.event.AggregateEvent;
-import com.dmc.d1.domain.Id;
 
 import java.util.*;
 
@@ -12,7 +11,7 @@ public class InMemoryAggregateEventStore implements AggregateEventStore {
 
     List<AggregateEvent> events = new ArrayList<>();
 
-    Map<Id, List<AggregateEvent>> eventsById = new HashMap<>();
+    Map<String, List<AggregateEvent>> eventsById = new HashMap<>();
 
     @Override
     public void add(AggregateEvent event) {
@@ -28,10 +27,8 @@ public class InMemoryAggregateEventStore implements AggregateEventStore {
     }
 
     @Override
-    public void add(Iterable<AggregateEvent> eventsToAdd) {
-        for(AggregateEvent e : eventsToAdd) {
-            add(e);
-        }
+    public void add(List<AggregateEvent> eventsToAdd) {
+        eventsToAdd.forEach(this::add);
     }
 
     @Override
@@ -45,7 +42,7 @@ public class InMemoryAggregateEventStore implements AggregateEventStore {
     }
 
     @Override
-    public List<AggregateEvent> get(Id id) {
+    public List<AggregateEvent> get(String id) {
         return eventsById.get(id);
     }
 }

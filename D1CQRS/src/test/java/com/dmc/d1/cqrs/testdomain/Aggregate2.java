@@ -28,8 +28,8 @@ public class Aggregate2 extends Aggregate {
 
 
     public void doSomething(String s1, String s2) {
-        apply(new StringUpdatedEvent1(getId(), s1));
-        apply(new StringUpdatedEvent2(getId(), s2));
+        apply(new StringUpdatedEvent1(id, s1));
+        apply(new StringUpdatedEvent2(id, s2));
     }
 
     @EventHandler
@@ -55,7 +55,7 @@ public class Aggregate2 extends Aggregate {
 
 
     @Override
-    protected MyId getId() {
-        return id;
+    protected String getId() {
+        return id.toString();
     }
 }

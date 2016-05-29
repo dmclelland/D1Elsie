@@ -3,14 +3,14 @@ package com.dmc.d1.cqrs.testdomain.command;
 import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.annotations.CommandHandler;
 import com.dmc.d1.cqrs.command.AbstractCommandHandler;
-import com.dmc.d1.cqrs.command.AnnotatedMethodInvokerStrategy;
+import com.dmc.d1.cqrs.AnnotatedMethodInvokerStrategy;
 import com.dmc.d1.cqrs.testdomain.Aggregate2;
 import com.dmc.d1.cqrs.testdomain.MyId;
 
 /**
  * Created by davidclelland on 17/05/2016.
  */
-public class MyCommandHandler2 extends AbstractCommandHandler<MyId, Aggregate2> {
+public class MyCommandHandler2 extends AbstractCommandHandler<Aggregate2> {
 
     public MyCommandHandler2(AggregateRepository repository, AnnotatedMethodInvokerStrategy strategy) {
         super(repository, strategy);
@@ -19,7 +19,7 @@ public class MyCommandHandler2 extends AbstractCommandHandler<MyId, Aggregate2> 
     @CommandHandler
     public void handle(CreateAggregate2Command command) {
 
-        Aggregate2 aggregate = new Aggregate2(command.getAggregateId());
+        Aggregate2 aggregate = new Aggregate2(command.getId());
         createAggregate(aggregate);
 
         aggregate.doSomething(command.getStr1(), command.getStr2());

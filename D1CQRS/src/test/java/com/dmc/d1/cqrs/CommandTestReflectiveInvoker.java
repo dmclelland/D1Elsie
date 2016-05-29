@@ -22,12 +22,12 @@ public class CommandTestReflectiveInvoker {
     CommandBus bus;
 
     AggregateEventStore aes = new InMemoryAggregateEventStore();
-    AggregateRepository<MyId,Aggregate1> repo1 = new AggregateRepository(aes);
-    AggregateRepository<MyId,Aggregate2> repo2 = new AggregateRepository(aes);
+    AggregateRepository<Aggregate1> repo1 = new AggregateRepository(aes, Aggregate2.class,AnnotatedMethodInvokerStrategy.REFLECTIVE);
+    AggregateRepository<Aggregate2> repo2 = new AggregateRepository(aes, Aggregate2.class,AnnotatedMethodInvokerStrategy.REFLECTIVE);
 
     @Before
     public void setup(){
-        List<AbstractCommandHandler> lst = new ArrayList<>();
+        List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
 
         lst.add(new MyCommandHandler1(repo1, AnnotatedMethodInvokerStrategy.REFLECTIVE));
         lst.add(new MyCommandHandler2(repo2, AnnotatedMethodInvokerStrategy.REFLECTIVE));
@@ -42,7 +42,7 @@ public class CommandTestReflectiveInvoker {
         CreateAggregate1Command command = new CreateAggregate1Command(id, 3 ,5);
         bus.dispatch(command);
 
-        Aggregate1 aggregate = repo1.find(id);
+        Aggregate1 aggregate = repo1.find(id.toString());
 
         assertEquals(aggregate.getI1(), 3);
         assertEquals(aggregate.getI2(), 5);
@@ -50,7 +50,7 @@ public class CommandTestReflectiveInvoker {
         UpdateAggregate1Command command2 = new UpdateAggregate1Command(id, 6 ,9);
         bus.dispatch(command2);
 
-        aggregate = repo1.find(id);
+        aggregate = repo1.find(id.toString());
 
         assertEquals(aggregate.getI1(), 6);
         assertEquals(aggregate.getI2(), 9);
@@ -70,7 +70,7 @@ public class CommandTestReflectiveInvoker {
         CreateAggregate2Command command = new CreateAggregate2Command(id, "Hello","Goodbye");
         bus.dispatch(command);
 
-        Aggregate2 aggregate = repo2.find(id);
+        Aggregate2 aggregate = repo2.find(id.toString());
 
         assertEquals(aggregate.getS1(), "Hello");
         assertEquals(aggregate.getS2(), "Goodbye");
@@ -79,7 +79,7 @@ public class CommandTestReflectiveInvoker {
         UpdateAggregate2Command command2 = new UpdateAggregate2Command(id, "Blimey","Where am I");
         bus.dispatch(command2);
 
-        aggregate = repo2.find(id);
+        aggregate = repo2.find(id.toString());
 
         //events which have been stored in the event store get replayed, overwriting the old values
         assertEquals(aggregate.getS1(), "Hello");

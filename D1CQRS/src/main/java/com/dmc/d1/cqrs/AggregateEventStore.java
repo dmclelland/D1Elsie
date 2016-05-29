@@ -1,7 +1,6 @@
 package com.dmc.d1.cqrs;
 
 import com.dmc.d1.cqrs.event.AggregateEvent;
-import com.dmc.d1.domain.Id;
 
 import java.util.List;
 
@@ -12,11 +11,11 @@ public interface AggregateEventStore {
 
     void add(AggregateEvent event);
 
-    void add(Iterable<AggregateEvent> events);
+    void add(List<AggregateEvent> events);
 
     AggregateEvent get();
 
     List<AggregateEvent> getAll();
 
-    List<AggregateEvent> get(Id id);
+    List<AggregateEvent> get(String id);
 }

@@ -1,5 +1,6 @@
 package com.dmc.d1.cqrs.command;
 
+import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,20 +15,20 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Created by davidclelland on 18/05/2016.
  */
-public class ReflectiveAnnotatedMethodInvoker implements AnnotatedMethodInvoker {
+class ReflectiveAnnotatedCommandHandlerInvoker<A extends Aggregate, T extends AbstractCommandHandler<A>> implements AnnotatedCommandHandlerInvoker<A,T> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ReflectiveAnnotatedMethodInvoker.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ReflectiveAnnotatedCommandHandlerInvoker.class);
 
-    private final AbstractCommandHandler commandHandler;
+    private final AbstractCommandHandler<A> commandHandler;
 
     private final Map<String, Method> annotatedCommandMethods = new HashMap<>();
 
-    public ReflectiveAnnotatedMethodInvoker(AbstractCommandHandler commandHandler) {
+    public ReflectiveAnnotatedCommandHandlerInvoker(AbstractCommandHandler<A> commandHandler) {
         this.commandHandler = checkNotNull(commandHandler);
         buildCommandMethods(commandHandler);
     }
 
-    private void buildCommandMethods(AbstractCommandHandler commandHandler) {
+    private void buildCommandMethods(AbstractCommandHandler<A> commandHandler) {
 
         //register all annotated methods
         for (Method m : Utils.methodsOf(commandHandler.getClass())) {
@@ -45,7 +46,7 @@ public class ReflectiveAnnotatedMethodInvoker implements AnnotatedMethodInvoker 
     }
 
     @Override
-    public void invoke(Command command, AbstractCommandHandler handler) {
+    public void invoke(Command command, T handler) {
 
         Method commandMethod = annotatedCommandMethods.get(command.getName());
 

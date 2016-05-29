@@ -20,9 +20,13 @@ public class UpdateAggregate1Command implements Command {
         this.i2 = i2;
     }
 
-    @Override
-    public MyId getAggregateId() {
+    public MyId getId() {
         return id;
+    }
+
+    @Override
+    public String getAggregateId() {
+        return id.toString();
     }
 
     public int getI() {
