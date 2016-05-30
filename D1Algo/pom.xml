@@ -42,7 +42,7 @@
                                 <argument>DirectAnnotatedMethodInvoker</argument>
                                 <argument>com.dmc.d1.algo</argument>
                                 <argument>./D1Algo/src/generated/java</argument>
-                                <argument>com.dmc.d1.algo.command</argument>
+                                <argument>com.dmc.d1.algo.commandhandler</argument>
                             </arguments>
                         </configuration>
                     </execution>

@@ -1,7 +1,8 @@
-package com.dmc.d1.algo.command;
+package com.dmc.d1.algo.commandhandler;
 
 
 import com.dmc.d1.algo.aggregate.PairsAggregate;
+import com.dmc.d1.algo.command.CreatePairCommand;
 import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.annotations.CommandHandler;
 import com.dmc.d1.cqrs.command.AbstractCommandHandler;

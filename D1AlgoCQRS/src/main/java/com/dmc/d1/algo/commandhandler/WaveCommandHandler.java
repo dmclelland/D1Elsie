@@ -1,7 +1,11 @@
-package com.dmc.d1.algo.command;
+package com.dmc.d1.algo.commandhandler;
 
 
 import com.dmc.d1.algo.aggregate.WaveAggregate;
+import com.dmc.d1.algo.command.CancelWaveCommand;
+import com.dmc.d1.algo.command.CreateWaveCommand;
+import com.dmc.d1.algo.command.PauseWaveCommand;
+import com.dmc.d1.algo.command.ResumeWaveCommand;
 import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.annotations.CommandHandler;
 import com.dmc.d1.cqrs.command.AbstractCommandHandler;
@@ -11,7 +15,6 @@ import com.dmc.d1.cqrs.AnnotatedMethodInvokerStrategy;
  * Created by davidclelland on 18/05/2016.
  */
 public class WaveCommandHandler extends AbstractCommandHandler<WaveAggregate> {
-
 
     public WaveCommandHandler(AggregateRepository<WaveAggregate> repository, AnnotatedMethodInvokerStrategy strategy) {
         super(repository, strategy);

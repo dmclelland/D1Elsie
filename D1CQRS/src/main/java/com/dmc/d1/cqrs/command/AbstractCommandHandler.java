@@ -58,7 +58,7 @@ public abstract class AbstractCommandHandler<A extends Aggregate> {
         if (AnnotatedMethodInvokerStrategy.GENERATED == strategy) {
             try {
                 String className = this.getClass().getSimpleName() + "AnnotatedMethodInvoker";
-                Class<?> clazz  = Class.forName("com.dmc.d1.algo.command." + className);
+                Class<?> clazz  = Class.forName("com.dmc.d1.algo.commandhandler." + className);
                 return (AnnotatedCommandHandlerInvoker) clazz.newInstance();
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                 throw new RuntimeException("Unable to resolve annotated method invoker for " + this.getClass().getSimpleName(), e);

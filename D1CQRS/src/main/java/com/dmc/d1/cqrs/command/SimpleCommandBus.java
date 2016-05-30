@@ -11,18 +11,19 @@ import java.util.Map;
 /**
  * Created by davidclelland on 16/05/2016.
  */
-public class SimpleCommandBus implements CommandBus {
+public class SimpleCommandBus<A extends Aggregate, T extends AbstractCommandHandler<A>> implements CommandBus {
 
-    private Map<String, AbstractCommandHandler<? extends Aggregate>> commandToHandler = new HashMap<>();
+    private Map<String, T> commandToHandler = new HashMap<>();
 
-    public SimpleCommandBus(List<? extends AbstractCommandHandler<? extends Aggregate>> commandHandlers){
+
+    public SimpleCommandBus(List<T> commandHandlers){
         buildCommandToHandler(commandHandlers);
     }
 
-    private void buildCommandToHandler(List<? extends AbstractCommandHandler<? extends Aggregate>> commandHandlers) {
+    private void buildCommandToHandler(List<T> commandHandlers) {
 
         //if multiple handlers for the same command then this is an error
-        for (AbstractCommandHandler<? extends Aggregate> commandHandler : commandHandlers) {
+        for (T commandHandler : commandHandlers) {
             //register all annotated methods
             for (Method m : Utils.methodsOf(commandHandler.getClass())) {
                 if (m.isAnnotationPresent(com.dmc.d1.cqrs.annotations.CommandHandler.class)) {
@@ -42,7 +43,7 @@ public class SimpleCommandBus implements CommandBus {
     //TODO locking policy needs to be established
     @Override
     public void dispatch(Command command) {
-        AbstractCommandHandler<? extends Aggregate> handler =  commandToHandler.get(command.getName());
+       T handler =  commandToHandler.get(command.getName());
         if(handler==null)
             throw new IllegalStateException("No command handler registered for command " + command.getName());
 

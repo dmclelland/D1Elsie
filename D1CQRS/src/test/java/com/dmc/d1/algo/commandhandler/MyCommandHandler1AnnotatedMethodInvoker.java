@@ -1,4 +1,4 @@
-package com.dmc.d1.algo.command;
+package com.dmc.d1.algo.commandhandler;
 
 import com.dmc.d1.cqrs.command.AnnotatedCommandHandlerInvoker;
 import com.dmc.d1.cqrs.command.Command;

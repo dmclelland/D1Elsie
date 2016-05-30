@@ -1,12 +1,9 @@
-package com.dmc.d1.algo.command;
+package com.dmc.d1.algo.commandhandler;
 
 import com.dmc.d1.cqrs.command.AnnotatedCommandHandlerInvoker;
 import com.dmc.d1.cqrs.command.Command;
-import com.dmc.d1.cqrs.testdomain.Aggregate1;
 import com.dmc.d1.cqrs.testdomain.Aggregate2;
 import com.dmc.d1.cqrs.testdomain.command.*;
-
-import java.util.AbstractList;
 
 public final class MyCommandHandler2AnnotatedMethodInvoker implements AnnotatedCommandHandlerInvoker<Aggregate2, MyCommandHandler2> {
 
