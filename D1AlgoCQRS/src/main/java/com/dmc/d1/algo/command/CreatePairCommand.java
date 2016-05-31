@@ -8,7 +8,7 @@ import com.dmc.d1.domain.PairId;
  */
 public class CreatePairCommand implements Command {
 
-    private static String simpleClassName = CreatePairCommand.class.getSimpleName();
+    private static String CLASS_NAME = CreatePairCommand.class.getName();
 
     private final PairId pairId;
 
@@ -26,8 +26,8 @@ public class CreatePairCommand implements Command {
     }
 
     @Override
-    public String getName() {
-        return simpleClassName;
+    public String getClassName() {
+        return CLASS_NAME;
     }
 
     @Override

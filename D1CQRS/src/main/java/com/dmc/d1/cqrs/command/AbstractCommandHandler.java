@@ -2,7 +2,6 @@ package com.dmc.d1.cqrs.command;
 
 import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.AggregateRepository;
-import com.dmc.d1.cqrs.AnnotatedMethodInvokerStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,10 +18,9 @@ public abstract class AbstractCommandHandler<A extends Aggregate> {
 
     private final AnnotatedCommandHandlerInvoker<A, AbstractCommandHandler<A>> annotatedCommandHandlerInvoker;
 
-    protected AbstractCommandHandler(AggregateRepository<A> repository, AnnotatedMethodInvokerStrategy strategy) {
+    protected AbstractCommandHandler(AggregateRepository<A> repository) {
         this.repository = checkNotNull(repository);
-        checkNotNull(strategy);
-        this.annotatedCommandHandlerInvoker = getMethodInvoker(strategy);
+        this.annotatedCommandHandlerInvoker = getMethodInvoker();
     }
 
     protected A getAggregate(String id) {
@@ -45,26 +43,22 @@ public abstract class AbstractCommandHandler<A extends Aggregate> {
         try {
             annotatedCommandHandlerInvoker.invoke(command, this);
             commitAggregate(command.getAggregateId());
-        } catch (Exception e) {
+        } catch (Throwable e) {
             //rollback aggregate if any error
             rollbackAggregate(command.getAggregateId());
             LOG.error("Unable to process command {} ", command.toString(), e);
         }
     }
 
-
     @SuppressWarnings("rawtypes")
-    private AnnotatedCommandHandlerInvoker<A,AbstractCommandHandler<A>> getMethodInvoker(AnnotatedMethodInvokerStrategy strategy) {
-        if (AnnotatedMethodInvokerStrategy.GENERATED == strategy) {
-            try {
-                String className = this.getClass().getSimpleName() + "AnnotatedMethodInvoker";
-                Class<?> clazz  = Class.forName("com.dmc.d1.algo.commandhandler." + className);
-                return (AnnotatedCommandHandlerInvoker) clazz.newInstance();
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException("Unable to resolve annotated method invoker for " + this.getClass().getSimpleName(), e);
-            }
-        } else {
-            return new ReflectiveAnnotatedCommandHandlerInvoker(this);
+    private AnnotatedCommandHandlerInvoker<A, AbstractCommandHandler<A>> getMethodInvoker() {
+        try {
+            String className = this.getClass().getSimpleName() + "AnnotatedMethodInvoker";
+            Class<?> clazz = Class.forName("com.dmc.d1.algo.commandhandler." + className);
+            return (AnnotatedCommandHandlerInvoker) clazz.newInstance();
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException("Unable to resolve annotated method invoker for " + this.getClass().getSimpleName(), e);
         }
+
     }
 }

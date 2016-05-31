@@ -27,11 +27,11 @@ public class SimpleCommandBus<A extends Aggregate, T extends AbstractCommandHand
             //register all annotated methods
             for (Method m : Utils.methodsOf(commandHandler.getClass())) {
                 if (m.isAnnotationPresent(com.dmc.d1.cqrs.annotations.CommandHandler.class)) {
-                    if(commandToHandler.containsKey(m.getParameterTypes()[0].getSimpleName()))
-                        throw new IllegalStateException(m.getParameterTypes()[0].getSimpleName() + " has more than one handler");
+                    if(commandToHandler.containsKey(m.getParameterTypes()[0].getName()))
+                        throw new IllegalStateException(m.getParameterTypes()[0].getName() + " has more than one handler");
 
                     if (m.getParameterTypes().length == 1 && Command.class.isAssignableFrom(m.getParameterTypes()[0])) {
-                        commandToHandler.put(m.getParameterTypes()[0].getSimpleName(), commandHandler);
+                        commandToHandler.put(m.getParameterTypes()[0].getName(), commandHandler);
                     } else {
                         throw new IllegalStateException("A command handler must have a single argument of type " + Command.class.getName());
                     }
@@ -43,9 +43,9 @@ public class SimpleCommandBus<A extends Aggregate, T extends AbstractCommandHand
     //TODO locking policy needs to be established
     @Override
     public void dispatch(Command command) {
-       T handler =  commandToHandler.get(command.getName());
+       T handler =  commandToHandler.get(command.getClassName());
         if(handler==null)
-            throw new IllegalStateException("No command handler registered for command " + command.getName());
+            throw new IllegalStateException("No command handler registered for command " + command.getClassName());
 
         handler.invokeCommand(command);
     }

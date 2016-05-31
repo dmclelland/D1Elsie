@@ -23,7 +23,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Created by davidclelland on 20/05/2016.
  */
-public class CommandHandlerGenerator {
+class CommandHandlerGenerator {
 
     private final String rootPackageToScan;
     private final String generatedSourceDirectory;
@@ -65,12 +65,12 @@ public class CommandHandlerGenerator {
                     if (m.getParameterTypes().length == 1 && Command.class.isAssignableFrom(m.getParameterTypes()[0])) {
                         Class command = m.getParameterTypes()[0];
 
-                        if (commands.contains(command.getSimpleName()))
-                            throw new IllegalStateException(command.getSimpleName() + " has more than one handler");
+                        if (commands.contains(command.getName()))
+                            throw new IllegalStateException(command.getName() + " has more than one handler");
                         else
-                            commands.add(command.getSimpleName());
+                            commands.add(command.getName());
 
-                        invokeBuilder.beginControlFlow("if (command.getName().equals($S))", command.getSimpleName());
+                        invokeBuilder.beginControlFlow("if (command.getClassName().equals($S))", command.getName());
                         invokeBuilder.addStatement("commandHandler.$L(($T)command)", m.getName(), command);
                         invokeBuilder.addStatement("return");
                         invokeBuilder.endControlFlow();

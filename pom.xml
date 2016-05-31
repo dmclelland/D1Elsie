@@ -28,6 +28,7 @@
         <module>D1Algo</module>
         <module>D1Oms</module>
         <module>D1AlgoCQRS</module>
+        <module>D1CQRSTest</module>
     </modules>
 
     <dependencies>

@@ -2,6 +2,7 @@ package com.dmc.d1.cqrs;
 
 
 import com.dmc.d1.cqrs.event.AggregateEvent;
+import com.dmc.d1.cqrs.event.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,11 +16,14 @@ public abstract class Aggregate {
 
     private static final Logger LOG = LoggerFactory.getLogger(Aggregate.class);
     private final List<AggregateEvent> uncommittedEvents = new ArrayList<>();
-    private AnnotatedEventHandlerInvoker eventHandler;
+    private AnnotatedAggregateEventHandlerInvoker eventHandler;
+    private EventBus eventBus;
+
 
     public void apply(AggregateEvent event) {
         applyAggregateEvent(event);
-        //TODO apply to external event handlers
+        addToUncommitted(event);
+        eventBus.publish(event);
     }
 
     public void replay(AggregateEvent event) {
@@ -46,7 +50,7 @@ public abstract class Aggregate {
         }
     }
 
-    void addToUncommitted(AggregateEvent e) {
+    private void addToUncommitted(AggregateEvent e) {
         uncommittedEvents.add(e);
     }
 
@@ -58,9 +62,13 @@ public abstract class Aggregate {
         uncommittedEvents.clear();
     }
 
-    void setEventHandler(AnnotatedEventHandlerInvoker eventHandler) {
+    protected abstract String getId();
+
+    void setEventHandler(AnnotatedAggregateEventHandlerInvoker eventHandler) {
         this.eventHandler = eventHandler;
     }
 
-    protected abstract String getId();
+    void setEventBus(EventBus eventBus) {
+        this.eventBus = eventBus;
+    }
 }

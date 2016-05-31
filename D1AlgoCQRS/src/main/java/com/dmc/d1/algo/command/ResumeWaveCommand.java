@@ -8,7 +8,7 @@ import com.dmc.d1.domain.WaveId;
  */
 public class ResumeWaveCommand implements Command {
 
-    private static String simpleClassName = ResumeWaveCommand.class.getSimpleName();
+    private static String CLASS_NAME = ResumeWaveCommand.class.getName();
 
     private final WaveId waveId;
 
@@ -26,8 +26,8 @@ public class ResumeWaveCommand implements Command {
     }
 
     @Override
-    public String getName() {
-        return simpleClassName;
+    public String getClassName() {
+        return CLASS_NAME;
     }
 
     @Override

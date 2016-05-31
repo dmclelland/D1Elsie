@@ -17,10 +17,10 @@ public class InMemoryAggregateEventStore implements AggregateEventStore {
     public void add(AggregateEvent event) {
         events.add(event);
 
-        List<AggregateEvent> list = eventsById.get(event.getId());
+        List<AggregateEvent> list = eventsById.get(event.getAggregateId());
         if(list==null) {
             list = new ArrayList<>();
-            eventsById.put(event.getId(), list);
+            eventsById.put(event.getAggregateId(), list);
         }
         list.add(event);
 

@@ -19,8 +19,14 @@ public class CodeGen {
 
         try {
 
-            if(CodeGenType.DirectAnnotatedMethodInvoker==codeGenType) {
+            if(CodeGenType.COMMAND_HANDLER ==codeGenType) {
                 CommandHandlerGenerator generator = new CommandHandlerGenerator(rootPackageToScan,
+                        generatedSourceDirectory,
+                        generatedPackageName);
+
+                generator.generate();
+            }else if(CodeGenType.EVENT_HANDLER ==codeGenType) {
+                EventHandlerGenerator generator = new EventHandlerGenerator(rootPackageToScan,
                         generatedSourceDirectory,
                         generatedPackageName);
 

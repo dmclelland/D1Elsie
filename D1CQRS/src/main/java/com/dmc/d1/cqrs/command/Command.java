@@ -10,7 +10,7 @@ public interface Command {
 
     String getAggregateId();
 
-    String getName();
+    String getClassName();
 
     CommandType getCommandType();
 

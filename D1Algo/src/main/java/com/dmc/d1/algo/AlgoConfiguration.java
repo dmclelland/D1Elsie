@@ -4,10 +4,15 @@ import com.dmc.d1.algo.aggregate.PairsAggregate;
 import com.dmc.d1.algo.aggregate.WaveAggregate;
 import com.dmc.d1.algo.commandhandler.PairsCommandHandler;
 import com.dmc.d1.algo.commandhandler.WaveCommandHandler;
-import com.dmc.d1.cqrs.*;
+import com.dmc.d1.cqrs.Aggregate;
+import com.dmc.d1.cqrs.AggregateEventStore;
+import com.dmc.d1.cqrs.AggregateRepository;
+import com.dmc.d1.cqrs.InMemoryAggregateEventStore;
 import com.dmc.d1.cqrs.command.AbstractCommandHandler;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
+import com.dmc.d1.cqrs.event.EventBus;
+import com.dmc.d1.cqrs.event.SimpleEventBus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -21,28 +26,33 @@ import java.util.List;
 public class AlgoConfiguration {
 
     @Bean
+    SimpleEventBus eventBus(){
+        return new SimpleEventBus<>();
+    }
+
+    @Bean
     AggregateEventStore aggregateEventStore() {
         return new InMemoryAggregateEventStore();
     }
 
     @Bean
     AggregateRepository<WaveAggregate> waveAggregateRepository() {
-        return new AggregateRepository<>(aggregateEventStore(), WaveAggregate.class, AnnotatedMethodInvokerStrategy.GENERATED);
+        return new AggregateRepository<>(aggregateEventStore(), WaveAggregate.class, eventBus());
     }
 
     @Bean
     AggregateRepository<PairsAggregate> pairAggregateRepository() {
-        return new AggregateRepository<>(aggregateEventStore(), PairsAggregate.class, AnnotatedMethodInvokerStrategy.GENERATED);
+        return new AggregateRepository<>(aggregateEventStore(), PairsAggregate.class, eventBus());
     }
 
     @Bean
     WaveCommandHandler waveCommandHandler(AggregateRepository<WaveAggregate> waveAggregateRepository) {
-        return new WaveCommandHandler(waveAggregateRepository, AnnotatedMethodInvokerStrategy.GENERATED);
+        return new WaveCommandHandler(waveAggregateRepository);
     }
 
     @Bean
     PairsCommandHandler pairsCommandHandler(AggregateRepository<PairsAggregate> pairsAggregateRepository) {
-        return new PairsCommandHandler(pairsAggregateRepository, AnnotatedMethodInvokerStrategy.GENERATED);
+        return new PairsCommandHandler(pairsAggregateRepository);
     }
 
     @Bean
@@ -56,7 +66,7 @@ public class AlgoConfiguration {
     }
 
     @Bean
-    CommandBus commandBus(List<? extends AbstractCommandHandler<? extends Aggregate>>  commandHandlers) {
+    CommandBus commandBus(List<? extends AbstractCommandHandler<? extends Aggregate>> commandHandlers) {
         @SuppressWarnings("unchecked")
         SimpleCommandBus bus = new SimpleCommandBus(commandHandlers);
         return bus;
