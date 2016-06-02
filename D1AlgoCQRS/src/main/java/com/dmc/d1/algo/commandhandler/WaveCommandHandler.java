@@ -9,7 +9,6 @@ import com.dmc.d1.algo.command.ResumeWaveCommand;
 import com.dmc.d1.cqrs.AbstractCommandHandler;
 import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.annotations.CommandHandler;
-import com.dmc.d1.domain.WaveId;
 
 /**
  * Created by davidclelland on 18/05/2016.
@@ -21,7 +20,7 @@ public class WaveCommandHandler extends AbstractCommandHandler<WaveAggregate> {
 
     @CommandHandler
     public void handle(CreateWaveCommand command) {
-        createAggregate(new WaveAggregate(command.getWaveId()));
+        initialiseAggregate(new WaveAggregate(command.getWaveId()));
     }
 
     @CommandHandler

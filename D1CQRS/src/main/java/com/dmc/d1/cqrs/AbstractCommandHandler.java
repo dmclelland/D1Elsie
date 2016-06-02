@@ -27,7 +27,7 @@ public abstract class AbstractCommandHandler<A extends Aggregate> {
         return repository.find(id);
     }
 
-    protected void createAggregate(A aggregate) {
+    protected void initialiseAggregate(A aggregate) {
         repository.create(aggregate);
         UnitOfWork.add(aggregate);
     }
@@ -37,7 +37,7 @@ public abstract class AbstractCommandHandler<A extends Aggregate> {
             //if the command to invoke actually creates the aggregate then
             //obviously there won't be an aggregate at this point
             //in this case the aggregate gets added to the unit or work in the
-            //createAggregate method
+            //initialiseAggregate method
             Aggregate aggregate = getAggregate(command.getAggregateId());
 
             if(aggregate!=null)

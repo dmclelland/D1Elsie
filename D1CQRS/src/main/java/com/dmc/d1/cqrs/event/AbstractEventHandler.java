@@ -10,8 +10,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public abstract class AbstractEventHandler {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractEventHandler.class);
-
     private final AnnotatedEventHandlerInvoker annotatedEventHandlerInvoker;
 
     protected AbstractEventHandler() {

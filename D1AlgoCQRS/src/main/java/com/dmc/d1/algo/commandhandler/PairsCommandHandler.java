@@ -20,7 +20,7 @@ public class PairsCommandHandler extends AbstractCommandHandler<PairsAggregate> 
     @CommandHandler
     public void handle(CreatePairCommand command) {
         PairsAggregate aggregate = new PairsAggregate(command.getPairId());
-        createAggregate(aggregate);
+        initialiseAggregate(aggregate);
     }
 
 
