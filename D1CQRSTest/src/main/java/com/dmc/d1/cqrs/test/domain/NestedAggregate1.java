@@ -48,7 +48,7 @@ public class NestedAggregate1 extends Aggregate {
 
     @EventHandler
     public void handleEvent(TriggerExceptionNestedEvent event){
-        throw new RuntimeException();
+        throw new RuntimeException("This is a nested problem");
     }
 
 
