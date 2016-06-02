@@ -1,6 +1,6 @@
-package com.dmc.d1.cqrs.command;
+package com.dmc.d1.cqrs;
 
-import com.dmc.d1.cqrs.Aggregate;
+import com.dmc.d1.cqrs.command.Command;
 
 /**
  * Created by davidclelland on 18/05/2016.

@@ -1,20 +1,13 @@
-package com.dmc.d1.cqrs.test;
+package com.dmc.d1.cqrs;
 
-import com.dmc.d1.cqrs.Aggregate;
-import com.dmc.d1.cqrs.AggregateEventStore;
-import com.dmc.d1.cqrs.AggregateRepository;
-import com.dmc.d1.cqrs.InMemoryAggregateEventStore;
-import com.dmc.d1.cqrs.command.AbstractCommandHandler;
-import com.dmc.d1.cqrs.command.CommandBus;
-import com.dmc.d1.cqrs.command.SimpleCommandBus;
-import com.dmc.d1.cqrs.event.AbstractEventHandler;
-import com.dmc.d1.cqrs.event.EventBus;
-import com.dmc.d1.cqrs.event.SimpleEventBus;
+import com.dmc.d1.cqrs.command.*;
 import com.dmc.d1.cqrs.test.command.*;
+import com.dmc.d1.cqrs.test.domain.*;
 import com.dmc.d1.cqrs.test.commandhandler.MyCommandHandler1;
 import com.dmc.d1.cqrs.test.commandhandler.MyCommandHandler2;
+import com.dmc.d1.cqrs.event.AbstractEventHandler;
+import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.test.commandhandler.MyNestedCommandHandler1;
-import com.dmc.d1.cqrs.test.domain.*;
 import com.dmc.d1.cqrs.test.event.Aggregate1EventHandler;
 import com.dmc.d1.cqrs.test.event.Aggregate1EventHandler2;
 import org.junit.Before;
@@ -110,16 +103,17 @@ public class CommandDirectInvokerTest {
 
         Aggregate1 aggregate = repo1.find(id.toString());
 
-        assertEquals(aggregate.getStr(),"NestedTest");
-        assertEquals(aggregate.getI1(), 3);
-        assertEquals(aggregate.getI2(), 5);
+
+
+        assertEquals("NestedTest", aggregate.getStr());
+        assertEquals(3, aggregate.getI1());
+        assertEquals(5, aggregate.getI2());
 
         MyNestedId nestedId = new MyNestedId("testId1Nested");
 
         NestedAggregate1 nested = repo3.find(nestedId.toString());
 
         assertEquals("NestedTest", nested.getNestedProperty());
-
         assertEquals("NestedTest", agg1EventHandler2.getString(id));
     }
 
@@ -137,13 +131,50 @@ public class CommandDirectInvokerTest {
         assertEquals(aggregate.getS2(), "Goodbye");
 
         //command2 handler throws an exception - should rollback
-        UpdateAggregate2Command command2 = new UpdateAggregate2Command(id, "Blimey", "Where am I");
+        ExceptionTriggeringAggregate2Command command2 = new ExceptionTriggeringAggregate2Command(id, "Blimey", "Where am I");
         commandBus.dispatch(command2);
 
         aggregate = repo2.find(id.toString());
 
         //events which have been stored in the event store get replayed, overwriting the old values
-        assertEquals(aggregate.getS1(), "Hello");
-        assertEquals(aggregate.getS2(), "Goodbye");
+        assertEquals("Hello", aggregate.getS1());
+        assertEquals("Goodbye", aggregate.getS2());
     }
+
+    @Test
+    public void parentAggregateRollsBackWithNestedAggregateFailure() {
+
+        MyId id = new MyId("testId1");
+        MyNestedId nestedId = new MyNestedId("testId1Nested");
+
+        CreateAggregate1Command command = new CreateAggregate1Command(id, 3, 5);
+        commandBus.dispatch(command);
+
+        UpdateAggregate1Command2 command2 = new UpdateAggregate1Command2(id, "NestedTest");
+        commandBus.dispatch(command2);
+
+        Aggregate1 aggregate = repo1.find(id.toString());
+
+        assertEquals("NestedTest", aggregate.getStr());
+        assertEquals(3, aggregate.getI1());
+        assertEquals(5, aggregate.getI2());
+        NestedAggregate1 nested = repo3.find(nestedId.toString());
+        assertEquals("NestedTest", nested.getNestedProperty());
+
+        NestedExceptionTriggeringAggregate1Command command3 = new NestedExceptionTriggeringAggregate1Command(id,"Should not update");
+        commandBus.dispatch(command3);
+
+
+        //values should stay as they were
+        aggregate = repo1.find(id.toString());
+
+        assertEquals("NestedTest", aggregate.getStr());
+        assertEquals(3, aggregate.getI1());
+        assertEquals(5, aggregate.getI2());
+        nested = repo3.find(nestedId.toString());
+        assertEquals("NestedTest", nested.getNestedProperty());
+
+    }
+
+
 }

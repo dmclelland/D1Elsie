@@ -1,7 +1,7 @@
 package com.dmc.d1.cqrs.test.command;
 
-import com.dmc.d1.cqrs.test.domain.MyId;
 import com.dmc.d1.cqrs.command.Command;
+import com.dmc.d1.cqrs.test.domain.MyId;
 
 /**
  * Created by davidclelland on 17/05/2016.

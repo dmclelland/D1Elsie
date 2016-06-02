@@ -1,5 +1,6 @@
 package com.dmc.d1.cqrs.command;
 
+import com.dmc.d1.cqrs.AbstractCommandHandler;
 import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.Utils;
 
@@ -11,7 +12,7 @@ import java.util.Map;
 /**
  * Created by davidclelland on 16/05/2016.
  */
-public class SimpleCommandBus<A extends Aggregate, T extends AbstractCommandHandler<A>> implements CommandBus {
+public class SimpleCommandBus<T extends AbstractCommandHandler<? extends Aggregate>> implements CommandBus {
 
     private Map<String, T> commandToHandler = new HashMap<>();
 

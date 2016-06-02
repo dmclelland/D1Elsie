@@ -6,18 +6,16 @@ import com.dmc.d1.cqrs.test.domain.MyId;
 /**
  * Created by davidclelland on 17/05/2016.
  */
-public class CreateAggregate1Command implements Command {
+public class NestedExceptionTriggeringAggregate1Command implements Command {
 
-    private final static String CLASS_NAME = CreateAggregate1Command.class.getName();
+    private final static String CLASS_NAME = NestedExceptionTriggeringAggregate1Command.class.getName();
 
     private MyId id;
-    private int i1;
-    private int i2;
+    private String str;
 
-    public CreateAggregate1Command(MyId id, int i, int i2){
+    public NestedExceptionTriggeringAggregate1Command(MyId id, String str){
         this.id = id;
-        this.i1 = i;
-        this.i2 = i2;
+        this.str = str;
     }
 
     public MyId getId() {
@@ -29,12 +27,8 @@ public class CreateAggregate1Command implements Command {
         return id.toString();
     }
 
-    public int getI1() {
-        return i1;
-    }
-
-    public int getI2() {
-        return i2;
+    public String getStr() {
+        return str;
     }
 
     @Override

@@ -1,8 +1,7 @@
 package com.dmc.d1.cqrs.test.event;
 
-import com.dmc.d1.cqrs.event.AggregateEvent;
 import com.dmc.d1.cqrs.test.domain.MyId;
-import com.dmc.d1.domain.Id;
+import com.dmc.d1.cqrs.event.AggregateEvent;
 
 /**
  * Created by davidclelland on 16/05/2016.

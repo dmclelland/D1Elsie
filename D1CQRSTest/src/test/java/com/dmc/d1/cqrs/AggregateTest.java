@@ -1,13 +1,9 @@
-package com.dmc.d1.cqrs.test;
+package com.dmc.d1.cqrs;
 
 
-import com.dmc.d1.cqrs.AggregateEventStore;
-import com.dmc.d1.cqrs.AggregateRepository;
-import com.dmc.d1.cqrs.InMemoryAggregateEventStore;
-import com.dmc.d1.cqrs.command.SimpleCommandBus;
-import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.test.domain.Aggregate1;
 import com.dmc.d1.cqrs.test.domain.Aggregate2;
+import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.test.domain.MyId;
 import org.junit.Test;
 
@@ -39,10 +35,10 @@ public class AggregateTest {
         aggregate1.doSomething(5, 12);
         aggregate2.doSomething("Hello", "Goodbye");
 
-        assertEquals(aggregate1.getI1(), 5);
-        assertEquals(aggregate1.getI2(), 12);
+        assertEquals(5, aggregate1.getI1());
+        assertEquals(12, aggregate1.getI2());
 
-        assertEquals(aggregate2.getS1(), "Hello");
-        assertEquals(aggregate2.getS2(), "Goodbye");
+        assertEquals("Hello", aggregate2.getS1());
+        assertEquals("Goodbye", aggregate2.getS2());
     }
 }

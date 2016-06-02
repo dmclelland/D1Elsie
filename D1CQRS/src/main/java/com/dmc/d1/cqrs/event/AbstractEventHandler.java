@@ -1,6 +1,5 @@
 package com.dmc.d1.cqrs.event;
 
-import com.dmc.d1.cqrs.command.AnnotatedCommandHandlerInvoker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

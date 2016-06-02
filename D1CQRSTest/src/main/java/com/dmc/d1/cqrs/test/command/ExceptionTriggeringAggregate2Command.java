@@ -1,20 +1,20 @@
 package com.dmc.d1.cqrs.test.command;
 
-import com.dmc.d1.cqrs.test.domain.MyId;
 import com.dmc.d1.cqrs.command.Command;
+import com.dmc.d1.cqrs.test.domain.MyId;
 
 /**
  * Created by davidclelland on 17/05/2016.
  */
-public class UpdateAggregate2Command implements Command {
+public class ExceptionTriggeringAggregate2Command implements Command {
 
-    private final static String CLASS_NAME = UpdateAggregate2Command.class.getName();
+    private final static String CLASS_NAME = ExceptionTriggeringAggregate2Command.class.getName();
 
     private MyId id;
     private String str1;
     private String str2;
 
-    public UpdateAggregate2Command(MyId id, String str1, String str2) {
+    public ExceptionTriggeringAggregate2Command(MyId id, String str1, String str2) {
         this.id = id;
         this.str1 = str1;
         this.str2 = str2;

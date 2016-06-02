@@ -8,10 +8,9 @@ import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.AggregateEventStore;
 import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.InMemoryAggregateEventStore;
-import com.dmc.d1.cqrs.command.AbstractCommandHandler;
+import com.dmc.d1.cqrs.AbstractCommandHandler;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
-import com.dmc.d1.cqrs.event.EventBus;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,7 +25,7 @@ import java.util.List;
 public class AlgoConfiguration {
 
     @Bean
-    SimpleEventBus eventBus(){
+    SimpleEventBus<com.dmc.d1.cqrs.event.AbstractEventHandler> eventBus() {
         return new SimpleEventBus<>();
     }
 
@@ -55,6 +54,7 @@ public class AlgoConfiguration {
         return new PairsCommandHandler(pairsAggregateRepository);
     }
 
+
     @Bean
     List<? super AbstractCommandHandler<? extends Aggregate>> commandHandlers(WaveCommandHandler waveCommandHandler, PairsCommandHandler pairsCommandHandler) {
 
@@ -65,12 +65,11 @@ public class AlgoConfiguration {
         return lst;
     }
 
+
     @Bean
     CommandBus commandBus(List<? extends AbstractCommandHandler<? extends Aggregate>> commandHandlers) {
-        @SuppressWarnings("unchecked")
         SimpleCommandBus bus = new SimpleCommandBus(commandHandlers);
         return bus;
     }
-
 
 }

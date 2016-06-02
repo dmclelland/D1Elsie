@@ -2,8 +2,9 @@ package com.dmc.d1.cqrs.test.domain;
 
 import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.annotations.EventHandler;
-import com.dmc.d1.cqrs.test.event.IntUpdatedEvent1;
-import com.dmc.d1.cqrs.test.event.IntUpdatedEvent2;
+import com.dmc.d1.cqrs.test.event.TriggerExceptionEvent;
+import com.dmc.d1.cqrs.test.event.TriggerExceptionNestedEvent;
+import com.dmc.d1.cqrs.test.event.TriggeringExceptionInNestedAggregateEvent;
 import com.dmc.d1.cqrs.test.event.NestedUpdatedEvent1;
 
 /**
@@ -33,10 +34,23 @@ public class NestedAggregate1 extends Aggregate {
         apply(new NestedUpdatedEvent1(id, nestedProperty));
     }
 
+    public void doSomethingCausingError(String nestedProperty){
+        apply(new NestedUpdatedEvent1(id, nestedProperty));
+        apply(new TriggerExceptionNestedEvent(id));
+    }
+
+
     @EventHandler
-    public void handleEvent1(NestedUpdatedEvent1 event){
+    public void handleEvent(NestedUpdatedEvent1 event){
         this.nestedProperty = event.getStr();
     }
+
+
+    @EventHandler
+    public void handleEvent(TriggerExceptionNestedEvent event){
+        throw new RuntimeException();
+    }
+
 
 
     public String getNestedProperty() {

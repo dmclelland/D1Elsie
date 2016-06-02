@@ -1,10 +1,8 @@
 package com.dmc.d1.cqrs;
 
-import com.dmc.d1.cqrs.event.AggregateEvent;
 import com.dmc.d1.cqrs.event.EventBus;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -28,30 +26,21 @@ public class AggregateRepository<A extends Aggregate> {
         this.eventBus = checkNotNull(eventBus);
     }
 
-    public A create(A aggregate) {
+     A create(A aggregate) {
         //create aggregate event handler
         aggregate.setEventHandler(annotatedAggregateEventHandlerInvoker);
         aggregate.setEventBus(eventBus);
+        aggregate.setAggregateEventStore(aggregateEventStore);
         cache.put(aggregate.getId(), aggregate);
+
         return aggregate;
     }
 
-    public void commit(String id) {
-        A aggregate = cache.get(id);
-        List<AggregateEvent> uncommittedEvents = aggregate.getUncommittedEvents();
-        aggregateEventStore.add(uncommittedEvents);
-        aggregate.clearUncommittedEvents();
-    }
 
-    public A find(String id) {
+     A find(String id) {
         return cache.get(id);
     }
 
-    public void rollback(String id) {
-        A aggregate = cache.get(id);
-        Iterable<AggregateEvent> events = aggregateEventStore.get(id);
-        aggregate.rollback(events);
-    }
 
     private AnnotatedAggregateEventHandlerInvoker getEventHandler() {
         try {
@@ -59,7 +48,7 @@ public class AggregateRepository<A extends Aggregate> {
             Class<?> clazz = Class.forName("com.dmc.d1.algo.eventhandler." + className);
             return (AnnotatedAggregateEventHandlerInvoker) clazz.newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException("Unable to resolve annotated method invoker for " + this.getClass().getSimpleName(), e);
+            throw new RuntimeException("Unable to resolve annotated method invoker for " +aggregateType.getName(), e);
         }
     }
 

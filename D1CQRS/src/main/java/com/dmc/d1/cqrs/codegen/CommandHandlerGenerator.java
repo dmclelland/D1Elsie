@@ -2,8 +2,8 @@ package com.dmc.d1.cqrs.codegen;
 
 import com.dmc.d1.cqrs.Utils;
 import com.dmc.d1.cqrs.annotations.CommandHandler;
-import com.dmc.d1.cqrs.command.AbstractCommandHandler;
-import com.dmc.d1.cqrs.command.AnnotatedCommandHandlerInvoker;
+import com.dmc.d1.cqrs.AbstractCommandHandler;
+import com.dmc.d1.cqrs.AnnotatedCommandHandlerInvoker;
 import com.dmc.d1.cqrs.command.Command;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;

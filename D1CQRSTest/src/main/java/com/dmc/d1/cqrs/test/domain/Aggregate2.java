@@ -4,6 +4,7 @@ import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.test.event.StringUpdatedEvent1;
 import com.dmc.d1.cqrs.test.event.StringUpdatedEvent2;
 import com.dmc.d1.cqrs.annotations.EventHandler;
+import com.dmc.d1.cqrs.test.event.TriggerExceptionEvent;
 
 /**
  * Created by davidclelland on 17/05/2016.
@@ -32,6 +33,12 @@ public class Aggregate2 extends Aggregate {
         apply(new StringUpdatedEvent2(id, s2));
     }
 
+    public void doSomethingWhichCausesException(String s1, String s2) {
+        apply(new StringUpdatedEvent1(id, s1));
+        apply(new StringUpdatedEvent2(id, s2));
+        apply(new TriggerExceptionEvent(id));
+    }
+
     @EventHandler
     public void handleEvent1(StringUpdatedEvent1 event) {
 
@@ -42,6 +49,12 @@ public class Aggregate2 extends Aggregate {
     @EventHandler
     public void handleEvent2(StringUpdatedEvent2 event) {
         this.s2 = event.getStr();
+    }
+
+
+    @EventHandler
+    public void handleEvent2(TriggerExceptionEvent event) {
+        throw new RuntimeException("This is a problem");
     }
 
 
@@ -58,4 +71,6 @@ public class Aggregate2 extends Aggregate {
     protected String getId() {
         return id.toString();
     }
+
+
 }

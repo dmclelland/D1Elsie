@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Created by davidclelland on 16/05/2016.
  */
@@ -18,35 +20,39 @@ public abstract class Aggregate {
     private final List<AggregateEvent> uncommittedEvents = new ArrayList<>();
     private AnnotatedAggregateEventHandlerInvoker eventHandler;
     private EventBus eventBus;
+    private AggregateEventStore aggregateEventStore;
 
-
-    public void apply(AggregateEvent event) {
+    protected void apply(AggregateEvent event) {
         applyAggregateEvent(event);
         addToUncommitted(event);
         eventBus.publish(event);
     }
 
-    public void replay(AggregateEvent event) {
+    void replay(AggregateEvent event) {
         applyAggregateEvent(event);
-    }
-
-    //to rollback reset and replay the events
-    void rollback( Iterable<AggregateEvent> events) {
-        clearUncommittedEvents();
-        rollbackAggregateToInitialState();
-
-        for(AggregateEvent event : events) {
-            applyAggregateEvent(event);
-        }
     }
 
     protected abstract void rollbackAggregateToInitialState();
 
+    protected abstract String getId();
+
+
     private void applyAggregateEvent(AggregateEvent event) {
-        try {
-            eventHandler.invoke(event, this);
-        } catch (Exception e) {
-            LOG.error("Unable to apply event {} ", event.toString(), e);
+        eventHandler.invoke(event, this);
+    }
+
+    void commit() {
+        aggregateEventStore.add(uncommittedEvents);
+        clearUncommittedEvents();
+    }
+
+    void rollback() {
+        Iterable<AggregateEvent> eventsToReplay = aggregateEventStore.get(getId());
+        clearUncommittedEvents();
+        rollbackAggregateToInitialState();
+
+        for (AggregateEvent event : eventsToReplay) {
+            applyAggregateEvent(event);
         }
     }
 
@@ -54,21 +60,19 @@ public abstract class Aggregate {
         uncommittedEvents.add(e);
     }
 
-    List<AggregateEvent> getUncommittedEvents() {
-        return uncommittedEvents;
-    }
-
-    void clearUncommittedEvents() {
+    private void clearUncommittedEvents() {
         uncommittedEvents.clear();
     }
 
-    protected abstract String getId();
-
     void setEventHandler(AnnotatedAggregateEventHandlerInvoker eventHandler) {
-        this.eventHandler = eventHandler;
+        this.eventHandler = checkNotNull(eventHandler);
     }
 
     void setEventBus(EventBus eventBus) {
-        this.eventBus = eventBus;
+        this.eventBus = checkNotNull(eventBus);
+    }
+
+    void setAggregateEventStore(AggregateEventStore aggregateEventStore) {
+        this.aggregateEventStore = checkNotNull(aggregateEventStore);
     }
 }

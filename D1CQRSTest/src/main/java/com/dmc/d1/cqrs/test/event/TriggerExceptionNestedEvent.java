@@ -1,20 +1,18 @@
 package com.dmc.d1.cqrs.test.event;
 
-import com.dmc.d1.cqrs.test.domain.MyNestedId;
 import com.dmc.d1.cqrs.event.AggregateEvent;
+import com.dmc.d1.cqrs.test.domain.MyId;
+import com.dmc.d1.cqrs.test.domain.MyNestedId;
 
 /**
  * Created by davidclelland on 16/05/2016.
  */
-public class NestedUpdatedEvent1 implements AggregateEvent {
-    private final static String CLASS_NAME = NestedUpdatedEvent1.class.getName();
+public class TriggerExceptionNestedEvent implements AggregateEvent {
+    private final static String CLASS_NAME = TriggerExceptionNestedEvent.class.getName();
     private final MyNestedId id;
-    private final String str;
 
-    public NestedUpdatedEvent1(MyNestedId id, String str){
+    public TriggerExceptionNestedEvent(MyNestedId id){
         this.id = id;
-        this.str = str;
-
     }
 
     @Override
@@ -27,7 +25,5 @@ public class NestedUpdatedEvent1 implements AggregateEvent {
         return CLASS_NAME;
     }
 
-    public String getStr() {
-        return str;
-    }
+
 }

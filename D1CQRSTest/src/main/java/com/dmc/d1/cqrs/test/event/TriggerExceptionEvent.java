@@ -1,20 +1,17 @@
 package com.dmc.d1.cqrs.test.event;
 
-import com.dmc.d1.cqrs.test.domain.MyId;
 import com.dmc.d1.cqrs.event.AggregateEvent;
+import com.dmc.d1.cqrs.test.domain.MyId;
 
 /**
  * Created by davidclelland on 16/05/2016.
  */
-public class StringUpdatedEvent1 implements AggregateEvent {
-    private final static String CLASS_NAME = StringUpdatedEvent1.class.getName();
+public class TriggerExceptionEvent implements AggregateEvent {
+    private final static String CLASS_NAME = TriggerExceptionEvent.class.getName();
     private final MyId id;
-    private final String str;
 
-    public StringUpdatedEvent1(MyId id, String str){
+    public TriggerExceptionEvent(MyId id){
         this.id = id;
-        this.str = str;
-
     }
 
     @Override
@@ -27,7 +24,5 @@ public class StringUpdatedEvent1 implements AggregateEvent {
         return CLASS_NAME;
     }
 
-    public String getStr() {
-        return str;
-    }
+
 }

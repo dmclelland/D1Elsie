@@ -7,14 +7,14 @@ import com.dmc.d1.cqrs.test.domain.MyNestedId;
 /**
  * Created by davidclelland on 16/05/2016.
  */
-public class StringUpdatedEvent3 implements AggregateEvent {
-    private final static String CLASS_NAME = StringUpdatedEvent3.class.getName();
+public class TriggeringExceptionInNestedAggregateEvent implements AggregateEvent {
+    private final static String CLASS_NAME = TriggeringExceptionInNestedAggregateEvent.class.getName();
     private final MyId id;
     private final MyNestedId nestedId;
 
     private final String str;
 
-    public StringUpdatedEvent3(MyId id, MyNestedId nestedId,String str){
+    public TriggeringExceptionInNestedAggregateEvent(MyId id, MyNestedId nestedId, String str){
         this.id = id;
         this.nestedId = nestedId;
         this.str = str;

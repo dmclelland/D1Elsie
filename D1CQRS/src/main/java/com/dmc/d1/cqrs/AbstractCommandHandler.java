@@ -1,7 +1,7 @@
-package com.dmc.d1.cqrs.command;
+package com.dmc.d1.cqrs;
 
-import com.dmc.d1.cqrs.Aggregate;
-import com.dmc.d1.cqrs.AggregateRepository;
+import com.dmc.d1.cqrs.command.Command;
+import com.dmc.d1.domain.Id;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,23 +29,25 @@ public abstract class AbstractCommandHandler<A extends Aggregate> {
 
     protected void createAggregate(A aggregate) {
         repository.create(aggregate);
-    }
-
-    private void commitAggregate(String id) {
-        repository.commit(id);
-    }
-
-    private void rollbackAggregate(String id) {
-        repository.rollback(id);
+        UnitOfWork.add(aggregate);
     }
 
     public void invokeCommand(Command command) {
         try {
+            //if the command to invoke actually creates the aggregate then
+            //obviously there won't be an aggregate at this point
+            //in this case the aggregate gets added to the unit or work in the
+            //createAggregate method
+            Aggregate aggregate = getAggregate(command.getAggregateId());
+
+            if(aggregate!=null)
+                UnitOfWork.add(aggregate);
+
             annotatedCommandHandlerInvoker.invoke(command, this);
-            commitAggregate(command.getAggregateId());
+            UnitOfWork.commit();
         } catch (Throwable e) {
             //rollback aggregate if any error
-            rollbackAggregate(command.getAggregateId());
+            UnitOfWork.rollback();
             LOG.error("Unable to process command {} ", command.toString(), e);
         }
     }
@@ -59,6 +61,5 @@ public abstract class AbstractCommandHandler<A extends Aggregate> {
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException("Unable to resolve annotated method invoker for " + this.getClass().getSimpleName(), e);
         }
-
     }
 }

@@ -6,29 +6,21 @@ import com.dmc.d1.cqrs.test.domain.MyNestedId;
 /**
  * Created by davidclelland on 17/05/2016.
  */
-public class CreateNestedAggregate1Command implements Command {
+public class ExceptionTriggeringNestedAggregateCommand implements Command {
 
-    private final static String CLASS_NAME = CreateNestedAggregate1Command.class.getName();
+    private final static String CLASS_NAME = ExceptionTriggeringNestedAggregateCommand.class.getName();
 
     private MyNestedId id;
     private String str;
 
-    public CreateNestedAggregate1Command(MyNestedId id, String str){
+
+    public ExceptionTriggeringNestedAggregateCommand(MyNestedId id, String str) {
         this.id = id;
         this.str = str;
     }
 
     public MyNestedId getId() {
         return id;
-    }
-
-    @Override
-    public String getAggregateId() {
-        return id.toString();
-    }
-
-    public String getStr() {
-        return str;
     }
 
     @Override
@@ -39,6 +31,15 @@ public class CreateNestedAggregate1Command implements Command {
     @Override
     public CommandType getCommandType() {
         return CommandType.PROCESS_STARTER;
+    }
+
+    @Override
+    public String getAggregateId() {
+        return id.toString();
+    }
+
+    public String getStr() {
+        return str;
     }
 
 }
