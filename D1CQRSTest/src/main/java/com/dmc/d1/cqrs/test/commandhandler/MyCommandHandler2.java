@@ -5,7 +5,7 @@ import com.dmc.d1.cqrs.annotations.CommandHandler;
 import com.dmc.d1.cqrs.AbstractCommandHandler;
 import com.dmc.d1.cqrs.test.command.CreateAggregate2Command;
 import com.dmc.d1.cqrs.test.command.ExceptionTriggeringAggregate2Command;
-import com.dmc.d1.cqrs.test.domain.Aggregate2;
+import com.dmc.d1.cqrs.test.aggregate.Aggregate2;
 
 /**
  * Created by davidclelland on 17/05/2016.

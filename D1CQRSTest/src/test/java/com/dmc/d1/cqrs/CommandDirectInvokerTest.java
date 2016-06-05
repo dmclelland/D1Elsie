@@ -1,6 +1,11 @@
 package com.dmc.d1.cqrs;
 
 import com.dmc.d1.cqrs.command.*;
+import com.dmc.d1.cqrs.event.store.AggregateEventStore;
+import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;
+import com.dmc.d1.cqrs.test.aggregate.Aggregate1;
+import com.dmc.d1.cqrs.test.aggregate.Aggregate2;
+import com.dmc.d1.cqrs.test.aggregate.NestedAggregate1;
 import com.dmc.d1.cqrs.test.command.*;
 import com.dmc.d1.cqrs.test.domain.*;
 import com.dmc.d1.cqrs.test.commandhandler.MyCommandHandler1;

@@ -1,11 +1,10 @@
-package com.dmc.d1.cqrs.test.domain;
+package com.dmc.d1.cqrs.test.aggregate;
 
+import com.dmc.d1.algo.event.NestedUpdatedEvent1;
+import com.dmc.d1.algo.event.TriggerExceptionNestedEvent;
 import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.annotations.EventHandler;
-import com.dmc.d1.cqrs.test.event.TriggerExceptionEvent;
-import com.dmc.d1.cqrs.test.event.TriggerExceptionNestedEvent;
-import com.dmc.d1.cqrs.test.event.TriggeringExceptionInNestedAggregateEvent;
-import com.dmc.d1.cqrs.test.event.NestedUpdatedEvent1;
+import com.dmc.d1.cqrs.test.domain.MyNestedId;
 
 /**
  * Created by davidclelland on 17/05/2016.

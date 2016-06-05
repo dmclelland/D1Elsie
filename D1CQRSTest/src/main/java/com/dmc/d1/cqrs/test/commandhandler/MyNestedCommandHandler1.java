@@ -5,7 +5,7 @@ import com.dmc.d1.cqrs.annotations.CommandHandler;
 import com.dmc.d1.cqrs.AbstractCommandHandler;
 import com.dmc.d1.cqrs.test.command.CreateNestedAggregate1Command;
 import com.dmc.d1.cqrs.test.command.ExceptionTriggeringNestedAggregateCommand;
-import com.dmc.d1.cqrs.test.domain.NestedAggregate1;
+import com.dmc.d1.cqrs.test.aggregate.NestedAggregate1;
 
 /**
  * Created By davidclelland on 31/05/2016.

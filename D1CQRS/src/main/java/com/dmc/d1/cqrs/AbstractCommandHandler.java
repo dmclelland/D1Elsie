@@ -23,6 +23,11 @@ public abstract class AbstractCommandHandler<A extends Aggregate> {
         this.annotatedCommandHandlerInvoker = getMethodInvoker();
     }
 
+    protected AbstractCommandHandler(AggregateRepository<A> repository, AnnotatedCommandHandlerInvoker<A, AbstractCommandHandler<A>> commandHandlerInvoker) {
+        this.repository = checkNotNull(repository);
+        this.annotatedCommandHandlerInvoker = commandHandlerInvoker;
+    }
+
     protected A getAggregate(String id) {
         return repository.find(id);
     }

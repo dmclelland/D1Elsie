@@ -1,10 +1,11 @@
-package com.dmc.d1.cqrs.test.domain;
+package com.dmc.d1.cqrs.test.aggregate;
 
+import com.dmc.d1.algo.event.StringUpdatedEvent1;
+import com.dmc.d1.algo.event.StringUpdatedEvent2;
+import com.dmc.d1.algo.event.TriggerExceptionEvent;
 import com.dmc.d1.cqrs.Aggregate;
-import com.dmc.d1.cqrs.test.event.StringUpdatedEvent1;
-import com.dmc.d1.cqrs.test.event.StringUpdatedEvent2;
 import com.dmc.d1.cqrs.annotations.EventHandler;
-import com.dmc.d1.cqrs.test.event.TriggerExceptionEvent;
+import com.dmc.d1.cqrs.test.domain.MyId;
 
 /**
  * Created by davidclelland on 17/05/2016.

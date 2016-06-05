@@ -1,11 +1,13 @@
-package com.dmc.d1.cqrs.test.domain;
+package com.dmc.d1.cqrs.test.aggregate;
 
+import com.dmc.d1.algo.event.HandledByExternalHandlersEvent;
+import com.dmc.d1.algo.event.IntUpdatedEvent1;
+import com.dmc.d1.algo.event.IntUpdatedEvent2;
+import com.dmc.d1.algo.event.TriggerExceptionInNestedAggregateEvent;
 import com.dmc.d1.cqrs.Aggregate;
-import com.dmc.d1.cqrs.test.event.HandledByExternalHandlersEvent;
-import com.dmc.d1.cqrs.test.event.IntUpdatedEvent1;
-import com.dmc.d1.cqrs.test.event.IntUpdatedEvent2;
 import com.dmc.d1.cqrs.annotations.EventHandler;
-import com.dmc.d1.cqrs.test.event.TriggeringExceptionInNestedAggregateEvent;
+import com.dmc.d1.cqrs.test.domain.MyId;
+import com.dmc.d1.cqrs.test.domain.MyNestedId;
 
 /**
  * Created by davidclelland on 17/05/2016.
@@ -51,7 +53,7 @@ public class Aggregate1 extends Aggregate {
     public void triggerExceptionInNestedAggregate(String str){
         MyNestedId nestedId = generateNestedId(id);
 
-        apply(new TriggeringExceptionInNestedAggregateEvent(id, nestedId, str));
+        apply(new TriggerExceptionInNestedAggregateEvent(id, nestedId, str));
 
     }
 
@@ -83,7 +85,7 @@ public class Aggregate1 extends Aggregate {
 
 
     @EventHandler
-    public void handleEvent3(TriggeringExceptionInNestedAggregateEvent event){
+    public void handleEvent3(TriggerExceptionInNestedAggregateEvent event){
         this.str = event.getStr();
     }
 

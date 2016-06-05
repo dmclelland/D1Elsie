@@ -8,9 +8,8 @@ import static com.google.common.base.Preconditions.checkState;
 public class CodeGen {
 
 
-
     public static void main(String[] args) {
-        checkState(args.length==4);
+        checkState(args.length == 4);
 
         CodeGenType codeGenType = CodeGenType.valueOf(args[0]);
         String rootPackageToScan = args[1];
@@ -19,21 +18,27 @@ public class CodeGen {
 
         try {
 
-            if(CodeGenType.COMMAND_HANDLER ==codeGenType) {
+            if (CodeGenType.COMMAND_HANDLER == codeGenType) {
                 CommandHandlerGenerator generator = new CommandHandlerGenerator(rootPackageToScan,
                         generatedSourceDirectory,
                         generatedPackageName);
 
                 generator.generate();
-            }else if(CodeGenType.EVENT_HANDLER ==codeGenType) {
+            } else if (CodeGenType.EVENT_HANDLER == codeGenType) {
                 EventHandlerGenerator generator = new EventHandlerGenerator(rootPackageToScan,
+                        generatedSourceDirectory,
+                        generatedPackageName);
+
+                generator.generate();
+            } else if (CodeGenType.EVENT == codeGenType) {
+                EventGenerator generator = new EventGenerator(
                         generatedSourceDirectory,
                         generatedPackageName);
 
                 generator.generate();
             }
         } catch (Exception e) {
-          throw new RuntimeException("Unable to generate code", e);
+            throw new RuntimeException("Unable to generate code", e);
         }
     }
 }

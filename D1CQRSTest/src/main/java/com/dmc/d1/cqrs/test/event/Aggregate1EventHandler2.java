@@ -1,5 +1,6 @@
 package com.dmc.d1.cqrs.test.event;
 
+import com.dmc.d1.algo.event.HandledByExternalHandlersEvent;
 import com.dmc.d1.cqrs.annotations.EventHandler;
 import com.dmc.d1.cqrs.test.domain.MyId;
 import com.dmc.d1.cqrs.event.AbstractEventHandler;

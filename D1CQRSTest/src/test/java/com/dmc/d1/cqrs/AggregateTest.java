@@ -1,8 +1,10 @@
 package com.dmc.d1.cqrs;
 
 
-import com.dmc.d1.cqrs.test.domain.Aggregate1;
-import com.dmc.d1.cqrs.test.domain.Aggregate2;
+import com.dmc.d1.cqrs.event.store.AggregateEventStore;
+import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;
+import com.dmc.d1.cqrs.test.aggregate.Aggregate1;
+import com.dmc.d1.cqrs.test.aggregate.Aggregate2;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.test.domain.MyId;
 import org.junit.Test;

@@ -9,17 +9,17 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>d1-cqrs-test</artifactId>
+    <artifactId>d1-cqrs-test-generated</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>com.dmc.d1</groupId>
-            <artifactId>d1-cqrs</artifactId>
+            <artifactId>d1-cqrs-test-domain</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.dmc.d1</groupId>
-            <artifactId>d1-cqrs-test-generated</artifactId>
+            <artifactId>d1-cqrs</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
@@ -31,7 +31,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>generateTestCommands</id>
+                        <id>generateTestEvents</id>
                         <phase>generate-test-sources</phase>
                         <goals>
                             <goal>java</goal>
@@ -39,26 +39,10 @@
                         <configuration>
                             <mainClass>com.dmc.d1.cqrs.codegen.CodeGen</mainClass>
                             <arguments>
-                                <argument>COMMAND_HANDLER</argument>
-                                <argument>com.dmc.d1.cqrs.test</argument>
-                                <argument>./D1CQRSTest/src/generated/java</argument>
-                                <argument>com.dmc.d1.algo.commandhandler</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>generateTestEventHandlers</id>
-                        <phase>generate-test-sources</phase>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                        <configuration>
-                            <mainClass>com.dmc.d1.cqrs.codegen.CodeGen</mainClass>
-                            <arguments>
-                                <argument>EVENT_HANDLER</argument>
-                                <argument>com.dmc.d1.cqrs.test</argument>
-                                <argument>./D1CQRSTest/src/generated/java</argument>
-                                <argument>com.dmc.d1.algo.eventhandler</argument>
+                                <argument>EVENT</argument>
+                                <argument>NOT_REQUIRED</argument>
+                                <argument>./D1CQRSTestGenerated/src/generated/java</argument>
+                                <argument>com.dmc.d1.algo.event</argument>
                             </arguments>
                         </configuration>
                     </execution>

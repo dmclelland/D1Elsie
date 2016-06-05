@@ -1,4 +1,4 @@
-package com.dmc.d1.cqrs;
+package com.dmc.d1.cqrs.event.store;
 
 import com.dmc.d1.cqrs.event.AggregateEvent;
 
@@ -7,7 +7,7 @@ import java.util.*;
 /**
  * Created by davidclelland on 17/05/2016.
  */
-public class InMemoryAggregateEventStore implements AggregateEventStore {
+public class InMemoryAggregateEventStore implements AggregateEventStore<AggregateEvent> {
 
     List<AggregateEvent> events = new ArrayList<>();
 

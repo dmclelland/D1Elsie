@@ -1,5 +1,7 @@
 package com.dmc.d1.cqrs.test.event;
 
+import com.dmc.d1.algo.event.HandledByExternalHandlersEvent;
+import com.dmc.d1.algo.event.TriggerExceptionInNestedAggregateEvent;
 import com.dmc.d1.cqrs.annotations.EventHandler;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.event.AbstractEventHandler;
@@ -25,7 +27,7 @@ public class Aggregate1EventHandler extends AbstractEventHandler {
     }
 
     @EventHandler
-    public void handle(TriggeringExceptionInNestedAggregateEvent event){
+    public void handle(TriggerExceptionInNestedAggregateEvent event){
         bus.dispatch(new ExceptionTriggeringNestedAggregateCommand(event.getNestedId(),event.getStr()));
     }
 }

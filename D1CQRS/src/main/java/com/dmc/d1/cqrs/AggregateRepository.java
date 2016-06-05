@@ -1,5 +1,6 @@
 package com.dmc.d1.cqrs;
 
+import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.EventBus;
 
 import java.util.HashMap;

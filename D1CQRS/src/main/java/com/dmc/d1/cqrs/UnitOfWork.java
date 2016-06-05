@@ -21,7 +21,15 @@ class UnitOfWork {
         LinkedList<Aggregate> list = new LinkedList<>();
         int counter = 0;
         boolean rollback = false;
+
+        void clear(){
+            list.clear();
+            counter=0;
+            rollback=false;
+
+        }
     }
+
 
     private static ThreadLocal<Aggregates> threadLocal = new ThreadLocal<>();
 
@@ -38,7 +46,7 @@ class UnitOfWork {
     }
 
     private static void clear() {
-        threadLocal.remove();
+        threadLocal.get().clear();
     }
 
     //if root then commit -> unless a nested aggregate flagged that the aggregates should be rolled back
