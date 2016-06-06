@@ -1,5 +1,6 @@
 package com.dmc.d1.cqrs;
 
+import com.dmc.d1.algo.event.EventFactoryPooled;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
@@ -60,12 +61,12 @@ public class PerfTest2 {
         repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus);
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
-        lst.add(new MyCommandHandler1(repo1));
+        lst.add(new MyCommandHandler1(repo1, new EventFactoryPooled()));
 
         commandBus = new SimpleCommandBus(lst);
 
         lst = new ArrayList<>();
-        lst.add(new MyCommandHandler1(repo1,
+        lst.add(new MyCommandHandler1(repo1, new EventFactoryPooled(),
                 new ReflectiveAnnotatedCommandHandlerInvoker(MyCommandHandler1.class)));
 
         commandBusWithReflectiveCommandHandler = new SimpleCommandBus(lst);

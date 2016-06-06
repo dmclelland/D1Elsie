@@ -1,5 +1,6 @@
 package com.dmc.d1.cqrs.test.commandhandler;
 
+import com.dmc.d1.algo.event.EventFactoryAbstract;
 import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.annotations.CommandHandler;
 import com.dmc.d1.cqrs.AbstractCommandHandler;
@@ -12,13 +13,17 @@ import com.dmc.d1.cqrs.test.aggregate.NestedAggregate1;
  */
 public class MyNestedCommandHandler1  extends AbstractCommandHandler<NestedAggregate1> {
 
-    public MyNestedCommandHandler1(AggregateRepository<NestedAggregate1> repository) {
+    private final EventFactoryAbstract eventFactory;
+
+
+    public MyNestedCommandHandler1(AggregateRepository<NestedAggregate1> repository, EventFactoryAbstract eventFactory) {
         super(repository);
+        this.eventFactory = eventFactory;
     }
 
     @CommandHandler
     public void handle(CreateNestedAggregate1Command command) {
-        NestedAggregate1 aggregate = new NestedAggregate1(command.getId());
+        NestedAggregate1 aggregate = new NestedAggregate1(command.getId(), eventFactory);
         initialiseAggregate(aggregate);
         aggregate.doSomething(command.getStr());
     }

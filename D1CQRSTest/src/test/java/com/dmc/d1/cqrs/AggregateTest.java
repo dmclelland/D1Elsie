@@ -1,6 +1,7 @@
 package com.dmc.d1.cqrs;
 
 
+import com.dmc.d1.algo.event.EventFactoryBasic;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;
 import com.dmc.d1.cqrs.test.aggregate.Aggregate1;
@@ -28,8 +29,8 @@ public class AggregateTest {
     @Test
     public void testAggregate() {
 
-        Aggregate1 aggregate1 = new Aggregate1(id1);
-        Aggregate2 aggregate2 = new Aggregate2(id2);
+        Aggregate1 aggregate1 = new Aggregate1(id1, new EventFactoryBasic());
+        Aggregate2 aggregate2 = new Aggregate2(id2, new EventFactoryBasic());
 
         aggregate1Repo.create(aggregate1);
         aggregate2Repo.create(aggregate2);

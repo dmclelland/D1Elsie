@@ -47,7 +47,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>generateEvents</id>
+                        <id>generateEventHandlerss</id>
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>java</goal>

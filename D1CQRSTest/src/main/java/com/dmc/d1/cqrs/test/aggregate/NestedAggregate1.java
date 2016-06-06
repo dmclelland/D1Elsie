@@ -1,5 +1,6 @@
 package com.dmc.d1.cqrs.test.aggregate;
 
+import com.dmc.d1.algo.event.EventFactoryAbstract;
 import com.dmc.d1.algo.event.NestedUpdatedEvent1;
 import com.dmc.d1.algo.event.TriggerExceptionNestedEvent;
 import com.dmc.d1.cqrs.Aggregate;
@@ -14,9 +15,11 @@ public class NestedAggregate1 extends Aggregate {
 
     private String nestedProperty;
     private MyNestedId id;
+    private final EventFactoryAbstract eventFactory;
 
-    public NestedAggregate1(MyNestedId id){
+    public NestedAggregate1(MyNestedId id,EventFactoryAbstract eventFactory ){
         this.id = id;
+        this.eventFactory = eventFactory;
     }
 
     @Override
@@ -30,12 +33,12 @@ public class NestedAggregate1 extends Aggregate {
     }
 
     public void doSomething(String nestedProperty){
-        apply(new NestedUpdatedEvent1(id, nestedProperty));
+        apply(eventFactory.createNestedUpdatedEvent1(id, nestedProperty));
     }
 
     public void doSomethingCausingError(String nestedProperty){
-        apply(new NestedUpdatedEvent1(id, nestedProperty));
-        apply(new TriggerExceptionNestedEvent(id));
+        apply(eventFactory.createNestedUpdatedEvent1(id, nestedProperty));
+        apply(eventFactory.createTriggerExceptionNestedEvent(id));
     }
 
 

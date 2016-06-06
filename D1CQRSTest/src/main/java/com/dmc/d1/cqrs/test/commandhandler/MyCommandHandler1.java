@@ -1,5 +1,6 @@
 package com.dmc.d1.cqrs.test.commandhandler;
 
+import com.dmc.d1.algo.event.EventFactoryAbstract;
 import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.AnnotatedCommandHandlerInvoker;
 import com.dmc.d1.cqrs.annotations.CommandHandler;
@@ -15,19 +16,24 @@ import com.dmc.d1.cqrs.test.aggregate.Aggregate1;
  */
 public class MyCommandHandler1 extends AbstractCommandHandler<Aggregate1> {
 
-    public MyCommandHandler1(AggregateRepository repository) {
+    private final EventFactoryAbstract eventFactory;
+
+    public MyCommandHandler1(AggregateRepository repository, EventFactoryAbstract eventFactory) {
         super(repository);
+        this.eventFactory = eventFactory;
+
     }
 
 
-    public MyCommandHandler1(AggregateRepository repository, AnnotatedCommandHandlerInvoker commandHandlerInvoker) {
+    public MyCommandHandler1(AggregateRepository repository, EventFactoryAbstract eventFactory, AnnotatedCommandHandlerInvoker commandHandlerInvoker) {
         super(repository,commandHandlerInvoker);
+        this.eventFactory = eventFactory;
     }
 
 
     @CommandHandler
     public void handle(CreateAggregate1Command command) {
-        Aggregate1 aggregate = new Aggregate1(command.getId());
+        Aggregate1 aggregate = new Aggregate1(command.getId(), eventFactory);
         initialiseAggregate(aggregate);
         aggregate.doSomething(command.getI1(), command.getI2());
     }

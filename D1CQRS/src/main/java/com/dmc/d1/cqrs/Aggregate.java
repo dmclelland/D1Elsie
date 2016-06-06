@@ -23,6 +23,7 @@ public abstract class Aggregate {
     private EventBus eventBus;
     private AggregateEventStore aggregateEventStore;
 
+
     protected void apply(AggregateEvent event) {
         applyAggregateEvent(event);
         addToUncommitted(event);

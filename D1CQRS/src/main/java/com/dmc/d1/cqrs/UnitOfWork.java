@@ -26,7 +26,6 @@ class UnitOfWork {
             list.clear();
             counter=0;
             rollback=false;
-
         }
     }
 

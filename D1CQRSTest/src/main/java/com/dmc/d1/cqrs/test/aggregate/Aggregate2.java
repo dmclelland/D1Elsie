@@ -1,5 +1,6 @@
 package com.dmc.d1.cqrs.test.aggregate;
 
+import com.dmc.d1.algo.event.EventFactoryAbstract;
 import com.dmc.d1.algo.event.StringUpdatedEvent1;
 import com.dmc.d1.algo.event.StringUpdatedEvent2;
 import com.dmc.d1.algo.event.TriggerExceptionEvent;
@@ -18,8 +19,11 @@ public class Aggregate2 extends Aggregate {
     private String s2;
     private MyId id;
 
-    public Aggregate2(MyId id) {
+    private final EventFactoryAbstract eventFactory;
+
+    public Aggregate2(MyId id, EventFactoryAbstract eventFactory) {
         this.id = id;
+        this.eventFactory = eventFactory;
     }
 
     @Override
@@ -30,14 +34,14 @@ public class Aggregate2 extends Aggregate {
 
 
     public void doSomething(String s1, String s2) {
-        apply(new StringUpdatedEvent1(id, s1));
-        apply(new StringUpdatedEvent2(id, s2));
+        apply(eventFactory.createStringUpdatedEvent1(id, s1));
+        apply(eventFactory.createStringUpdatedEvent2(id, s2));
     }
 
     public void doSomethingWhichCausesException(String s1, String s2) {
-        apply(new StringUpdatedEvent1(id, s1));
-        apply(new StringUpdatedEvent2(id, s2));
-        apply(new TriggerExceptionEvent(id));
+        apply(eventFactory.createStringUpdatedEvent1(id, s1));
+        apply(eventFactory.createStringUpdatedEvent2(id, s2));
+        apply(eventFactory.createTriggerExceptionEvent(id));
     }
 
     @EventHandler

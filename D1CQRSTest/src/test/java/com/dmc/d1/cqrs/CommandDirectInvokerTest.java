@@ -1,5 +1,6 @@
 package com.dmc.d1.cqrs;
 
+import com.dmc.d1.algo.event.EventFactoryBasic;
 import com.dmc.d1.cqrs.command.*;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;
@@ -50,9 +51,9 @@ public class CommandDirectInvokerTest {
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
 
-        lst.add(new MyCommandHandler1(repo1));
-        lst.add(new MyCommandHandler2(repo2));
-        lst.add(new MyNestedCommandHandler1(repo3));
+        lst.add(new MyCommandHandler1(repo1, new EventFactoryBasic()));
+        lst.add(new MyCommandHandler2(repo2, new EventFactoryBasic()));
+        lst.add(new MyNestedCommandHandler1(repo3, new EventFactoryBasic()));
 
         commandBus = new SimpleCommandBus(lst);
 
