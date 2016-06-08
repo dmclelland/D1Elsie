@@ -7,4 +7,6 @@ public interface AggregateEvent {
     String getAggregateId();
     String getClassName();
 
+    void clean();
+
 }

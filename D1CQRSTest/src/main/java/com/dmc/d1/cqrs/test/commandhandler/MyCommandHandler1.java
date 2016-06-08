@@ -16,24 +16,21 @@ import com.dmc.d1.cqrs.test.aggregate.Aggregate1;
  */
 public class MyCommandHandler1 extends AbstractCommandHandler<Aggregate1> {
 
-    private final EventFactoryAbstract eventFactory;
 
-    public MyCommandHandler1(AggregateRepository repository, EventFactoryAbstract eventFactory) {
+    public MyCommandHandler1(AggregateRepository repository) {
         super(repository);
-        this.eventFactory = eventFactory;
 
     }
 
 
-    public MyCommandHandler1(AggregateRepository repository, EventFactoryAbstract eventFactory, AnnotatedCommandHandlerInvoker commandHandlerInvoker) {
+    public MyCommandHandler1(AggregateRepository repository, AnnotatedCommandHandlerInvoker commandHandlerInvoker) {
         super(repository,commandHandlerInvoker);
-        this.eventFactory = eventFactory;
     }
 
 
     @CommandHandler
     public void handle(CreateAggregate1Command command) {
-        Aggregate1 aggregate = new Aggregate1(command.getId(), eventFactory);
+        Aggregate1 aggregate = new Aggregate1(command.getId());
         initialiseAggregate(aggregate);
         aggregate.doSomething(command.getI1(), command.getI2());
     }

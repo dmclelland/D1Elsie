@@ -5,6 +5,7 @@ import com.dmc.d1.algo.aggregate.WaveAggregate;
 import com.dmc.d1.algo.commandhandler.PairsCommandHandler;
 import com.dmc.d1.algo.commandhandler.WaveCommandHandler;
 import com.dmc.d1.cqrs.Aggregate;
+import com.dmc.d1.cqrs.event.EventFactoryMarker;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;
@@ -34,14 +35,18 @@ public class AlgoConfiguration {
         return new InMemoryAggregateEventStore();
     }
 
+
+    //TODO ensure eventfactory gets wired in
     @Bean
     AggregateRepository<WaveAggregate> waveAggregateRepository() {
-        return new AggregateRepository<>(aggregateEventStore(), WaveAggregate.class, eventBus());
+        return new AggregateRepository<>(aggregateEventStore(), WaveAggregate.class, eventBus(), new EventFactoryMarker() {
+        });
     }
 
     @Bean
     AggregateRepository<PairsAggregate> pairAggregateRepository() {
-        return new AggregateRepository<>(aggregateEventStore(), PairsAggregate.class, eventBus());
+        return new AggregateRepository<>(aggregateEventStore(), PairsAggregate.class, eventBus(), new EventFactoryMarker() {
+        });
     }
 
     @Bean

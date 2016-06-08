@@ -13,9 +13,5 @@ public interface AggregateEventStore<E extends AggregateEvent> {
 
     void add(List<E> events);
 
-    E get();
-
-    List<E> getAll();
-
     List<E> get(String id);
 }

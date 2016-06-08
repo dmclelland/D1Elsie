@@ -1,9 +1,6 @@
 package com.dmc.d1.cqrs.test.aggregate;
 
-import com.dmc.d1.algo.event.EventFactoryAbstract;
-import com.dmc.d1.algo.event.StringUpdatedEvent1;
-import com.dmc.d1.algo.event.StringUpdatedEvent2;
-import com.dmc.d1.algo.event.TriggerExceptionEvent;
+import com.dmc.d1.algo.event.*;
 import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.annotations.EventHandler;
 import com.dmc.d1.cqrs.test.domain.MyId;
@@ -12,18 +9,16 @@ import com.dmc.d1.cqrs.test.domain.MyId;
  * Created by davidclelland on 17/05/2016.
  */
 @com.dmc.d1.cqrs.annotations.Aggregate
-public class Aggregate2 extends Aggregate {
+public class Aggregate2 extends Aggregate<EventFactoryAbstract> {
 
 
     private String s1;
     private String s2;
     private MyId id;
 
-    private final EventFactoryAbstract eventFactory;
 
-    public Aggregate2(MyId id, EventFactoryAbstract eventFactory) {
+    public Aggregate2(MyId id) {
         this.id = id;
-        this.eventFactory = eventFactory;
     }
 
     @Override

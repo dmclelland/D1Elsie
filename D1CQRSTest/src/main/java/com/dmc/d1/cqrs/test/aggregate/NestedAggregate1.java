@@ -1,6 +1,7 @@
 package com.dmc.d1.cqrs.test.aggregate;
 
 import com.dmc.d1.algo.event.EventFactoryAbstract;
+import com.dmc.d1.algo.event.EventFactoryBasic;
 import com.dmc.d1.algo.event.NestedUpdatedEvent1;
 import com.dmc.d1.algo.event.TriggerExceptionNestedEvent;
 import com.dmc.d1.cqrs.Aggregate;
@@ -11,15 +12,13 @@ import com.dmc.d1.cqrs.test.domain.MyNestedId;
  * Created by davidclelland on 17/05/2016.
  */
 @com.dmc.d1.cqrs.annotations.Aggregate
-public class NestedAggregate1 extends Aggregate {
+public class NestedAggregate1 extends Aggregate<EventFactoryAbstract> {
 
     private String nestedProperty;
     private MyNestedId id;
-    private final EventFactoryAbstract eventFactory;
 
-    public NestedAggregate1(MyNestedId id,EventFactoryAbstract eventFactory ){
+    public NestedAggregate1(MyNestedId id){
         this.id = id;
-        this.eventFactory = eventFactory;
     }
 
     @Override

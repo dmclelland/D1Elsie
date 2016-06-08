@@ -33,9 +33,22 @@
 
         <dependency>
             <groupId>net.openhft</groupId>
-            <artifactId>chronicle</artifactId>
-            <version>3.6.2</version>
+            <artifactId>chronicle-queue</artifactId>
+            <version>4.4.3</version>
         </dependency>
 
+
+        <dependency>
+            <groupId>net.openhft</groupId>
+            <artifactId>chronicle-core</artifactId>
+            <version>1.6.2</version>
+        </dependency>
+        <!--
+        <dependency>
+            <groupId>net.openhft</groupId>
+            <artifactId>chronicle-wire</artifactId>
+            <version>1.6.2</version>
+        </dependency>
+           -->
     </dependencies>
 </project>

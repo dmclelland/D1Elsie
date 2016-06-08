@@ -1,11 +1,11 @@
 package com.dmc.d1.cqrs;
 
-import com.dmc.d1.algo.event.EventFactoryPooled;
+import com.dmc.d1.algo.event.ChronicleAggregateEventStore;
+import com.dmc.d1.algo.event.EventFactoryChronicle;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
-import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;
 import com.dmc.d1.cqrs.test.aggregate.Aggregate1;
 import com.dmc.d1.cqrs.test.command.CreateAggregate1Command;
 import com.dmc.d1.cqrs.test.command.UpdateAggregate1Command;
@@ -29,7 +29,7 @@ import static org.junit.Assert.assertEquals;
 @Ignore
 public class PerfTest2 {
 
-    private static int REPEAT_TEST = 20;
+    private static int REPEAT_TEST = 1;
 
     private static int ITERATIONS = 1_000_000;
 
@@ -40,33 +40,35 @@ public class PerfTest2 {
     AggregateEventStore aes;
     AggregateRepository<Aggregate1> repo1;
 
+    EventFactoryChronicle eventFactory = new EventFactoryChronicle();
+
 
     @Before
-    public void before(){
+    public void before() {
         sleep();
     }
 
-    private void sleep(){
-        try {
-            Thread.sleep(30000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    private void sleep() {
+//        try {
+//            Thread.sleep(30000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
     }
 
-    private void setup() {
-        aes = new InMemoryAggregateEventStore();
+    private void setup() throws Exception {
+        aes = new ChronicleAggregateEventStore();
         SimpleEventBus eventBus = new SimpleEventBus();
 
-        repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus);
+        repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, eventFactory);
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
-        lst.add(new MyCommandHandler1(repo1, new EventFactoryPooled()));
+        lst.add(new MyCommandHandler1(repo1));
 
         commandBus = new SimpleCommandBus(lst);
 
         lst = new ArrayList<>();
-        lst.add(new MyCommandHandler1(repo1, new EventFactoryPooled(),
+        lst.add(new MyCommandHandler1(repo1,
                 new ReflectiveAnnotatedCommandHandlerInvoker(MyCommandHandler1.class)));
 
         commandBusWithReflectiveCommandHandler = new SimpleCommandBus(lst);
@@ -74,7 +76,7 @@ public class PerfTest2 {
 
 
     @Test
-    public void testCreateAndUpdateCommandDirect() {
+    public void testCreateAndUpdateCommandDirect() throws Exception {
         for (int j = 0; j < REPEAT_TEST; j++) {
             setup();
             int rnd = ((this.hashCode() ^ (int) System.nanoTime()));
@@ -89,8 +91,8 @@ public class PerfTest2 {
 
             Aggregate1 aggregate = repo1.find(aggregateIdentifier);
 
-            assertEquals(aggregate.getI1(), rnd);
-            assertEquals(aggregate.getI2(), rnd + 2);
+            assertEquals(rnd, aggregate.getI1());
+            assertEquals(rnd + 2, aggregate.getI2());
 
 
             for (int i = 0; i < ITERATIONS; i++) {
@@ -101,14 +103,14 @@ public class PerfTest2 {
 
                 aggregate = repo1.find(aggregateIdentifier);
 
-                assertEquals(aggregate.getI1(), rnd - 5);
-                assertEquals(aggregate.getI2(), rnd - 7);
+                assertEquals(rnd - 5, aggregate.getI1());
+                assertEquals(rnd - 7, aggregate.getI2());
 
 
             }
             watch.stop();
             System.out.println("It took " + watch.getTotalTimeSeconds() + " to run");
-            assertEquals(2 + 2 * ITERATIONS, aes.getAll().size());
+            //assertEquals(2 + 2 * ITERATIONS, aes.getAll().size());
 
 
         }
@@ -118,7 +120,7 @@ public class PerfTest2 {
 
 
     @Test
-    public void testCreateAndUpdateCommandReflection() {
+    public void testCreateAndUpdateCommandReflection() throws Exception {
 
         for (int j = 0; j < REPEAT_TEST; j++) {
             setup();
@@ -158,7 +160,7 @@ public class PerfTest2 {
 
             watch.stop();
             System.out.println("It took " + watch.getTotalTimeSeconds() + " to run reflectively");
-            assertEquals(2 + 2 * ITERATIONS, aes.getAll().size());
+            //assertEquals(2 + 2 * ITERATIONS, aes.getAll().size());
 
 
         }

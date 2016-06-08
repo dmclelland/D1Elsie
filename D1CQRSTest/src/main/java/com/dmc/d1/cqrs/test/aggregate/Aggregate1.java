@@ -10,23 +10,17 @@ import com.dmc.d1.cqrs.test.domain.MyNestedId;
  * Created by davidclelland on 17/05/2016.
  */
 @com.dmc.d1.cqrs.annotations.Aggregate
-public class Aggregate1 extends Aggregate {
+public class Aggregate1 extends Aggregate<EventFactoryAbstract>{
 
     private int i1;
     private int i2;
     private String str;
 
+    private final MyId id;
 
-    private final EventFactoryAbstract eventFactory;
-
-    private MyId id;
-
-    public Aggregate1(MyId id, EventFactoryAbstract eventFactory){
-        this.eventFactory = eventFactory;
+    public Aggregate1(MyId id){
         this.id = id;
     }
-
-
 
     @Override
     protected String getId() {
@@ -46,30 +40,21 @@ public class Aggregate1 extends Aggregate {
 
     public void doSomething2(String str){
         MyNestedId nestedId = generateNestedId(id);
-
         apply(eventFactory.createHandledByExternalHandlersEvent(id, nestedId, str));
-
     }
 
 
     public void triggerExceptionInNestedAggregate(String str){
         MyNestedId nestedId = generateNestedId(id);
-
         apply(eventFactory.createTriggerExceptionInNestedAggregateEvent(id, nestedId, str));
-
     }
-
 
     private MyNestedId generateNestedId(MyId id){
         return new MyNestedId(id.toString()+"Nested");
-
     }
-
-
 
     @EventHandler
     public void handleEvent1(IntUpdatedEvent1 event){
-
         this.i1 = event.getI();
     }
 

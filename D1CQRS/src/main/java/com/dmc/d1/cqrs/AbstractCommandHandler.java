@@ -1,7 +1,7 @@
 package com.dmc.d1.cqrs;
 
 import com.dmc.d1.cqrs.command.Command;
-import com.dmc.d1.domain.Id;
+import com.dmc.d1.cqrs.event.EventFactoryMarker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +45,7 @@ public abstract class AbstractCommandHandler<A extends Aggregate> {
             //initialiseAggregate method
             Aggregate aggregate = getAggregate(command.getAggregateId());
 
-            if(aggregate!=null)
+            if (aggregate != null)
                 UnitOfWork.add(aggregate);
 
             annotatedCommandHandlerInvoker.invoke(command, this);

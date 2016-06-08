@@ -24,4 +24,9 @@ public class WaveCreatedEvent implements AggregateEvent {
     public String getClassName() {
         return CLASS_NAME;
     }
+
+    @Override
+    public void clean() {
+
+    }
 }

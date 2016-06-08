@@ -31,15 +31,15 @@ public class InMemoryAggregateEventStore implements AggregateEventStore<Aggregat
         eventsToAdd.forEach(this::add);
     }
 
-    @Override
-    public AggregateEvent get() {
-        return events.get(events.size()-1);
-    }
-
-    @Override
-    public List<AggregateEvent> getAll() {
-        return events;
-    }
+//    @Override
+//    public AggregateEvent get() {
+//        return events.get(events.size()-1);
+//    }
+//
+//    @Override
+//    public List<AggregateEvent> getAll() {
+//        return events;
+//    }
 
     @Override
     public List<AggregateEvent> get(String id) {
