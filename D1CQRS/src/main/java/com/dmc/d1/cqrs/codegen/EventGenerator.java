@@ -1,8 +1,8 @@
 package com.dmc.d1.cqrs.codegen;
 
-import com.dmc.d1.cqrs.event.AggregateEvent;
-import com.dmc.d1.cqrs.event.ChronicleAggregateEvent;
-import com.dmc.d1.cqrs.event.EventFactoryMarker;
+import com.dmc.d1.cqrs.event.*;
+import com.dmc.d1.cqrs.util.InstanceAllocator;
+import com.dmc.d1.cqrs.util.Resettable;
 import com.dmc.d1.domain.Id;
 import com.squareup.javapoet.*;
 import net.openhft.chronicle.core.io.IORuntimeException;
@@ -14,7 +14,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -48,22 +50,27 @@ class EventGenerator {
 
             //ClassName markerInterface = ClassName.get(com.dmc.d1.cqrs.event", className);
             TypeSpec.Builder abstractFactory = TypeSpec.interfaceBuilder(afName)
-                    .addSuperinterface(EventFactoryMarker.class)
+                    .addSuperinterface(EventFactory.class)
                     .addModifiers(Modifier.PUBLIC);
 
             TypeSpec.Builder basicFactory = TypeSpec.classBuilder("EventFactoryBasic")
                     .addSuperinterface(afName)
                     .addModifiers(Modifier.PUBLIC);
 
+
+            MethodSpec.Builder allocateInstanceMethod = MethodSpec.methodBuilder("allocateInstance")
+                    .addModifiers(Modifier.PUBLIC)
+                    .addParameter(String.class, "eventClass")
+                    .returns(ChronicleAggregateEvent.class);
+
+
+            MethodSpec.Builder chronicleFactoryConstructor = MethodSpec.constructorBuilder()
+                    .addStatement("$T<String> eventNames = new $T<>()",List.class, ArrayList.class);
+
             TypeSpec.Builder chronicleFactory = TypeSpec.classBuilder("EventFactoryChronicle")
                     .addSuperinterface(afName)
                     .addModifiers(Modifier.PUBLIC);
 
-
-            MethodSpec.Builder chronicleEventPlaceholder = MethodSpec.methodBuilder("createEventPlaceholder")
-                    .addModifiers(Modifier.PUBLIC)
-                    .addParameter(String.class, "eventClass")
-                    .returns(ChronicleAggregateEvent.class);
 
             String sCurrentLine;
             while ((sCurrentLine = br.readLine()) != null) {
@@ -72,11 +79,21 @@ class EventGenerator {
                 ClassName interfaceName = generateInterface(vo, abstractFactory);
 
                 generateBasicEvent(vo, interfaceName, basicFactory);
-                generateChronicleEvent(vo, interfaceName, chronicleFactory, chronicleEventPlaceholder);
+                generateChronicleEvent(vo, interfaceName, chronicleFactory, chronicleFactoryConstructor, allocateInstanceMethod);
             }
 
-            chronicleEventPlaceholder.addStatement("throw new RuntimeException(\"Unexpected\")");
-            chronicleFactory.addMethod(chronicleEventPlaceholder.build());
+
+            ParameterizedTypeName instanceAllocatorInterface = ParameterizedTypeName.get(InstanceAllocator.class, ChronicleAggregateEvent.class);
+
+            TypeSpec.Builder instanceAllocator = TypeSpec.classBuilder("ChronicleInstanceAllocator")
+                    .addSuperinterface(instanceAllocatorInterface);
+
+            chronicleFactoryConstructor.addStatement("$T allocator = new ChronicleInstanceAllocator()", instanceAllocatorInterface);
+            chronicleFactoryConstructor.addStatement("$T.initialise(eventNames,allocator)", AggregateEventPool.class);
+            chronicleFactory.addMethod(chronicleFactoryConstructor.build());
+
+            allocateInstanceMethod.addStatement("throw new RuntimeException(\"Unexpected\")");
+            instanceAllocator.addMethod(allocateInstanceMethod.build());
 
             JavaFile javaFileAF = JavaFile.builder(this.generatedPackageName, abstractFactory.build())
                     .build();
@@ -87,6 +104,11 @@ class EventGenerator {
                     .build();
 
             javaFileBF.writeTo(new File(this.generatedSourceDirectory));
+
+
+            JavaFile javaFileIA = JavaFile.builder(this.generatedPackageName, instanceAllocator.build())
+                    .build();
+            javaFileIA.writeTo(new File(this.generatedSourceDirectory));
 
             JavaFile javaFilePF = JavaFile.builder(this.generatedPackageName, chronicleFactory.build())
                     .build();
@@ -217,10 +239,6 @@ class EventGenerator {
         CodeBlock.Builder factoryCreateStatement = CodeBlock.builder();
         factoryCreateStatement.add("return new $T(", eventClass);
 
-//                public HandledByExternalHandlersEvent createHandledByExternalHandlersEvent(MyId myId, MyNestedId nestedId, String str) {
-//                    return new HandledByExternalHandlersEventBasic(myId, nestedId, str);
-//                }
-
         int noOfParams = vo.instanceVariables.keySet().size();
         int count = 0;
 
@@ -270,14 +288,6 @@ class EventGenerator {
                         .build()
         );
 
-        //noop
-        eventBuilder.addMethod(
-                MethodSpec.methodBuilder("clean")
-                        .addModifiers(Modifier.PUBLIC)
-                        .addAnnotation(Override.class)
-                        .build()
-        );
-
         factoryCreateStatement.add(");");
 
         basicFactoryCreateMethod.addCode(factoryCreateStatement.build());
@@ -295,43 +305,25 @@ class EventGenerator {
     }
 
 
-    private void generateChronicleEvent(EventVo vo, ClassName interfaceClass, TypeSpec.Builder chronicleFactory,
-                                        MethodSpec.Builder chronicleEventPlaceholder) throws Exception {
+    private void generateChronicleEvent(EventVo vo, ClassName interfaceClass, TypeSpec.Builder chronicleFactory,   MethodSpec.Builder chronicleFactoryConstructor,
+                                        MethodSpec.Builder  allocateInstanceMethod) throws Exception {
 
         String className = vo.className + "Chronicle";
 
+        String eventInterfaceName = interfaceClass.packageName()+"."+interfaceClass.simpleName();
+
         //class name is the interface
         FieldSpec CLASS_NAME = FieldSpec.builder(String.class, "CLASS_NAME", Modifier.FINAL, Modifier.STATIC)
-                .initializer("\"$L.$L\"", interfaceClass.packageName(), interfaceClass.simpleName()).build();
+                .initializer("$S",eventInterfaceName).build();
 
-        FieldSpec INIT_POOL_SIZE = FieldSpec.builder(int.class, "INIT_POOL_SIZE", Modifier.FINAL, Modifier.STATIC)
-                .initializer(CodeBlock.of("50")).build();
 
-        FieldSpec noOfInstances = FieldSpec.builder(int.class, "noOfInstances", Modifier.STATIC)
-                .initializer(CodeBlock.of("0")).build();
-
-        FieldSpec noRemoved = FieldSpec.builder(int.class, "noRemoved", Modifier.STATIC)
-                .initializer(CodeBlock.of("0")).build();
+        chronicleFactoryConstructor.addStatement("eventNames.add($S)",eventInterfaceName );
 
         ClassName eventClass = ClassName.get(this.generatedPackageName, className);
-        ClassName list = ClassName.get("java.util", "List");
-        ClassName arrayList = ClassName.get("java.util", "ArrayList");
 
-        TypeName listOfClass = ParameterizedTypeName.get(list, eventClass);
-
-
-        chronicleEventPlaceholder.beginControlFlow("if (eventClass.equals(\"$L.$L\"))", interfaceClass.packageName(), interfaceClass.simpleName());
-        chronicleEventPlaceholder.addStatement("return new $T()", eventClass);
-        chronicleEventPlaceholder.endControlFlow();
-
-
-        FieldSpec INSTANCES = FieldSpec.builder(listOfClass, "INSTANCES", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
-                .initializer("new $T<>(INIT_POOL_SIZE)", arrayList).build();
-
-        CodeBlock staticCodeBlock = CodeBlock.builder().beginControlFlow("for (int i = 0; i < INIT_POOL_SIZE; i++)")
-                .addStatement("INSTANCES.add(new $L())", className)
-                .endControlFlow().build();
-
+        allocateInstanceMethod.beginControlFlow("if (eventClass.equals($S))",eventInterfaceName);
+        allocateInstanceMethod.addStatement("return new $T()", eventClass);
+        allocateInstanceMethod.endControlFlow();
 
         MethodSpec.Builder readMarshallableMethod = MethodSpec.methodBuilder("readMarshallable")
                 .addParameter(WireIn.class, "wireIn")
@@ -347,31 +339,29 @@ class EventGenerator {
         TypeSpec.Builder eventBuilder = TypeSpec.classBuilder(className)
                 .addSuperinterface(interfaceClass)
                 .addSuperinterface(ChronicleAggregateEvent.class)
-                .addField(CLASS_NAME)
-                .addField(INIT_POOL_SIZE)
-                .addField(noOfInstances)
-                .addField(noRemoved)
-                .addField(INSTANCES)
-                .addStaticBlock(staticCodeBlock);
+                .addField(CLASS_NAME);
 
         MethodSpec constructor = MethodSpec.constructorBuilder()
                 .build();
 
 
-        MethodSpec.Builder createBuilder = MethodSpec.methodBuilder("create")
-                .addModifiers(Modifier.STATIC)
-                .returns(eventClass)
-                .addStatement("$N  INSTANCE = INSTANCES.get(noOfInstances++)", className);
-
-        MethodSpec.Builder clearBuilder = MethodSpec.methodBuilder("clear").addModifiers(Modifier.PRIVATE);
+        MethodSpec.Builder setBuilder = MethodSpec.methodBuilder("set").addModifiers();
+        MethodSpec.Builder resetBuilder = MethodSpec.methodBuilder("reset").addModifiers(Modifier.PUBLIC);
 
         MethodSpec.Builder chronicleFactoryCreateMethod = MethodSpec.methodBuilder("create" + vo.className)
                 .addModifiers(Modifier.PUBLIC)
                 .returns(interfaceClass);
 
 
+        //HandledByExternalHandlersEventChronicle event = (HandledByExternalHandlersEventChronicle)
+          //      AggregateEventPool.allocate("com.dmc.d1.algo.event.HandledByExternalHandlersEvent");
+
+       // event.set(id, nestedId, str);
+       // return event;
+
         CodeBlock.Builder factoryCreateStatement = CodeBlock.builder();
-        factoryCreateStatement.add("return  $T.create(", eventClass);
+        factoryCreateStatement.addStatement("$T event = ($T) AggregateEventPool.allocate($S)", eventClass, eventClass, eventInterfaceName);
+        factoryCreateStatement.add("event.set(");
 
         int noOfParams = vo.instanceVariables.keySet().size();
         int count = 0;
@@ -410,15 +400,16 @@ class EventGenerator {
 
             eventBuilder.addField(typeName, key, Modifier.PRIVATE);
 
-            createBuilder.addParameter(typeName, key)
-                    .addStatement("INSTANCE.$N = $N", key, key);
+            setBuilder.addParameter(typeName, key)
+                    .addStatement("this.$N = $N", key, key);
+
             if (typeName.isPrimitive()) {
                 if (TypeName.BOOLEAN == typeName)
-                    clearBuilder.addStatement("this.$N = false", key);
+                    resetBuilder.addStatement("this.$N = false", key);
                 else
-                    clearBuilder.addStatement("this.$N = 0", key);
+                    resetBuilder.addStatement("this.$N = 0", key);
             } else {
-                clearBuilder.addStatement("this.$N = null", key);
+                resetBuilder.addStatement("this.$N = null", key);
             }
             eventBuilder.addMethod(
                     MethodSpec.methodBuilder("get" + capitalize(key))
@@ -431,10 +422,11 @@ class EventGenerator {
         }
 
         factoryCreateStatement.add(");");
+        factoryCreateStatement.addStatement("return event");
 
         chronicleFactoryCreateMethod.addCode(factoryCreateStatement.build());
 
-        createBuilder.addStatement("return INSTANCE");
+
 
         eventBuilder.addMethod(
                 MethodSpec.methodBuilder("getAggregateId")
@@ -454,26 +446,11 @@ class EventGenerator {
                         .build()
         );
 
-
-        //TODO REVISIT THIS!!!
-        eventBuilder.addMethod(
-                MethodSpec.methodBuilder("clean")
-                        .addModifiers(Modifier.PUBLIC)
-                        .addStatement("INSTANCES.get(noRemoved).clear()")
-                        .addStatement("noRemoved++")
-                        .beginControlFlow("if(noRemoved==noOfInstances)")
-                        .addStatement(" noRemoved=noOfInstances = 0")
-                        .endControlFlow()
-                        .addAnnotation(Override.class)
-                        .build()
-        );
-
-
         eventBuilder.addMethod(readMarshallableMethod.build());
         eventBuilder.addMethod(writeMarshallableMethod.build());
 
-        eventBuilder.addMethod(createBuilder.build());
-        eventBuilder.addMethod(clearBuilder.build());
+        eventBuilder.addMethod(setBuilder.build());
+        eventBuilder.addMethod(resetBuilder.build());
         eventBuilder.addMethod(constructor);
 
         JavaFile javaFile = JavaFile.builder(this.generatedPackageName, eventBuilder.build())

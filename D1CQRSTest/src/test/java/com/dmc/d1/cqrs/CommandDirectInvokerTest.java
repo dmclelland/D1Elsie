@@ -1,6 +1,8 @@
 package com.dmc.d1.cqrs;
 
-import com.dmc.d1.algo.event.ChronicleAggregateEventStore;
+import com.dmc.d1.algo.event.Configuration;
+import com.dmc.d1.cqrs.event.EventFactory;
+import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
 import com.dmc.d1.algo.event.EventFactoryChronicle;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
@@ -18,8 +20,10 @@ import com.dmc.d1.cqrs.test.domain.MyId;
 import com.dmc.d1.cqrs.test.domain.MyNestedId;
 import com.dmc.d1.cqrs.test.event.Aggregate1EventHandler;
 import com.dmc.d1.cqrs.test.event.Aggregate1EventHandler2;
+import com.dmc.d1.cqrs.util.InstanceAllocator;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -47,16 +51,19 @@ public class CommandDirectInvokerTest {
 
     DeleteStatic deleteOnClose = DeleteStatic.INSTANCE;
 
+    EventFactory chronicleEventFactory = Configuration.getEventFactoryChronicle();
+    InstanceAllocator instanceAllocator = Configuration.getInstanceAllocatorChronicle();
+
     @Before
     public void setup() throws Exception {
 
-        aes = new ChronicleAggregateEventStore();
+        aes = new ChronicleAggregateEventStore(instanceAllocator, Configuration.getChroniclePath());
 
         SimpleEventBus eventBus = new SimpleEventBus();
 
-        repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, new EventFactoryChronicle());
-        repo2 = new AggregateRepository(aes, Aggregate2.class, eventBus, new EventFactoryChronicle());
-        repo3 = new AggregateRepository(aes, NestedAggregate1.class, eventBus, new EventFactoryChronicle());
+        repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, chronicleEventFactory);
+        repo2 = new AggregateRepository(aes, Aggregate2.class, eventBus, chronicleEventFactory);
+        repo3 = new AggregateRepository(aes, NestedAggregate1.class, eventBus, chronicleEventFactory);
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
 
@@ -159,6 +166,7 @@ public class CommandDirectInvokerTest {
         assertEquals("Goodbye", aggregate.getS2());
     }
 
+
     @Test
     public void parentAggregateRollsBackWithNestedAggregateFailure() {
 
@@ -179,10 +187,9 @@ public class CommandDirectInvokerTest {
         NestedAggregate1 nested = repo3.find(nestedId.toString());
         assertEquals("NestedTest", nested.getNestedProperty());
 
-        NestedExceptionTriggeringAggregate1Command command3 = new NestedExceptionTriggeringAggregate1Command(id, "Should not update");
+        NestedExceptionTriggeringAggregate1Command command3 = new NestedExceptionTriggeringAggregate1Command(id,
+                "Should not update");
         commandBus.dispatch(command3);
-
-
         //values should stay as they were
         aggregate = repo1.find(id.toString());
 
@@ -191,7 +198,6 @@ public class CommandDirectInvokerTest {
         assertEquals(5, aggregate.getI2());
         nested = repo3.find(nestedId.toString());
         assertEquals("NestedTest", nested.getNestedProperty());
-
     }
 
     enum DeleteStatic {

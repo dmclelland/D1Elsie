@@ -2,7 +2,6 @@ package com.dmc.d1.cqrs;
 
 
 import com.dmc.d1.algo.event.EventFactoryBasic;
-import com.dmc.d1.cqrs.event.EventFactoryMarker;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;

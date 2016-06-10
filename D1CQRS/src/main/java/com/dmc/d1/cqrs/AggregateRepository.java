@@ -1,7 +1,7 @@
 package com.dmc.d1.cqrs;
 
 import com.dmc.d1.cqrs.event.EventBus;
-import com.dmc.d1.cqrs.event.EventFactoryMarker;
+import com.dmc.d1.cqrs.event.EventFactory;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 
 import java.util.HashMap;
@@ -21,9 +21,9 @@ public class AggregateRepository<A extends Aggregate> {
 
     private final Class<A> aggregateType;
 
-    private final EventFactoryMarker eventFactory;
+    private final EventFactory eventFactory;
 
-    public AggregateRepository(AggregateEventStore aggregateEventStore, Class<A> aggregateType, EventBus eventBus, EventFactoryMarker eventFactory) {
+    public AggregateRepository(AggregateEventStore aggregateEventStore, Class<A> aggregateType, EventBus eventBus, EventFactory eventFactory) {
         this.aggregateEventStore = checkNotNull(aggregateEventStore);
         this.aggregateType = checkNotNull(aggregateType);
         this.annotatedAggregateEventHandlerInvoker = checkNotNull(getEventHandler());

@@ -1,7 +1,6 @@
 package com.dmc.d1.cqrs;
 
 import com.dmc.d1.cqrs.command.Command;
-import com.dmc.d1.cqrs.event.EventFactoryMarker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

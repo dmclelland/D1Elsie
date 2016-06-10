@@ -1,6 +1,8 @@
 package com.dmc.d1.cqrs;
 
-import com.dmc.d1.algo.event.ChronicleAggregateEventStore;
+import com.dmc.d1.algo.event.Configuration;
+import com.dmc.d1.cqrs.event.EventFactory;
+import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
 import com.dmc.d1.algo.event.EventFactoryChronicle;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
@@ -12,6 +14,8 @@ import com.dmc.d1.cqrs.test.command.UpdateAggregate1Command;
 import com.dmc.d1.cqrs.test.commandhandler.MyCommandHandler1;
 import com.dmc.d1.cqrs.test.commandhandler.ReflectiveAnnotatedCommandHandlerInvoker;
 import com.dmc.d1.cqrs.test.domain.MyId;
+import com.dmc.d1.cqrs.util.InstanceAllocator;
+import org.HdrHistogram.Histogram;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -19,6 +23,7 @@ import org.springframework.util.StopWatch;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
@@ -31,7 +36,7 @@ public class PerfTest2 {
 
     private static int REPEAT_TEST = 1;
 
-    private static int ITERATIONS = 1_000_000;
+    private static int ITERATIONS = 10_000;
 
     CommandBus commandBus;
 
@@ -40,8 +45,14 @@ public class PerfTest2 {
     AggregateEventStore aes;
     AggregateRepository<Aggregate1> repo1;
 
-    EventFactoryChronicle eventFactory = new EventFactoryChronicle();
+    EventFactory chronicleEventFactory = Configuration.getEventFactoryChronicle();
+    InstanceAllocator instanceAllocator = Configuration.getInstanceAllocatorChronicle();
 
+    private static final Histogram CREATE_HISTOGRAM =
+            new Histogram(TimeUnit.SECONDS.toNanos(30), 2);
+
+    private static final Histogram UPDATE_HISTOGRAM =
+            new Histogram(TimeUnit.SECONDS.toNanos(30), 2);
 
     @Before
     public void before() {
@@ -57,10 +68,10 @@ public class PerfTest2 {
     }
 
     private void setup() throws Exception {
-        aes = new ChronicleAggregateEventStore();
+        aes = new ChronicleAggregateEventStore(instanceAllocator, Configuration.getChroniclePath());
         SimpleEventBus eventBus = new SimpleEventBus();
 
-        repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, eventFactory);
+        repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, chronicleEventFactory);
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
         lst.add(new MyCommandHandler1(repo1));
@@ -110,11 +121,8 @@ public class PerfTest2 {
             }
             watch.stop();
             System.out.println("It took " + watch.getTotalTimeSeconds() + " to run");
-            //assertEquals(2 + 2 * ITERATIONS, aes.getAll().size());
-
-
+            assertEquals(2 + 2 * ITERATIONS, aes.getAll().size());
         }
-
         sleep();
     }
 
@@ -160,7 +168,7 @@ public class PerfTest2 {
 
             watch.stop();
             System.out.println("It took " + watch.getTotalTimeSeconds() + " to run reflectively");
-            //assertEquals(2 + 2 * ITERATIONS, aes.getAll().size());
+            assertEquals(2 + 2 * ITERATIONS, aes.getAll().size());
 
 
         }

@@ -1,7 +1,7 @@
-package com.dmc.d1.algo.event;
+package com.dmc.d1.cqrs.event.store;
 
 import com.dmc.d1.cqrs.event.ChronicleAggregateEvent;
-import com.dmc.d1.cqrs.event.store.AggregateEventStore;
+import com.dmc.d1.cqrs.util.InstanceAllocator;
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.queue.ChronicleQueueBuilder;
 import net.openhft.chronicle.queue.ExcerptAppender;
@@ -15,22 +15,24 @@ import java.util.List;
 /**
  * Created by davidclelland on 17/05/2016.
  */
-public class ChronicleAggregateEventStore implements AggregateEventStore<ChronicleAggregateEvent> {
-
-    private final static String BASE_PATH = System.getProperty("java.io.tmpdir") + "/d1-events";
+public class ChronicleAggregateEventStore implements AggregateEventStore<ChronicleAggregateEvent>{
 
     private final ChronicleQueue chronicle;
     private final ExcerptAppender appender;
     private final ExcerptTailer tailer;
-    private final EventFactoryChronicle efc = new EventFactoryChronicle();
+    private final InstanceAllocator<ChronicleAggregateEvent> eef;
+    private final String path;
 
 
-    public ChronicleAggregateEventStore() throws IOException {
-        chronicle = ChronicleQueueBuilder.single(BASE_PATH)
+    public ChronicleAggregateEventStore(InstanceAllocator<ChronicleAggregateEvent> eef, String path) throws IOException {
+
+        chronicle = ChronicleQueueBuilder.single(path)
                 .build();
 
         appender = chronicle.createAppender();
         tailer = chronicle.createTailer();
+        this.eef = eef;
+        this.path = path;
     }
 
     @Override
@@ -48,33 +50,34 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Chronic
     }
 
 //    @Override
-//    public ChronicleAggregateEvent get() {
+//    public AggregateEvent get() {
 //         tailer.readDocument(w -> System.out.println("msg: " + w.read(()->"msg").text()));
 //
-//        ChronicleAggregateEvent event = (ChronicleAggregateEvent)tailer.readDocument(event.)
+//        AggregateEvent event = (AggregateEvent)tailer.readDocument(event.)
 //
 //        return event;
 //    }
 //
 //    @Override
-//    public List<ChronicleAggregateEvent> getAll() {
+//    public List<AggregateEvent> getAll() {
 //        return null;
 //    }
+
 
     @Override
     public List<ChronicleAggregateEvent> get(String id) {
 
         tailer.toStart();
 
-        List<ChronicleAggregateEvent> lst =  new ArrayList<>();
+        List<ChronicleAggregateEvent> lst = new ArrayList<>();
 
         String classIdentifier;
         while ((classIdentifier = tailer.readText()) != null) {
             try (DocumentContext documentContext = tailer.readingDocument()) {
-                ChronicleAggregateEvent e = efc.createEventPlaceholder(classIdentifier);
+                ChronicleAggregateEvent e = eef.allocateInstance(classIdentifier);
                 e.readMarshallable(documentContext.wire());
 
-                if(id.equals(e.getAggregateId())) {
+                if (id.equals(e.getAggregateId())) {
                     lst.add(e);
                 }
             }
@@ -82,16 +85,25 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Chronic
         return lst;
     }
 
-    public String getChroniclePath() {
-        return BASE_PATH;
+    @Override
+    public List<ChronicleAggregateEvent> getAll() {
+        tailer.toStart();
+
+        List<ChronicleAggregateEvent> lst = new ArrayList<>();
+
+        String classIdentifier;
+        while ((classIdentifier = tailer.readText()) != null) {
+            try (DocumentContext documentContext = tailer.readingDocument()) {
+                ChronicleAggregateEvent e = eef.allocateInstance(classIdentifier);
+                e.readMarshallable(documentContext.wire());
+                lst.add(e);
+            }
+        }
+        return lst;
     }
 
-//    private ChronicleAggregateEvent deserialize(Wire wire){
-//        ChronicleAggregateEvent event = new Person();
-//        //This line deserialises the Bytes (created in the serialise method) using
-//        //the wire implementation provided.
-//        person.readMarshallable(wire);
-//        System.out.println("Deserialised person: " + person);
-//    }
+    public String getChroniclePath() {
+        return path;
+    }
 
 }

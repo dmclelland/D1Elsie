@@ -25,8 +25,4 @@ public class WaveCreatedEvent implements AggregateEvent {
         return CLASS_NAME;
     }
 
-    @Override
-    public void clean() {
-
-    }
 }

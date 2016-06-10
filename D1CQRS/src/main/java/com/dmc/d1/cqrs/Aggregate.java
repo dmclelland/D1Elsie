@@ -2,7 +2,7 @@ package com.dmc.d1.cqrs;
 
 
 import com.dmc.d1.cqrs.event.AggregateEvent;
-import com.dmc.d1.cqrs.event.EventFactoryMarker;
+import com.dmc.d1.cqrs.event.EventFactory;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.EventBus;
 import org.slf4j.Logger;
@@ -16,7 +16,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Created by davidclelland on 16/05/2016.
  */
-public abstract class Aggregate<EF extends EventFactoryMarker>{
+public abstract class Aggregate<EF extends EventFactory>{
 
     private static final Logger LOG = LoggerFactory.getLogger(Aggregate.class);
     private final List<AggregateEvent> uncommittedEvents = new ArrayList<>();
@@ -66,9 +66,6 @@ public abstract class Aggregate<EF extends EventFactoryMarker>{
     }
 
     private void clearUncommittedEvents() {
-        for(AggregateEvent event : uncommittedEvents){
-            event.clean();
-        }
         uncommittedEvents.clear();
     }
 

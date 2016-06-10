@@ -6,7 +6,4 @@ package com.dmc.d1.cqrs.event;
 public interface AggregateEvent {
     String getAggregateId();
     String getClassName();
-
-    void clean();
-
 }
