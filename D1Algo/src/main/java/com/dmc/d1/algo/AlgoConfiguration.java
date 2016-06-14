@@ -4,15 +4,16 @@ import com.dmc.d1.algo.aggregate.PairsAggregate;
 import com.dmc.d1.algo.aggregate.WaveAggregate;
 import com.dmc.d1.algo.commandhandler.PairsCommandHandler;
 import com.dmc.d1.algo.commandhandler.WaveCommandHandler;
-import com.dmc.d1.cqrs.Aggregate;
-import com.dmc.d1.cqrs.event.EventFactory;
-import com.dmc.d1.cqrs.event.store.AggregateEventStore;
-import com.dmc.d1.cqrs.AggregateRepository;
-import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;
 import com.dmc.d1.cqrs.AbstractCommandHandler;
+import com.dmc.d1.cqrs.Aggregate;
+import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
+import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
+import com.dmc.d1.cqrs.event.EventFactory;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
+import com.dmc.d1.cqrs.event.store.AggregateEventStore;
+import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -36,17 +37,27 @@ public class AlgoConfiguration {
     }
 
 
-    //TODO ensure eventfactory gets wired in
+
     @Bean
     AggregateRepository<WaveAggregate> waveAggregateRepository() {
         return new AggregateRepository<>(aggregateEventStore(), WaveAggregate.class, eventBus(), new EventFactory() {
-        });
+            @Override
+            public AggregateInitialisedEvent createAggregateInitialisedEvent(String aggregateId) {
+                return null;
+            }
+        }, (id, typeName) -> null);
+
     }
 
     @Bean
     AggregateRepository<PairsAggregate> pairAggregateRepository() {
         return new AggregateRepository<>(aggregateEventStore(), PairsAggregate.class, eventBus(), new EventFactory() {
-        });
+            @Override
+            public AggregateInitialisedEvent createAggregateInitialisedEvent(String aggregateId) {
+                return null;
+            }
+        },(id, typeName) -> null);
+
     }
 
     @Bean

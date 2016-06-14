@@ -10,7 +10,7 @@ import com.dmc.d1.cqrs.event.AbstractEventHandler;
 public class WaveEventHandler extends AbstractEventHandler {
 
     @EventHandler
-    public void handle(WaveCreatedEvent e){
+    public void handle(WaveCreatedEventAbstract e){
 
     }
 }

@@ -12,20 +12,17 @@ import com.dmc.d1.cqrs.test.domain.MyNestedId;
 @com.dmc.d1.cqrs.annotations.Aggregate
 public class Aggregate1 extends Aggregate<EventFactoryAbstract>{
 
+    private static String CLASS_NAME = Aggregate1.class.getName();
+
     private int i1;
     private int i2;
     private String str;
 
-    private final MyId id;
 
-    public Aggregate1(MyId id){
-        this.id = id;
+    public Aggregate1(String id) {
+        super(id, CLASS_NAME);
     }
 
-    @Override
-    protected String getId() {
-        return id.toString();
-    }
 
     @Override
     protected void rollbackAggregateToInitialState() {
@@ -34,23 +31,23 @@ public class Aggregate1 extends Aggregate<EventFactoryAbstract>{
     }
 
     public void doSomething(int i1, int i2){
-        apply(eventFactory.createIntUpdatedEvent1(id, i1));
-        apply(eventFactory.createIntUpdatedEvent2(id, i2));
+        apply(eventFactory.createIntUpdatedEvent1(getId(), i1));
+        apply(eventFactory.createIntUpdatedEvent2(getId(), i2));
     }
 
     public void doSomething2(String str){
-        MyNestedId nestedId = generateNestedId(id);
-        apply(eventFactory.createHandledByExternalHandlersEvent(id, nestedId, str));
+        String nestedId = generateNestedId(getId());
+        apply(eventFactory.createHandledByExternalHandlersEvent(getId(), nestedId, str));
     }
 
 
     public void triggerExceptionInNestedAggregate(String str){
-        MyNestedId nestedId = generateNestedId(id);
-        apply(eventFactory.createTriggerExceptionInNestedAggregateEvent(id, nestedId, str));
+        String nestedId = generateNestedId(getId());
+        apply(eventFactory.createTriggerExceptionInNestedAggregateEvent(getId(), nestedId, str));
     }
 
-    private MyNestedId generateNestedId(MyId id){
-        return new MyNestedId(id.toString()+"Nested");
+    private String generateNestedId(String id){
+        return id.toString()+"Nested";
     }
 
     @EventHandler

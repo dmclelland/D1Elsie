@@ -2,8 +2,6 @@ package com.dmc.d1.cqrs.codegen;
 
 import com.dmc.d1.cqrs.event.*;
 import com.dmc.d1.cqrs.util.InstanceAllocator;
-import com.dmc.d1.cqrs.util.Resettable;
-import com.dmc.d1.domain.Id;
 import com.squareup.javapoet.*;
 import net.openhft.chronicle.core.io.IORuntimeException;
 import net.openhft.chronicle.wire.WireIn;
@@ -53,9 +51,23 @@ class EventGenerator {
                     .addSuperinterface(EventFactory.class)
                     .addModifiers(Modifier.PUBLIC);
 
+
+            abstractFactory.addMethod(MethodSpec.methodBuilder("createAggregateInitialisedEvent")
+                    .addParameter(String.class,"aggregateId")
+                    .addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC)
+                    .returns(AggregateEvent.class).build());
+
             TypeSpec.Builder basicFactory = TypeSpec.classBuilder("EventFactoryBasic")
                     .addSuperinterface(afName)
                     .addModifiers(Modifier.PUBLIC);
+
+            basicFactory.addMethod(MethodSpec.methodBuilder("createAggregateInitialisedEvent")
+                    .returns(AggregateEvent.class)
+                    .addModifiers(Modifier.PUBLIC)
+                    .addParameter(String.class,"aggregateId")
+                    .addStatement("return new $T(aggregateId)", AggregateInitialisedEvent.class)
+                    .build());
+
 
 
             MethodSpec.Builder allocateInstanceMethod = MethodSpec.methodBuilder("allocateInstance")
@@ -64,13 +76,29 @@ class EventGenerator {
                     .returns(ChronicleAggregateEvent.class);
 
 
+            allocateInstanceMethod.beginControlFlow("if (eventClass.equals($S))",ChronicleAggregateInitialisedEvent.class.getName());
+            allocateInstanceMethod.addStatement("return new $T()",ChronicleAggregateInitialisedEvent.class);
+            allocateInstanceMethod.endControlFlow();
+
+
             MethodSpec.Builder chronicleFactoryConstructor = MethodSpec.constructorBuilder()
                     .addStatement("$T<String> eventNames = new $T<>()",List.class, ArrayList.class);
+
+            //add initialisation event
+            chronicleFactoryConstructor.addStatement("eventNames.add($S)",ChronicleAggregateInitialisedEvent.class.getName());
 
             TypeSpec.Builder chronicleFactory = TypeSpec.classBuilder("EventFactoryChronicle")
                     .addSuperinterface(afName)
                     .addModifiers(Modifier.PUBLIC);
 
+            chronicleFactory.addMethod(MethodSpec.methodBuilder("createAggregateInitialisedEvent")
+                    .returns(AggregateEvent.class)
+                    .addModifiers(Modifier.PUBLIC)
+                    .addParameter(String.class,"aggregateId")
+                    .addStatement("$T event = ($T) AggregateEventPool.allocate($S)", ChronicleAggregateInitialisedEvent.class, ChronicleAggregateInitialisedEvent.class, ChronicleAggregateInitialisedEvent.class.getName())
+                    .addStatement("event.set(aggregateId)")
+                    .addStatement("return event")
+                    .build());
 
             String sCurrentLine;
             while ((sCurrentLine = br.readLine()) != null) {
@@ -83,7 +111,7 @@ class EventGenerator {
             }
 
 
-            ParameterizedTypeName instanceAllocatorInterface = ParameterizedTypeName.get(InstanceAllocator.class, ChronicleAggregateEvent.class);
+            ParameterizedTypeName instanceAllocatorInterface = ParameterizedTypeName.get(InstanceAllocator.class, AggregateEvent.class);
 
             TypeSpec.Builder instanceAllocator = TypeSpec.classBuilder("ChronicleInstanceAllocator")
                     .addSuperinterface(instanceAllocatorInterface);
@@ -165,6 +193,8 @@ class EventGenerator {
                 .addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC)
                 .returns(eventClass);
 
+        abstractFactoryCreateMethod.addParameter(String.class, "id");
+
 
         for (String key : vo.instanceVariables.keySet()) {
 
@@ -181,23 +211,6 @@ class EventGenerator {
 
             abstractFactoryCreateMethod.addParameter(typeName, key);
         }
-
-        interfaceBuilder.addMethod(
-                MethodSpec.methodBuilder("getAggregateId")
-                        .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                        .addAnnotation(Override.class)
-                        .returns(String.class)
-                        .build()
-        );
-
-        interfaceBuilder.addMethod(
-                MethodSpec.methodBuilder("getClassName")
-                        .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                        .addAnnotation(Override.class)
-                        .returns(String.class)
-                        .build()
-        );
-
 
         abstractFactory.addMethod(abstractFactoryCreateMethod.build());
 
@@ -224,20 +237,27 @@ class EventGenerator {
 
         TypeSpec.Builder eventBuilder = TypeSpec.classBuilder(className)
                 .addSuperinterface(interfaceClass)
+                .superclass(AggregateEventAbstract.class)
                 .addField(CLASS_NAME);
 
 
         MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PUBLIC);
 
+        constructorBuilder.addParameter(String.class, "id")
+                .addStatement("setAggregateId(id)")
+                .addStatement("setClassName(CLASS_NAME)");
+
 
         MethodSpec.Builder basicFactoryCreateMethod = MethodSpec.methodBuilder("create" + vo.className)
                 .addModifiers(Modifier.PUBLIC)
-                .returns(interfaceClass);
+                .returns(eventClass);
 
+
+        basicFactoryCreateMethod.addParameter(String.class, "id");
 
         CodeBlock.Builder factoryCreateStatement = CodeBlock.builder();
-        factoryCreateStatement.add("return new $T(", eventClass);
+        factoryCreateStatement.add("return new $T(id$L ", eventClass, vo.instanceVariables.size() > 0 ? "," : "");
 
         int noOfParams = vo.instanceVariables.keySet().size();
         int count = 0;
@@ -270,23 +290,6 @@ class EventGenerator {
             );
         }
 
-        eventBuilder.addMethod(
-                MethodSpec.methodBuilder("getAggregateId")
-                        .addModifiers(Modifier.PUBLIC)
-                        .addStatement("return id.toString()")
-                        .addAnnotation(Override.class)
-                        .returns(String.class)
-                        .build()
-        );
-
-        eventBuilder.addMethod(
-                MethodSpec.methodBuilder("getClassName")
-                        .addModifiers(Modifier.PUBLIC)
-                        .addStatement("return CLASS_NAME")
-                        .addAnnotation(Override.class)
-                        .returns(String.class)
-                        .build()
-        );
 
         factoryCreateStatement.add(");");
 
@@ -338,7 +341,7 @@ class EventGenerator {
 
         TypeSpec.Builder eventBuilder = TypeSpec.classBuilder(className)
                 .addSuperinterface(interfaceClass)
-                .addSuperinterface(ChronicleAggregateEvent.class)
+                .superclass(ChronicleAggregateEvent.class)
                 .addField(CLASS_NAME);
 
         MethodSpec constructor = MethodSpec.constructorBuilder()
@@ -348,37 +351,60 @@ class EventGenerator {
         MethodSpec.Builder setBuilder = MethodSpec.methodBuilder("set").addModifiers();
         MethodSpec.Builder resetBuilder = MethodSpec.methodBuilder("reset").addModifiers(Modifier.PUBLIC);
 
+        setBuilder.addParameter(String.class, "id");
+        setBuilder.addStatement("setAggregateId(id)");
+        setBuilder.addStatement(" setClassName(CLASS_NAME)");
+
         MethodSpec.Builder chronicleFactoryCreateMethod = MethodSpec.methodBuilder("create" + vo.className)
                 .addModifiers(Modifier.PUBLIC)
                 .returns(interfaceClass);
 
+        chronicleFactoryCreateMethod.addParameter(String.class, "id");
 
-        //HandledByExternalHandlersEventChronicle event = (HandledByExternalHandlersEventChronicle)
-          //      AggregateEventPool.allocate("com.dmc.d1.algo.event.HandledByExternalHandlersEvent");
 
-       // event.set(id, nestedId, str);
-       // return event;
+//        void set(String id, int i) {
+//            setAggregateId(id);
+//            setClassName(CLASS_NAME);
+//            this.i = i;
+//        }
+//
+//        public void reset() {
+//            setAggregateId(null);
+//            setClassName(null);
+//            this.i = 0;
+//        }
 
         CodeBlock.Builder factoryCreateStatement = CodeBlock.builder();
         factoryCreateStatement.addStatement("$T event = ($T) AggregateEventPool.allocate($S)", eventClass, eventClass, eventInterfaceName);
-        factoryCreateStatement.add("event.set(");
+
 
         int noOfParams = vo.instanceVariables.keySet().size();
+
+        factoryCreateStatement.add("event.set(id$L", noOfParams > 0 ? "," : "");
+
+
         int count = 0;
 
-                /*
+//        @Override
+//        public void readMarshallable(WireIn wireIn) throws IORuntimeException {
+//            wireIn.read(()-> "id").text(this, (o, b) -> o.setAggregateId(b));
+//            wireIn.read(()-> "i").int32(this, (o, b) -> o.i = b);
+//            setClassName(CLASS_NAME);
+//        }
+//
+//        @Override
+//        public void writeMarshallable(WireOut wireOut) {
+//            wireOut.write(()-> "id").text(getAggregateId());
+//            wireOut.write(()-> "i").int32(i);
+//        }
 
-    public void readMarshallable(WireIn wireIn) throws IORuntimeException {
-        wireIn.read(() -> "id").text(this, (o, b) -> o.id = new MyId(b));
-        wireIn.read(() -> "nestedId").text(this, (o, b) -> o.nestedId = new MyNestedId(b));
-        wireIn.read(() -> "str").text(this, (o, b) -> o.str = b);
-    }
-    public void writeMarshallable(WireOut wireOut) {
-        wireOut.write(() -> "id").text(id.toString());
-        wireOut.write(() -> "nestedId").text(nestedId.toString());
-        wireOut.write(() -> "str").text(str);
-    }
-       */
+        readMarshallableMethod.addStatement("wireIn.read(()-> \"id\").text(this, (o, b) -> o.setAggregateId(b))");
+        readMarshallableMethod.addStatement("setClassName(CLASS_NAME)");
+        readMarshallableMethod.addStatement("wireIn.read(() -> \"aggregateClassName\").text(this, (o, b) -> o.setAggregateClassName(b));");
+
+        writeMarshallableMethod.addStatement("wireOut.write(()-> \"id\").text(getAggregateId())");
+        writeMarshallableMethod.addStatement("wireOut.write(() -> \"aggregateClassName\").text(getAggregateClassName());");
+
 
         for (String key : vo.instanceVariables.keySet()) {
 
@@ -393,16 +419,21 @@ class EventGenerator {
             chronicleFactoryCreateMethod.addParameter(typeName, key);
 
             String dataTypeMethod = typeName.isPrimitive() ? "int32" : "text";
-            boolean isId = Id.class.isAssignableFrom(vo.instanceVariables.get(key));
 
-            readMarshallableMethod.addStatement("wireIn.read(()-> $S).$L(this, (o, b) -> o.$L = $L)", key, dataTypeMethod, key, (isId ? "new " + typeName.toString() + "(b)" : "b"));
-            writeMarshallableMethod.addStatement("wireOut.write(()-> $S).$L($L)", key, dataTypeMethod, key + (isId ? ".toString()" : ""));
+
+            if(!key.equals("id")) {
+                readMarshallableMethod.addStatement("wireIn.read(()-> $S).$L(this, (o, b) -> o.$L = b)", key, dataTypeMethod, key);
+                writeMarshallableMethod.addStatement("wireOut.write(()-> $S).$L($L)", key, dataTypeMethod, key);
+            }
 
             eventBuilder.addField(typeName, key, Modifier.PRIVATE);
 
             setBuilder.addParameter(typeName, key)
                     .addStatement("this.$N = $N", key, key);
 
+
+
+            resetBuilder.addStatement("setAggregateId(null)");
             if (typeName.isPrimitive()) {
                 if (TypeName.BOOLEAN == typeName)
                     resetBuilder.addStatement("this.$N = false", key);
@@ -426,25 +457,6 @@ class EventGenerator {
 
         chronicleFactoryCreateMethod.addCode(factoryCreateStatement.build());
 
-
-
-        eventBuilder.addMethod(
-                MethodSpec.methodBuilder("getAggregateId")
-                        .addModifiers(Modifier.PUBLIC)
-                        .addStatement("return id.toString()")
-                        .addAnnotation(Override.class)
-                        .returns(String.class)
-                        .build()
-        );
-
-        eventBuilder.addMethod(
-                MethodSpec.methodBuilder("getClassName")
-                        .addModifiers(Modifier.PUBLIC)
-                        .addStatement("return CLASS_NAME")
-                        .addAnnotation(Override.class)
-                        .returns(String.class)
-                        .build()
-        );
 
         eventBuilder.addMethod(readMarshallableMethod.build());
         eventBuilder.addMethod(writeMarshallableMethod.build());

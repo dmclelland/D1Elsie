@@ -14,16 +14,13 @@ import com.dmc.d1.cqrs.test.domain.MyNestedId;
 @com.dmc.d1.cqrs.annotations.Aggregate
 public class NestedAggregate1 extends Aggregate<EventFactoryAbstract> {
 
+    private static String CLASS_NAME = NestedAggregate1.class.getName();
+
     private String nestedProperty;
-    private MyNestedId id;
 
-    public NestedAggregate1(MyNestedId id){
-        this.id = id;
-    }
 
-    @Override
-    protected String getId() {
-        return id.toString();
+    public NestedAggregate1(String id) {
+        super(id, CLASS_NAME);
     }
 
     @Override
@@ -32,12 +29,12 @@ public class NestedAggregate1 extends Aggregate<EventFactoryAbstract> {
     }
 
     public void doSomething(String nestedProperty){
-        apply(eventFactory.createNestedUpdatedEvent1(id, nestedProperty));
+        apply(eventFactory.createNestedUpdatedEvent1(getId(), nestedProperty));
     }
 
     public void doSomethingCausingError(String nestedProperty){
-        apply(eventFactory.createNestedUpdatedEvent1(id, nestedProperty));
-        apply(eventFactory.createTriggerExceptionNestedEvent(id));
+        apply(eventFactory.createNestedUpdatedEvent1(getId(), nestedProperty));
+        apply(eventFactory.createTriggerExceptionNestedEvent(getId()));
     }
 
 

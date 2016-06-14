@@ -4,7 +4,6 @@ import com.dmc.d1.cqrs.AbstractCommandHandler;
 import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.AnnotatedCommandHandlerInvoker;
 import com.dmc.d1.cqrs.annotations.CommandHandler;
-import com.dmc.d1.cqrs.test.aggregate.Aggregate1;
 import com.dmc.d1.cqrs.test.aggregate.Aggregate2;
 import com.dmc.d1.cqrs.test.command.CreateAggregate2Command;
 import com.dmc.d1.cqrs.test.command.ExceptionTriggeringAggregate2Command;
@@ -21,14 +20,13 @@ public class MyCommandHandler2 extends AbstractCommandHandler<Aggregate2> {
     }
 
     public MyCommandHandler2(AggregateRepository repository, AnnotatedCommandHandlerInvoker commandHandlerInvoker) {
-        super(repository,commandHandlerInvoker);
+        super(repository, commandHandlerInvoker);
     }
 
 
     @CommandHandler
     public void handle(CreateAggregate2Command command) {
-        Aggregate2 aggregate = new Aggregate2(command.getId());
-        initialiseAggregate(aggregate);
+        Aggregate2 aggregate = initialiseAggregate(command.getId().toString());
         aggregate.doSomething(command.getStr1(), command.getStr2());
     }
 

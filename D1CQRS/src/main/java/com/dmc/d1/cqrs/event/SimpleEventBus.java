@@ -29,7 +29,7 @@ public class SimpleEventBus<H extends AbstractEventHandler> implements EventBus 
                         handlers.add(eventHandler);
                         eventToHandlers.put(m.getParameterTypes()[0].getName(), handlers);
                     } else {
-                        throw new IllegalStateException("An event handler must have a single argument of type " + AggregateEvent.class.getName());
+                        throw new IllegalStateException("An event handler must have a single argument assignable from " + AggregateEvent.class.getName());
                     }
                 }
             }

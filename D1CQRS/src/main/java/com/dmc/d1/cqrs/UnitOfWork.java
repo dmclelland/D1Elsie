@@ -4,7 +4,8 @@ import com.dmc.d1.cqrs.event.AggregateEventPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created By davidclelland on 01/06/2016.
@@ -19,7 +20,7 @@ class UnitOfWork {
     private static final Logger LOG = LoggerFactory.getLogger(UnitOfWork.class);
 
     private static class Aggregates {
-        LinkedList<Aggregate> list = new LinkedList<>();
+        List<Aggregate> list = new ArrayList<>();
         int counter = 0;
         boolean rollback = false;
 
@@ -29,7 +30,6 @@ class UnitOfWork {
             rollback=false;
         }
     }
-
 
     private static ThreadLocal<Aggregates> threadLocal = new ThreadLocal<>();
 
@@ -61,13 +61,18 @@ class UnitOfWork {
                     if (threadLocal.get().rollback) {
                         doRollback();
                     } else {
-                        while (!threadLocal.get().list.isEmpty()) {
-                            Aggregate aggregate = threadLocal.get().list.pop();
+                        for(int i = threadLocal.get().list.size()-1;i>=0;i--){
+                            Aggregate aggregate = threadLocal.get().list.get(i);
                             aggregate.commit();
                         }
                     }
                 } catch (Exception e) {
-                    LOG.error("Unexpected error committing aggregates", e);
+                    LOG.error("Unexpected error committing aggregates - attempt roll back", e);
+                    try {
+                        doRollback();
+                    }catch(Exception e1){
+                        LOG.error("Unable to roll back", e1);
+                    }
                 } finally {
                     clear();
                 }
@@ -92,10 +97,9 @@ class UnitOfWork {
     }
 
     private static void doRollback() {
-
         try {
-            while (!threadLocal.get().list.isEmpty()) {
-                Aggregate aggregate = threadLocal.get().list.pop();
+            for(int i = threadLocal.get().list.size()-1;i>=0;i--){
+                Aggregate aggregate = threadLocal.get().list.get(i);
                 aggregate.rollback();
             }
         } catch (Exception e) {

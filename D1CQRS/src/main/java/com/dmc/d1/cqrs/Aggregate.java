@@ -2,6 +2,7 @@ package com.dmc.d1.cqrs;
 
 
 import com.dmc.d1.cqrs.event.AggregateEvent;
+import com.dmc.d1.cqrs.event.AggregateEventAbstract;
 import com.dmc.d1.cqrs.event.EventFactory;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.EventBus;
@@ -23,11 +24,23 @@ public abstract class Aggregate<EF extends EventFactory>{
     private AnnotatedAggregateEventHandlerInvoker eventHandler;
     private EventBus eventBus;
     private AggregateEventStore aggregateEventStore;
+    private final String id;
+
+    //concrete class name of this aggregate, no need for reflection as aggregate factories
+    //have this information
+    private final String aggregateClassName;
+
     protected EF eventFactory;
 
+    protected Aggregate(String id, String aggregateClassName){
+        this.id = checkNotNull(id);
+        this.aggregateClassName = checkNotNull(aggregateClassName);
+    }
 
-
-    protected void apply(AggregateEvent event) {
+    protected final  <E extends AggregateEvent> void apply(E event) {
+        //assign the aggregate class that raised the event
+        //this is used if events need to be replayed
+        event.setAggregateClassName(aggregateClassName);
         applyAggregateEvent(event);
         addToUncommitted(event);
         eventBus.publish(event);
@@ -39,24 +52,25 @@ public abstract class Aggregate<EF extends EventFactory>{
 
     protected abstract void rollbackAggregateToInitialState();
 
-    protected abstract String getId();
-
+    protected final String getId(){
+        return id;
+    };
 
     private void applyAggregateEvent(AggregateEvent event) {
         eventHandler.invoke(event, this);
     }
 
-    void commit() {
+    final void commit() {
         aggregateEventStore.add(uncommittedEvents);
         clearUncommittedEvents();
     }
 
-    void rollback() {
-        Iterable<AggregateEvent> eventsToReplay = aggregateEventStore.get(getId());
+    final void rollback() {
+        Iterable<AggregateEventAbstract> eventsToReplay = aggregateEventStore.get(getId());
         clearUncommittedEvents();
         rollbackAggregateToInitialState();
 
-        for (AggregateEvent event : eventsToReplay) {
+        for (AggregateEventAbstract event : eventsToReplay) {
             applyAggregateEvent(event);
         }
     }
@@ -84,6 +98,4 @@ public abstract class Aggregate<EF extends EventFactory>{
     void setEventFactory(EF eventFactory){
         this.eventFactory = checkNotNull(eventFactory);
     }
-
-
 }

@@ -1,23 +1,23 @@
 package com.dmc.d1.cqrs.event.store;
 
-import com.dmc.d1.cqrs.event.AggregateEvent;
+import com.dmc.d1.cqrs.event.AggregateEventAbstract;
 
 import java.util.*;
 
 /**
  * Created by davidclelland on 17/05/2016.
  */
-public class InMemoryAggregateEventStore implements AggregateEventStore<AggregateEvent> {
+public class InMemoryAggregateEventStore implements AggregateEventStore<AggregateEventAbstract> {
 
-    List<AggregateEvent> events = new ArrayList<>();
+    List<AggregateEventAbstract> events = new ArrayList<>();
 
-    Map<String, List<AggregateEvent>> eventsById = new HashMap<>();
+    Map<String, List<AggregateEventAbstract>> eventsById = new HashMap<>();
 
     @Override
-    public void add(AggregateEvent event) {
+    public void add(AggregateEventAbstract event) {
         events.add(event);
 
-        List<AggregateEvent> list = eventsById.get(event.getAggregateId());
+        List<AggregateEventAbstract> list = eventsById.get(event.getAggregateId());
         if(list==null) {
             list = new ArrayList<>();
             eventsById.put(event.getAggregateId(), list);
@@ -26,17 +26,17 @@ public class InMemoryAggregateEventStore implements AggregateEventStore<Aggregat
     }
 
     @Override
-    public void add(List<AggregateEvent> eventsToAdd) {
+    public void add(List<AggregateEventAbstract> eventsToAdd) {
         eventsToAdd.forEach(this::add);
     }
 
     @Override
-    public List<AggregateEvent> getAll() {
+    public List<AggregateEventAbstract> getAll() {
         return events;
     }
 
     @Override
-    public List<AggregateEvent> get(String id) {
+    public List<AggregateEventAbstract> get(String id) {
         return eventsById.get(id);
     }
 }

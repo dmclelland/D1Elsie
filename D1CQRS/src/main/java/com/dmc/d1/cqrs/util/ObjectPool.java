@@ -1,7 +1,5 @@
 package com.dmc.d1.cqrs.util;
 
-import com.dmc.d1.cqrs.event.AggregateEvent;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,10 +21,8 @@ public class ObjectPool<T> {
     public T allocateObject(String eventIdentifier) {
 
         EntityPool<T> t  =  pool.get(eventIdentifier);
-
         return t.getEntry();
     }
-
 
     public ObjectPool(List<String> objectIdentifiers, InstanceAllocator<T> instanceAllocator, int size) {
         objectIdentifiers.forEach(e -> {
@@ -34,22 +30,22 @@ public class ObjectPool<T> {
         });
     }
     private static class EntityPool<T> {
-        final String eventIdentifier;
-        final int poolSize;
+        final String className;
+        final int initialPoolSize;
         final List<T> pool;
         final InstanceAllocator<T> instanceAllocator;
         int counter = 0;
 
-        public EntityPool(String eventIdentifier, int poolSize, InstanceAllocator instanceAllocator) {
-            this.poolSize = poolSize;
-            this.eventIdentifier = eventIdentifier;
-            this.pool = new ArrayList<>(poolSize);
+        public EntityPool(String className, int initialPoolSize, InstanceAllocator instanceAllocator) {
+            this.initialPoolSize = initialPoolSize;
+            this.className = className;
+            this.pool = new ArrayList<>(initialPoolSize);
             this.instanceAllocator = checkNotNull(instanceAllocator);
             increasePoolSize();
         }
 
         T getEntry() {
-            if (counter == poolSize) {
+            if (counter == pool.size()) {
                 increasePoolSize();
             }
             return pool.get(counter++);
@@ -57,8 +53,8 @@ public class ObjectPool<T> {
 
         private void increasePoolSize() {
 
-            for (int i = 0; i < poolSize; i++) {
-                pool.add(instanceAllocator.allocateInstance(eventIdentifier));
+            for (int i = 0; i < initialPoolSize; i++) {
+                pool.add(instanceAllocator.allocateInstance(className));
             }
         }
 

@@ -20,18 +20,18 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Chronic
     private final ChronicleQueue chronicle;
     private final ExcerptAppender appender;
     private final ExcerptTailer tailer;
-    private final InstanceAllocator<ChronicleAggregateEvent> eef;
+    private final InstanceAllocator<ChronicleAggregateEvent> instanceAllocator;
     private final String path;
 
 
-    public ChronicleAggregateEventStore(InstanceAllocator<ChronicleAggregateEvent> eef, String path) throws IOException {
+    public ChronicleAggregateEventStore(InstanceAllocator<ChronicleAggregateEvent> instanceAllocator, String path) throws IOException {
 
         chronicle = ChronicleQueueBuilder.single(path)
                 .build();
 
         appender = chronicle.createAppender();
         tailer = chronicle.createTailer();
-        this.eef = eef;
+        this.instanceAllocator = instanceAllocator;
         this.path = path;
     }
 
@@ -50,16 +50,16 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Chronic
     }
 
 //    @Override
-//    public AggregateEvent get() {
+//    public AggregateEventAbstract get() {
 //         tailer.readDocument(w -> System.out.println("msg: " + w.read(()->"msg").text()));
 //
-//        AggregateEvent event = (AggregateEvent)tailer.readDocument(event.)
+//        AggregateEventAbstract event = (AggregateEventAbstract)tailer.readDocument(event.)
 //
 //        return event;
 //    }
 //
 //    @Override
-//    public List<AggregateEvent> getAll() {
+//    public List<AggregateEventAbstract> getAll() {
 //        return null;
 //    }
 
@@ -74,7 +74,7 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Chronic
         String classIdentifier;
         while ((classIdentifier = tailer.readText()) != null) {
             try (DocumentContext documentContext = tailer.readingDocument()) {
-                ChronicleAggregateEvent e = eef.allocateInstance(classIdentifier);
+                ChronicleAggregateEvent e = instanceAllocator.allocateInstance(classIdentifier);
                 e.readMarshallable(documentContext.wire());
 
                 if (id.equals(e.getAggregateId())) {
@@ -94,13 +94,15 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Chronic
         String classIdentifier;
         while ((classIdentifier = tailer.readText()) != null) {
             try (DocumentContext documentContext = tailer.readingDocument()) {
-                ChronicleAggregateEvent e = eef.allocateInstance(classIdentifier);
+                ChronicleAggregateEvent e = instanceAllocator.allocateInstance(classIdentifier);
                 e.readMarshallable(documentContext.wire());
                 lst.add(e);
             }
         }
         return lst;
     }
+
+
 
     public String getChroniclePath() {
         return path;

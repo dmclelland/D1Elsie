@@ -10,16 +10,14 @@ import java.util.List;
  */
 public class AggregateEventPool {
 
-    private static ThreadLocal<ObjectPool<? extends AggregateEvent>> THREAD_LOCAL = new ThreadLocal<>();
+    private static ThreadLocal<ObjectPool<AggregateEvent>> THREAD_LOCAL = new ThreadLocal<>();
 
-    public  static <T extends AggregateEvent>  void initialise(List<String> eventNames, InstanceAllocator<T> instanceAllocator) {
+    public  static  void initialise(List<String> eventNames, InstanceAllocator<AggregateEvent> instanceAllocator) {
         if (THREAD_LOCAL.get() == null) {
-            ObjectPool<T> events = new ObjectPool<>(eventNames, instanceAllocator, 20);
+            ObjectPool<AggregateEvent> events = new ObjectPool<>(eventNames, instanceAllocator, 20);
             THREAD_LOCAL.set(events);
         }
     }
-
-
 
     public static boolean isInitialised() {
         return THREAD_LOCAL.get() != null;
@@ -33,16 +31,14 @@ public class AggregateEventPool {
         THREAD_LOCAL.get().reset();
     }
 
-    public static <T extends AggregateEvent> T allocate(String eventIdentifier) {
+    public static AggregateEvent allocate(String eventIdentifier) {
         if (THREAD_LOCAL.get() == null)
             throw new IllegalStateException("Event pool has not been initialized");
 
-        ObjectPool<? extends AggregateEvent> pool =  THREAD_LOCAL.get();
+        ObjectPool<AggregateEvent> pool =  THREAD_LOCAL.get();
 
-        AggregateEvent event = pool.allocateObject(eventIdentifier);
+        return pool.allocateObject(eventIdentifier);
 
-        //noinspection unchecked
-        return (T)event;
     }
 
 }

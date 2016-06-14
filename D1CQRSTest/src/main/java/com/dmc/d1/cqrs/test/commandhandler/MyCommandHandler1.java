@@ -1,15 +1,14 @@
 package com.dmc.d1.cqrs.test.commandhandler;
 
-import com.dmc.d1.algo.event.EventFactoryAbstract;
+import com.dmc.d1.cqrs.AbstractCommandHandler;
 import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.AnnotatedCommandHandlerInvoker;
 import com.dmc.d1.cqrs.annotations.CommandHandler;
-import com.dmc.d1.cqrs.AbstractCommandHandler;
+import com.dmc.d1.cqrs.test.aggregate.Aggregate1;
 import com.dmc.d1.cqrs.test.command.CreateAggregate1Command;
 import com.dmc.d1.cqrs.test.command.NestedExceptionTriggeringAggregate1Command;
 import com.dmc.d1.cqrs.test.command.UpdateAggregate1Command;
 import com.dmc.d1.cqrs.test.command.UpdateAggregate1Command2;
-import com.dmc.d1.cqrs.test.aggregate.Aggregate1;
 
 /**
  * Created by davidclelland on 17/05/2016.
@@ -24,14 +23,14 @@ public class MyCommandHandler1 extends AbstractCommandHandler<Aggregate1> {
 
 
     public MyCommandHandler1(AggregateRepository repository, AnnotatedCommandHandlerInvoker commandHandlerInvoker) {
-        super(repository,commandHandlerInvoker);
+        super(repository, commandHandlerInvoker);
     }
 
 
     @CommandHandler
     public void handle(CreateAggregate1Command command) {
-        Aggregate1 aggregate = new Aggregate1(command.getId());
-        initialiseAggregate(aggregate);
+
+        Aggregate1 aggregate = initialiseAggregate(command.getId().toString());
         aggregate.doSomething(command.getI1(), command.getI2());
     }
 

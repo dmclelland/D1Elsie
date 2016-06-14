@@ -1,6 +1,7 @@
 package com.dmc.d1.algo.aggregate;
 
 import com.dmc.d1.cqrs.Aggregate;
+import com.dmc.d1.domain.Id;
 import com.dmc.d1.domain.PairId;
 
 /**
@@ -8,11 +9,15 @@ import com.dmc.d1.domain.PairId;
  */
 public class PairsAggregate extends Aggregate{
 
+    private static String CLASS_NAME = PairsAggregate.class.getName();
+
+
     private PairId pairId;
 
     public PairsAggregate(PairId pairId){
-        this.pairId = pairId;
+        super(pairId.toString(), CLASS_NAME);
 
+        this.pairId = pairId;
     }
 
     @Override
@@ -20,8 +25,5 @@ public class PairsAggregate extends Aggregate{
 
     }
 
-    @Override
-    protected String getId() {
-        return pairId.toString();
-    }
+
 }

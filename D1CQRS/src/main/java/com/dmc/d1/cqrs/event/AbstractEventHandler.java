@@ -1,8 +1,5 @@
 package com.dmc.d1.cqrs.event;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**

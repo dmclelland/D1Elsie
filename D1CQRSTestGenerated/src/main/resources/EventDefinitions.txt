@@ -1,9 +1,9 @@
-name=HandledByExternalHandlersEvent, id=com.dmc.d1.cqrs.test.domain.MyId, nestedId=com.dmc.d1.cqrs.test.domain.MyNestedId, str=java.lang.String
-name=IntUpdatedEvent1, id=com.dmc.d1.cqrs.test.domain.MyId, i=java.lang.Integer
-name=IntUpdatedEvent2, id=com.dmc.d1.cqrs.test.domain.MyId, i=java.lang.Integer
-name=NestedUpdatedEvent1, id=com.dmc.d1.cqrs.test.domain.MyNestedId, str=java.lang.String
-name=StringUpdatedEvent1, id=com.dmc.d1.cqrs.test.domain.MyId,str=java.lang.String
-name=StringUpdatedEvent2, id=com.dmc.d1.cqrs.test.domain.MyId,str=java.lang.String
-name=TriggerExceptionEvent, id=com.dmc.d1.cqrs.test.domain.MyId
-name=TriggerExceptionNestedEvent, id=com.dmc.d1.cqrs.test.domain.MyNestedId
-name=TriggerExceptionInNestedAggregateEvent, id=com.dmc.d1.cqrs.test.domain.MyId, nestedId=com.dmc.d1.cqrs.test.domain.MyNestedId, str=java.lang.String
+name=HandledByExternalHandlersEvent,nestedId=java.lang.String, str=java.lang.String
+name=IntUpdatedEvent1, i=java.lang.Integer
+name=IntUpdatedEvent2, i=java.lang.Integer
+name=NestedUpdatedEvent1, str=java.lang.String
+name=StringUpdatedEvent1, str=java.lang.String
+name=StringUpdatedEvent2, str=java.lang.String
+name=TriggerExceptionEvent
+name=TriggerExceptionNestedEvent
+name=TriggerExceptionInNestedAggregateEvent, nestedId=java.lang.String, str=java.lang.String

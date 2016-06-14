@@ -15,18 +15,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class Aggregate1EventHandler2 extends AbstractEventHandler {
 
-    private final Map<MyId, String> map = new HashMap<>();
-
+    private final Map<String, String> map = new HashMap<>();
 
     @EventHandler
     public void handle(HandledByExternalHandlersEvent event){
-        map.put(event.getId(), event.getStr());
+        map.put(event.getAggregateId(), event.getStr());
     }
 
 
-
-
-    public String getString(MyId id){
+    public String getString(String id){
         return map.get(id);
     }
 

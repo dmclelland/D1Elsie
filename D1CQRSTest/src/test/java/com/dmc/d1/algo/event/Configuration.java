@@ -21,4 +21,8 @@ public class Configuration {
         return new EventFactoryChronicle();
     }
 
+    public static EventFactory getEventFactoryBasic(){
+        return new EventFactoryBasic();
+    }
+
 }

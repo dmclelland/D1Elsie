@@ -8,9 +8,12 @@ import com.dmc.d1.domain.WaveId;
  */
 public class WaveAggregate extends Aggregate {
 
+    private static String CLASS_NAME = WaveAggregate.class.getName();
+
     private WaveId waveId;
 
     public WaveAggregate(WaveId waveId){
+        super(waveId.toString(), CLASS_NAME);
         this.waveId = waveId;
 
     }
@@ -20,8 +23,4 @@ public class WaveAggregate extends Aggregate {
 
     }
 
-    @Override
-    protected String getId() {
-        return waveId.toString();
-    }
 }

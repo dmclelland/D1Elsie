@@ -31,9 +31,13 @@ public abstract class AbstractCommandHandler<A extends Aggregate> {
         return repository.find(id);
     }
 
-    protected void initialiseAggregate(A aggregate) {
-        repository.create(aggregate);
+    protected A initialiseAggregate(String id) {
+        if(repository.find(id)!=null)
+            throw new IllegalStateException("An aggregate with ID " + id + " already exists");
+
+        A aggregate = repository.create(id);
         UnitOfWork.add(aggregate);
+        return aggregate;
     }
 
     public void invokeCommand(Command command) {
@@ -55,6 +59,7 @@ public abstract class AbstractCommandHandler<A extends Aggregate> {
             LOG.error("Unable to process command {} ", command.toString(), e);
         }
     }
+
 
     @SuppressWarnings("rawtypes")
     private AnnotatedCommandHandlerInvoker<A, AbstractCommandHandler<A>> getMethodInvoker() {

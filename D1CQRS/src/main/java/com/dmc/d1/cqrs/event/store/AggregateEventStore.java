@@ -1,6 +1,7 @@
 package com.dmc.d1.cqrs.event.store;
 
 import com.dmc.d1.cqrs.event.AggregateEvent;
+import com.dmc.d1.cqrs.event.AggregateEventAbstract;
 
 import java.util.List;
 

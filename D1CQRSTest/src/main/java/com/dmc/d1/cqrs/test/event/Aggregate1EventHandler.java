@@ -7,6 +7,7 @@ import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.event.AbstractEventHandler;
 import com.dmc.d1.cqrs.test.command.CreateNestedAggregate1Command;
 import com.dmc.d1.cqrs.test.command.ExceptionTriggeringNestedAggregateCommand;
+import com.dmc.d1.cqrs.test.domain.MyNestedId;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -23,11 +24,11 @@ public class Aggregate1EventHandler extends AbstractEventHandler {
 
     @EventHandler
     public void handle(HandledByExternalHandlersEvent event){
-        bus.dispatch(new CreateNestedAggregate1Command(event.getNestedId(), event.getStr()));
+        bus.dispatch(new CreateNestedAggregate1Command(new MyNestedId(event.getNestedId()), event.getStr()));
     }
 
     @EventHandler
     public void handle(TriggerExceptionInNestedAggregateEvent event){
-        bus.dispatch(new ExceptionTriggeringNestedAggregateCommand(event.getNestedId(),event.getStr()));
+        bus.dispatch(new ExceptionTriggeringNestedAggregateCommand(new MyNestedId(event.getNestedId()),event.getStr()));
     }
 }

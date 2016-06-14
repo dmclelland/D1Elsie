@@ -3,9 +3,12 @@ package com.dmc.d1.algo.commandhandler;
 
 import com.dmc.d1.algo.aggregate.PairsAggregate;
 import com.dmc.d1.algo.command.CreatePairCommand;
+import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.annotations.CommandHandler;
 import com.dmc.d1.cqrs.AbstractCommandHandler;
+import com.dmc.d1.domain.Id;
+import com.dmc.d1.domain.PairId;
 
 /**
  * Created by davidclelland on 18/05/2016.
@@ -17,11 +20,10 @@ public class PairsCommandHandler extends AbstractCommandHandler<PairsAggregate> 
         super(repository);
     }
 
+
+
     @CommandHandler
     public void handle(CreatePairCommand command) {
-        PairsAggregate aggregate = new PairsAggregate(command.getPairId());
-        initialiseAggregate(aggregate);
+         PairsAggregate aggregate = initialiseAggregate(command.getPairId().toString());
     }
-
-
 }

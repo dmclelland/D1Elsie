@@ -3,12 +3,12 @@ package com.dmc.d1.cqrs;
 import com.dmc.d1.algo.event.Configuration;
 import com.dmc.d1.cqrs.event.EventFactory;
 import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
-import com.dmc.d1.algo.event.EventFactoryChronicle;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.test.aggregate.Aggregate1;
+import com.dmc.d1.cqrs.test.aggregate.AggregateFactoryImpl;
 import com.dmc.d1.cqrs.test.command.CreateAggregate1Command;
 import com.dmc.d1.cqrs.test.command.UpdateAggregate1Command;
 import com.dmc.d1.cqrs.test.commandhandler.MyCommandHandler1;
@@ -48,6 +48,8 @@ public class PerfTest2 {
     EventFactory chronicleEventFactory = Configuration.getEventFactoryChronicle();
     InstanceAllocator instanceAllocator = Configuration.getInstanceAllocatorChronicle();
 
+    AggregateFactory aggregateFactory = new AggregateFactoryImpl();
+
     private static final Histogram CREATE_HISTOGRAM =
             new Histogram(TimeUnit.SECONDS.toNanos(30), 2);
 
@@ -71,7 +73,7 @@ public class PerfTest2 {
         aes = new ChronicleAggregateEventStore(instanceAllocator, Configuration.getChroniclePath());
         SimpleEventBus eventBus = new SimpleEventBus();
 
-        repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, chronicleEventFactory);
+        repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, chronicleEventFactory, aggregateFactory);
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
         lst.add(new MyCommandHandler1(repo1));

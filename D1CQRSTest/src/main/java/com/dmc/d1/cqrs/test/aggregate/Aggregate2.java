@@ -10,16 +10,17 @@ import com.dmc.d1.cqrs.test.domain.MyId;
  */
 @com.dmc.d1.cqrs.annotations.Aggregate
 public class Aggregate2 extends Aggregate<EventFactoryAbstract> {
-
+    private static String CLASS_NAME = Aggregate2.class.getName();
 
     private String s1;
     private String s2;
-    private MyId id;
 
 
-    public Aggregate2(MyId id) {
-        this.id = id;
+    Aggregate2(String id) {
+        super(id,CLASS_NAME);
     }
+
+
 
     @Override
     protected void rollbackAggregateToInitialState() {
@@ -29,14 +30,14 @@ public class Aggregate2 extends Aggregate<EventFactoryAbstract> {
 
 
     public void doSomething(String s1, String s2) {
-        apply(eventFactory.createStringUpdatedEvent1(id, s1));
-        apply(eventFactory.createStringUpdatedEvent2(id, s2));
+        apply(eventFactory.createStringUpdatedEvent1(getId(), s1));
+        apply(eventFactory.createStringUpdatedEvent2(getId(), s2));
     }
 
     public void doSomethingWhichCausesException(String s1, String s2) {
-        apply(eventFactory.createStringUpdatedEvent1(id, s1));
-        apply(eventFactory.createStringUpdatedEvent2(id, s2));
-        apply(eventFactory.createTriggerExceptionEvent(id));
+        apply(eventFactory.createStringUpdatedEvent1(getId(), s1));
+        apply(eventFactory.createStringUpdatedEvent2(getId(), s2));
+        apply(eventFactory.createTriggerExceptionEvent(getId()));
     }
 
     @EventHandler
@@ -65,12 +66,5 @@ public class Aggregate2 extends Aggregate<EventFactoryAbstract> {
     public String getS2() {
         return s2;
     }
-
-
-    @Override
-    protected String getId() {
-        return id.toString();
-    }
-
 
 }
