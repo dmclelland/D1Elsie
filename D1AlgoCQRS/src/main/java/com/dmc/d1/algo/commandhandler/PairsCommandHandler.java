@@ -24,6 +24,6 @@ public class PairsCommandHandler extends AbstractCommandHandler<PairsAggregate> 
 
     @CommandHandler
     public void handle(CreatePairCommand command) {
-         PairsAggregate aggregate = initialiseAggregate(command.getPairId().toString());
+         PairsAggregate aggregate = initialiseAggregate(command.getPairId().asString());
     }
 }

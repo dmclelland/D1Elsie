@@ -22,7 +22,7 @@ public class ResumeWaveCommand implements Command {
 
     @Override
     public String getAggregateId() {
-        return waveId.toString();
+        return waveId.asString();
     }
 
     @Override

@@ -47,7 +47,7 @@ public class Aggregate1 extends Aggregate<EventFactoryAbstract>{
     }
 
     private String generateNestedId(String id){
-        return id.toString()+"Nested";
+        return id+"Nested";
     }
 
     @EventHandler

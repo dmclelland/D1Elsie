@@ -22,7 +22,7 @@ public class CreatePairCommand implements Command {
 
     @Override
     public String getAggregateId() {
-        return pairId.toString();
+        return pairId.asString();
     }
 
     @Override

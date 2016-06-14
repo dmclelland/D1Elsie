@@ -24,16 +24,16 @@ public class AggregateTest {
     AggregateFactory aggregateFactory = new AggregateFactoryImpl();
 
     AggregateRepository<Aggregate1> aggregate1Repo = new AggregateRepository(eventStore, Aggregate1.class, bus, new EventFactoryBasic(), aggregateFactory);
-    AggregateRepository<Aggregate2> aggregate2Repo = new AggregateRepository(eventStore, Aggregate2.class, bus, new EventFactoryBasic(),  aggregateFactory);
+    AggregateRepository<Aggregate2> aggregate2Repo = new AggregateRepository(eventStore, Aggregate2.class, bus, new EventFactoryBasic(), aggregateFactory);
 
-    MyId id1 = new MyId("testId1");
-    MyId id2 = new MyId("testId1");
+    MyId id1 = MyId.from("testId1");
+    MyId id2 = MyId.from("testId1");
 
     @Test
     public void testAggregate() {
 
-        Aggregate1 aggregate1 = aggregate1Repo.create(id1.toString());
-        Aggregate2 aggregate2 = aggregate2Repo.create(id2.toString());
+        Aggregate1 aggregate1 = aggregate1Repo.create(id1.asString());
+        Aggregate2 aggregate2 = aggregate2Repo.create(id2.asString());
 
         aggregate1.doSomething(5, 12);
         aggregate2.doSomething("Hello", "Goodbye");

@@ -24,11 +24,11 @@ public class Aggregate1EventHandler extends AbstractEventHandler {
 
     @EventHandler
     public void handle(HandledByExternalHandlersEvent event){
-        bus.dispatch(new CreateNestedAggregate1Command(new MyNestedId(event.getNestedId()), event.getStr()));
+        bus.dispatch(new CreateNestedAggregate1Command( MyNestedId.from(event.getNestedId()), event.getStr()));
     }
 
     @EventHandler
     public void handle(TriggerExceptionInNestedAggregateEvent event){
-        bus.dispatch(new ExceptionTriggeringNestedAggregateCommand(new MyNestedId(event.getNestedId()),event.getStr()));
+        bus.dispatch(new ExceptionTriggeringNestedAggregateCommand(MyNestedId.from(event.getNestedId()),event.getStr()));
     }
 }

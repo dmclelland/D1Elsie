@@ -13,7 +13,7 @@ public class WaveAggregate extends Aggregate {
     private WaveId waveId;
 
     public WaveAggregate(WaveId waveId){
-        super(waveId.toString(), CLASS_NAME);
+        super(waveId.asString(), CLASS_NAME);
         this.waveId = waveId;
 
     }

@@ -15,7 +15,7 @@ public class PairsAggregate extends Aggregate{
     private PairId pairId;
 
     public PairsAggregate(PairId pairId){
-        super(pairId.toString(), CLASS_NAME);
+        super(pairId.asString(), CLASS_NAME);
 
         this.pairId = pairId;
     }

@@ -21,7 +21,7 @@ public class WaveCommandHandler extends AbstractCommandHandler<WaveAggregate> {
     @CommandHandler
     public void handle(CreateWaveCommand command) {
 
-        WaveAggregate aggregate = initialiseAggregate(command.getWaveId().toString());
+        WaveAggregate aggregate = initialiseAggregate(command.getWaveId().asString());
     }
 
     @CommandHandler

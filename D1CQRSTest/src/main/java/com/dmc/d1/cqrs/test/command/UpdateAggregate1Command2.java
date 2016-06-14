@@ -25,7 +25,7 @@ public class UpdateAggregate1Command2 implements Command {
 
     @Override
     public String getAggregateId() {
-        return id.toString();
+        return id.asString();
     }
 
     public String getStr() {

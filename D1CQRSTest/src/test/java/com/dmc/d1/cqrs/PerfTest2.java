@@ -96,8 +96,8 @@ public class PerfTest2 {
             StopWatch watch = new StopWatch();
             watch.start();
 
-            MyId id = new MyId("" + rnd);
-            String aggregateIdentifier = id.toString();
+            MyId id = MyId.from("" + rnd);
+            String aggregateIdentifier = id.asString();
 
             CreateAggregate1Command command = new CreateAggregate1Command(id, rnd, rnd + 2);
             commandBus.dispatch(command);
@@ -141,9 +141,9 @@ public class PerfTest2 {
 
             rnd = xorShift(rnd);
 
-            MyId id = new MyId("" + rnd);
+            MyId id =  MyId.from("" + rnd);
 
-            String aggregateIdentifier = id.toString();
+            String aggregateIdentifier = id.asString();
 
             CreateAggregate1Command command = new CreateAggregate1Command(id, rnd, rnd + 2);
             commandBusWithReflectiveCommandHandler.dispatch(command);

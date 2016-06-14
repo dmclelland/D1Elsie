@@ -27,6 +27,7 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Chronic
     public ChronicleAggregateEventStore(InstanceAllocator<ChronicleAggregateEvent> instanceAllocator, String path) throws IOException {
 
         chronicle = ChronicleQueueBuilder.single(path)
+                .blockSize(128 << 20)
                 .build();
 
         appender = chronicle.createAppender();
@@ -48,21 +49,6 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Chronic
             appender.writeDocument(event);
         }
     }
-
-//    @Override
-//    public AggregateEventAbstract get() {
-//         tailer.readDocument(w -> System.out.println("msg: " + w.read(()->"msg").text()));
-//
-//        AggregateEventAbstract event = (AggregateEventAbstract)tailer.readDocument(event.)
-//
-//        return event;
-//    }
-//
-//    @Override
-//    public List<AggregateEventAbstract> getAll() {
-//        return null;
-//    }
-
 
     @Override
     public List<ChronicleAggregateEvent> get(String id) {

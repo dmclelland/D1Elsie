@@ -13,7 +13,7 @@ public class WaveCreatedEventAbstract extends AggregateEventAbstract {
 
     public WaveCreatedEventAbstract(WaveId waveId) {
         setClassName(CLASS_NAME);
-        setAggregateId(waveId.toString());
+        setAggregateId(waveId.asString());
 
         this.waveId = waveId;
     }

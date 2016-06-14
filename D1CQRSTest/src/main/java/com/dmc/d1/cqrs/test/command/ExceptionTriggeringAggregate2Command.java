@@ -36,7 +36,7 @@ public class ExceptionTriggeringAggregate2Command implements Command {
 
     @Override
     public String getAggregateId() {
-        return id.toString();
+        return id.asString();
     }
 
 

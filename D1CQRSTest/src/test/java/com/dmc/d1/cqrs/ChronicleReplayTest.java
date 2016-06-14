@@ -135,13 +135,13 @@ public class ChronicleReplayTest {
             MyId id = ids.get(randomSelect.nextInt(1000));
             rnd = xorShift(rnd);
 
-            if (Integer.parseInt(id.toString()) % 2 == 0) {
+            if (Integer.parseInt(id.asString()) % 2 == 0) {
 
                 UpdateAggregate1Command command = new UpdateAggregate1Command(id, rnd - 5, rnd - 7);
                 long t0 = System.nanoTime();
                 commandBus.dispatch(command);
 
-                Aggregate1 aggregate = repo1.find(id.toString());
+                Aggregate1 aggregate = repo1.find(id.asString());
 
                 assertEquals(aggregate.getI1(), rnd - 5);
                 assertEquals(aggregate.getI2(), rnd - 7);
@@ -151,7 +151,7 @@ public class ChronicleReplayTest {
                 long t0 = System.nanoTime();
                 commandBus.dispatch(command);
 
-                Aggregate2 aggregate = repo2.find(id.toString());
+                Aggregate2 aggregate = repo2.find(id.asString());
 
                 assertEquals(aggregate.getS1(), "" + (rnd - 5));
                 assertEquals(aggregate.getS2(), "" + (rnd - 7));
@@ -168,7 +168,7 @@ public class ChronicleReplayTest {
         for (int i = 0; i < iterations; i++) {
             busyWaitMicros(50);
             rnd = xorShift(rnd);
-            MyId id = new MyId("" + rnd);
+            MyId id = MyId.from("" + rnd);
             ids.add(id);
 
 
@@ -177,12 +177,12 @@ public class ChronicleReplayTest {
                 long t0 = System.nanoTime();
                 commandBus.dispatch(new CreateAggregate1Command(id, rnd, rnd + 2));
 
-                aggregate = repo1.find(id.toString());
+                aggregate = repo1.find(id.asString());
             } else if (Math.abs(rnd % 2) == 1) {
                 long t0 = System.nanoTime();
                 commandBus.dispatch(new CreateAggregate2Command(id, "" + rnd, "" + (rnd + 2)));
 
-                aggregate = repo2.find(id.toString());
+                aggregate = repo2.find(id.asString());
             }
             aggregates.add(aggregate);
         }

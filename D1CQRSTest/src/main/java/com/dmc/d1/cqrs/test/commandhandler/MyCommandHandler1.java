@@ -30,7 +30,7 @@ public class MyCommandHandler1 extends AbstractCommandHandler<Aggregate1> {
     @CommandHandler
     public void handle(CreateAggregate1Command command) {
 
-        Aggregate1 aggregate = initialiseAggregate(command.getId().toString());
+        Aggregate1 aggregate = initialiseAggregate(command.getId().asString());
         aggregate.doSomething(command.getI1(), command.getI2());
     }
 
