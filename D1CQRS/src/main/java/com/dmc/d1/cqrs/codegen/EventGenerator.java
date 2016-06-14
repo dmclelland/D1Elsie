@@ -52,22 +52,9 @@ class EventGenerator {
                     .addModifiers(Modifier.PUBLIC);
 
 
-            abstractFactory.addMethod(MethodSpec.methodBuilder("createAggregateInitialisedEvent")
-                    .addParameter(String.class,"aggregateId")
-                    .addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC)
-                    .returns(AggregateEvent.class).build());
-
             TypeSpec.Builder basicFactory = TypeSpec.classBuilder("EventFactoryBasic")
                     .addSuperinterface(afName)
                     .addModifiers(Modifier.PUBLIC);
-
-            basicFactory.addMethod(MethodSpec.methodBuilder("createAggregateInitialisedEvent")
-                    .returns(AggregateEvent.class)
-                    .addModifiers(Modifier.PUBLIC)
-                    .addParameter(String.class,"aggregateId")
-                    .addStatement("return new $T(aggregateId)", AggregateInitialisedEvent.class)
-                    .build());
-
 
 
             MethodSpec.Builder allocateInstanceMethod = MethodSpec.methodBuilder("allocateInstance")
@@ -76,29 +63,36 @@ class EventGenerator {
                     .returns(ChronicleAggregateEvent.class);
 
 
-            allocateInstanceMethod.beginControlFlow("if (eventClass.equals($S))",ChronicleAggregateInitialisedEvent.class.getName());
-            allocateInstanceMethod.addStatement("return new $T()",ChronicleAggregateInitialisedEvent.class);
-            allocateInstanceMethod.endControlFlow();
-
 
             MethodSpec.Builder chronicleFactoryConstructor = MethodSpec.constructorBuilder()
                     .addStatement("$T<String> eventNames = new $T<>()",List.class, ArrayList.class);
 
-            //add initialisation event
-            chronicleFactoryConstructor.addStatement("eventNames.add($S)",ChronicleAggregateInitialisedEvent.class.getName());
 
             TypeSpec.Builder chronicleFactory = TypeSpec.classBuilder("EventFactoryChronicle")
                     .addSuperinterface(afName)
                     .addModifiers(Modifier.PUBLIC);
 
-            chronicleFactory.addMethod(MethodSpec.methodBuilder("createAggregateInitialisedEvent")
-                    .returns(AggregateEvent.class)
-                    .addModifiers(Modifier.PUBLIC)
-                    .addParameter(String.class,"aggregateId")
-                    .addStatement("$T event = ($T) AggregateEventPool.allocate($S)", ChronicleAggregateInitialisedEvent.class, ChronicleAggregateInitialisedEvent.class, ChronicleAggregateInitialisedEvent.class.getName())
-                    .addStatement("event.set(aggregateId)")
-                    .addStatement("return event")
-                    .build());
+
+            EventVo aggregateInitialisedVo = new EventVo();
+            aggregateInitialisedVo.className = AggregateInitialisedEvent.class.getSimpleName();
+
+            ClassName eventClass = ClassName.get(AggregateInitialisedEvent.class.getPackage().getName(), AggregateInitialisedEvent.class.getSimpleName());
+
+            generateBasicEvent(aggregateInitialisedVo,eventClass,basicFactory);
+            generateChronicleEvent(aggregateInitialisedVo,eventClass,chronicleFactory,chronicleFactoryConstructor,allocateInstanceMethod);
+
+            //createAggregateInitialisedEvent
+            MethodSpec.Builder abstractFactoryCreateMethod = MethodSpec.methodBuilder("create" + eventClass.simpleName())
+                    .addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC)
+                    .returns(eventClass);
+
+            abstractFactoryCreateMethod.addParameter(String.class, "id");
+
+            abstractFactory.addMethod(abstractFactoryCreateMethod.build());
+
+
+            //create chronicle initialised event
+
 
             String sCurrentLine;
             while ((sCurrentLine = br.readLine()) != null) {
@@ -251,7 +245,7 @@ class EventGenerator {
 
         MethodSpec.Builder basicFactoryCreateMethod = MethodSpec.methodBuilder("create" + vo.className)
                 .addModifiers(Modifier.PUBLIC)
-                .returns(eventClass);
+                .returns(interfaceClass);
 
 
         basicFactoryCreateMethod.addParameter(String.class, "id");

@@ -123,7 +123,7 @@ public class PerfTest2 {
             }
             watch.stop();
             System.out.println("It took " + watch.getTotalTimeSeconds() + " to run");
-            assertEquals(2 + 2 * ITERATIONS, aes.getAll().size());
+            assertEquals(3 + 2 * ITERATIONS, aes.getAll().size());
         }
         sleep();
     }
@@ -170,7 +170,7 @@ public class PerfTest2 {
 
             watch.stop();
             System.out.println("It took " + watch.getTotalTimeSeconds() + " to run reflectively");
-            assertEquals(2 + 2 * ITERATIONS, aes.getAll().size());
+            assertEquals(3 + 2 * ITERATIONS, aes.getAll().size());
 
 
         }

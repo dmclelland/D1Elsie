@@ -20,6 +20,7 @@ public class AggregateEventReplayer {
 
     public AggregateEventReplayer(AggregateEventStore eventStore,
                                   List<AggregateRepository> repos) {
+
         this.eventStore = checkNotNull(eventStore);
         checkNotNull(repos);
         this.repos = repos.stream().collect(Collectors.toMap(a -> a.getAggregateClassName(), a -> a));
@@ -33,9 +34,9 @@ public class AggregateEventReplayer {
             AggregateRepository repo = repos.get(event.getAggregateClassName());
 
             if (event instanceof AggregateInitialisedEvent) {
-                AggregateInitialisedEvent aie = (AggregateInitialisedEvent)event;
+                AggregateInitialisedEvent aie = (AggregateInitialisedEvent) event;
                 repo.handleAggregateInitialisedEvent(aie);
-            }else{
+            } else {
                 Aggregate agg = repo.find(event.getAggregateId());
                 agg.replay(event);
             }
