@@ -6,6 +6,7 @@ import static com.google.common.base.Preconditions.checkState;
  * Created by davidclelland on 19/05/2016.
  */
 public class CodeGen {
+    //TODO replace existing DSL with xml/json based open source project
 
 
     public static void main(String[] args) {
