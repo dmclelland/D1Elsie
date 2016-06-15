@@ -1,6 +1,5 @@
 package com.dmc.d1.cqrs;
 
-import com.dmc.d1.algo.commandhandler.MyCommandHandler1AnnotatedMethodInvoker;
 import com.dmc.d1.algo.event.Configuration;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
@@ -8,14 +7,10 @@ import com.dmc.d1.cqrs.event.EventFactory;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
-import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;
 import com.dmc.d1.cqrs.test.aggregate.Aggregate1;
 import com.dmc.d1.cqrs.test.aggregate.Aggregate2;
 import com.dmc.d1.cqrs.test.aggregate.AggregateFactoryImpl;
-import com.dmc.d1.cqrs.test.command.CreateAggregate1Command;
-import com.dmc.d1.cqrs.test.command.CreateAggregate2Command;
-import com.dmc.d1.cqrs.test.command.UpdateAggregate1Command;
-import com.dmc.d1.cqrs.test.command.UpdateAggregate2Command;
+import com.dmc.d1.cqrs.test.command.*;
 import com.dmc.d1.cqrs.test.commandhandler.MyCommandHandler1;
 import com.dmc.d1.cqrs.test.commandhandler.MyCommandHandler2;
 import com.dmc.d1.cqrs.test.commandhandler.ReflectiveAnnotatedCommandHandlerInvoker;
@@ -39,12 +34,12 @@ import static org.junit.Assert.assertEquals;
  * Created By davidclelland on 02/06/2016.
  */
 
+//TODO migrate performance tests to JMH
+
 @Ignore
 public class PerfTest {
 
     private static int REPEAT_TEST = 1;
-
-    private static int ITERATIONS = 10_000;
 
     EventFactory basicEventFactory = Configuration.getEventFactoryBasic();
     EventFactory chronicleEventFactory = Configuration.getEventFactoryChronicle();
@@ -69,11 +64,11 @@ public class PerfTest {
 
     @Before
     public void before() {
-        try {
-            Thread.sleep(15000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            Thread.sleep(15000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
     }
 
     @After
@@ -81,6 +76,8 @@ public class PerfTest {
         CREATE_HISTOGRAM.reset();
         UPDATE_HISTOGRAM.reset();
     }
+
+    CommandFactoryPooled pooled = new CommandFactoryPooled();
 
     private void setup() throws Exception {
         chronicleAES = new ChronicleAggregateEventStore(instanceAllocator, Configuration.getChroniclePath());
@@ -98,6 +95,7 @@ public class PerfTest {
         commandBus = new SimpleCommandBus(lst);
 
         lst = new ArrayList<>();
+
         lst.add(new MyCommandHandler1(repo1,
                 new ReflectiveAnnotatedCommandHandlerInvoker(MyCommandHandler1.class)));
         lst.add(new MyCommandHandler2(repo2,
@@ -109,31 +107,10 @@ public class PerfTest {
 
     @Test
     public void testCreateAndUpdateCommandDirect() throws Exception {
-
         for (int j = 0; j < REPEAT_TEST; j++) {
             setup();
-            int rnd = ((this.hashCode() ^ (int) System.nanoTime()));
-            StopWatch watch = new StopWatch();
-            watch.start();
-            List<MyId> ids = new ArrayList<>();
-            List<Aggregate> aggregates = new ArrayList<>();
-            rnd = createAggregates(commandBus, rnd, ids, aggregates, 1000, true);
-            rnd = createAggregates(commandBus, rnd, ids, aggregates, 10000, false);
-
-            rnd = updateAggregates(commandBus, rnd, ids, 1000, true);
-            rnd = updateAggregates(commandBus, rnd, ids, 250000, false);
-            watch.stop();
-            System.out.println("It took " + watch.getTotalTimeSeconds() + " to run");
-            //assertEquals(4 * ITERATIONS, aes.getAll().size());
-
-            CREATE_HISTOGRAM.getHistogramData().outputPercentileDistribution(System.out, 10d);
-            UPDATE_HISTOGRAM.getHistogramData().outputPercentileDistribution(System.out, 10d);
+            testCreateAndUpdateCommand(this.commandBus);
         }
-
-
-
-        System.out.println(chronicleAES.getAll().size() + " events written to a log");
-
     }
 
 
@@ -142,78 +119,55 @@ public class PerfTest {
 
         for (int j = 0; j < REPEAT_TEST; j++) {
             setup();
+            testCreateAndUpdateCommand(this.commandBusWithReflectiveCommandHandler);
+        }
+
+    }
+
+
+
+    private void testCreateAndUpdateCommand(CommandBus commandBus) throws Exception {
+
             int rnd = ((this.hashCode() ^ (int) System.nanoTime()));
             StopWatch watch = new StopWatch();
             watch.start();
             List<MyId> ids = new ArrayList<>();
             List<Aggregate> aggregates = new ArrayList<>();
-            rnd = createAggregates(commandBusWithReflectiveCommandHandler, rnd, ids, aggregates, 1000, true);
-            rnd = createAggregates(commandBusWithReflectiveCommandHandler, rnd, ids, aggregates, 10000, false);
+            rnd = createAggregates(commandBus, rnd, ids, aggregates, 1000, true);
+            rnd = createAggregates(commandBus, rnd, ids, aggregates, 25000, false);
 
-            rnd = updateAggregates(commandBusWithReflectiveCommandHandler, rnd, ids, 1000, true);
-            rnd = updateAggregates(commandBusWithReflectiveCommandHandler, rnd, ids, 250000, false);
+            rnd = updateAggregates(commandBus, rnd, ids, 1000, true);
+            rnd = updateAggregates(commandBus, rnd, ids, 750000, false);
             watch.stop();
             System.out.println("It took " + watch.getTotalTimeSeconds() + " to run");
             //assertEquals(4 * ITERATIONS, aes.getAll().size());
 
             CREATE_HISTOGRAM.getHistogramData().outputPercentileDistribution(System.out, 10d);
             UPDATE_HISTOGRAM.getHistogramData().outputPercentileDistribution(System.out, 10d);
-        }
+
+
+        System.out.println("EVENTS: " + chronicleAES.getAll().size());
 
     }
 
-    @Test
-    public void invokerTest() throws Exception {
-        SimpleEventBus eventBus = new SimpleEventBus();
-
-        AggregateEventStore store = new InMemoryAggregateEventStore();
-
-
-        AggregateRepository repo1 = new AggregateRepository(store, Aggregate1.class, eventBus, basicEventFactory, aggregateFactory);
-        AggregateRepository repo2 = new AggregateRepository(store, Aggregate2.class, eventBus, basicEventFactory, aggregateFactory);
-
-        List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
-        MyCommandHandler1 commandHandler = new MyCommandHandler1(repo1);
-
-
-        //lst.add(new MyCommandHandler1(repo1));
-        //lst.add(new MyCommandHandler2(repo2));
-
-        //SimpleCommandBus commandBus = new SimpleCommandBus(lst);
-
-        ReflectiveAnnotatedCommandHandlerInvoker reflective = new ReflectiveAnnotatedCommandHandlerInvoker(MyCommandHandler1.class);
-
-        MyCommandHandler1AnnotatedMethodInvoker direct = new MyCommandHandler1AnnotatedMethodInvoker();
-
-        CreateAggregate1Command command = new CreateAggregate1Command(MyId.from("gjg"), 0, 1);
-        reflective.invoke(command, commandHandler);
-
-        int rnd = ((this.hashCode() ^ (int) System.nanoTime()));
-
-
-        for (int i = 0; i < 50000000; i++) {
-
-            rnd = xorShift(rnd);
-
-            UpdateAggregate1Command commandUpdate = new UpdateAggregate1Command(MyId.from("gjg"), rnd+2, rnd-3);
-            direct.invoke(commandUpdate, commandHandler);
-        }
-
-    }
 
 
     private int updateAggregates(CommandBus commandBus, int rnd, List<MyId> ids, int iterations, boolean warmup) {
         Random randomSelect = new Random();
         //send a whole bunch of updates
+
+        int noOfIds = ids.size();
         for (int i = 0; i < iterations; i++) {
             busyWaitMicros(20);
 
-            MyId id = ids.get(randomSelect.nextInt(1000));
+            MyId id = ids.get(randomSelect.nextInt(noOfIds));
             rnd = xorShift(rnd);
 
-            if (Integer.parseInt(id.asString()) % 2 == 0) {
+            int idAsInt = Integer.parseInt(id.asString());
 
-                UpdateAggregate1Command command = new UpdateAggregate1Command(id, rnd - 5, rnd - 7);
+            if (idAsInt % 2 == 0) {
+                UpdateAggregate1Command command = pooled.createUpdateAggregate1Command(id, rnd-5, rnd-7);
+
                 long t0 = System.nanoTime();
                 commandBus.dispatch(command);
                 if (!warmup)
@@ -222,9 +176,9 @@ public class PerfTest {
 
                 assertEquals(aggregate.getI1(), rnd - 5);
                 assertEquals(aggregate.getI2(), rnd - 7);
-            } else {
+            } else if (Math.abs(idAsInt % 2) == 1) {
+                UpdateAggregate2Command command = pooled.createUpdateAggregate2Command(id, "" + (rnd - 5), "" + (rnd - 7));
 
-                UpdateAggregate2Command command = new UpdateAggregate2Command(id, "" + (rnd - 5), "" + (rnd - 7));
                 long t0 = System.nanoTime();
                 commandBus.dispatch(command);
                 if (!warmup)
@@ -242,24 +196,27 @@ public class PerfTest {
     }
 
     private int createAggregates(CommandBus commandBus, int rnd, List<MyId> ids, List<Aggregate> aggregates, int iterations, boolean warmup) {
-        //create 1000 different aggregates
+        //create aggregates
         for (int i = 0; i < iterations; i++) {
             busyWaitMicros(20);
             rnd = xorShift(rnd);
             MyId id = MyId.from("" + rnd);
             ids.add(id);
 
-
             Aggregate aggregate = null;
             if (rnd % 2 == 0) {
                 long t0 = System.nanoTime();
-                commandBus.dispatch(new CreateAggregate1Command(id, rnd, rnd + 2));
+                CreateAggregate1Command command = pooled.createCreateAggregate1Command(id, rnd, rnd+2);
+                commandBus.dispatch(command);
+
                 if (!warmup)
                     CREATE_HISTOGRAM.recordValue((System.nanoTime() - t0) / 1000);
                 aggregate = repo1.find(id.asString());
             } else if (Math.abs(rnd % 2) == 1) {
                 long t0 = System.nanoTime();
-                commandBus.dispatch(new CreateAggregate2Command(id, "" + rnd, "" + (rnd + 2)));
+
+                CreateAggregate2Command command = pooled.createCreateAggregate2Command(id, "" + rnd, "" + (rnd + 2));
+                commandBus.dispatch(command);
                 if (!warmup)
                     CREATE_HISTOGRAM.recordValue((System.nanoTime() - t0) / 1000);
                 aggregate = repo2.find(id.asString());
