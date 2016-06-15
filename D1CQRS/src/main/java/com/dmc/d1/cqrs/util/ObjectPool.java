@@ -18,14 +18,13 @@ public class ObjectPool<T> {
         pool.values().forEach(p ->p.clear());
     }
 
-    public T allocateObject(String eventIdentifier) {
-
-        EntityPool<T> t  =  pool.get(eventIdentifier);
+    public T allocateObject(String className) {
+        EntityPool<T> t  =  pool.get(className);
         return t.getEntry();
     }
 
-    public ObjectPool(List<String> objectIdentifiers, InstanceAllocator<T> instanceAllocator, int size) {
-        objectIdentifiers.forEach(e -> {
+    public ObjectPool(List<String> classNames, InstanceAllocator<T> instanceAllocator, int size) {
+        classNames.forEach(e -> {
             pool.put(e, new EntityPool(e, size, instanceAllocator));
         });
     }
@@ -36,7 +35,7 @@ public class ObjectPool<T> {
         final InstanceAllocator<T> instanceAllocator;
         int counter = 0;
 
-        public EntityPool(String className, int initialPoolSize, InstanceAllocator instanceAllocator) {
+        public EntityPool(String className, int initialPoolSize, InstanceAllocator<T> instanceAllocator) {
             this.initialPoolSize = initialPoolSize;
             this.className = className;
             this.pool = new ArrayList<>(initialPoolSize);
