@@ -8,7 +8,10 @@ import java.util.List;
 /**
  * Created By davidclelland on 09/06/2016.
  */
-public class AggregateEventPool {
+public final class AggregateEventPool {
+
+    private AggregateEventPool(){
+    }
 
     private static ThreadLocal<ObjectPool<AggregateEvent>> THREAD_LOCAL = new ThreadLocal<>();
 
@@ -18,6 +21,7 @@ public class AggregateEventPool {
             THREAD_LOCAL.set(events);
         }
     }
+
 
     public static boolean isInitialised() {
         return THREAD_LOCAL.get() != null;

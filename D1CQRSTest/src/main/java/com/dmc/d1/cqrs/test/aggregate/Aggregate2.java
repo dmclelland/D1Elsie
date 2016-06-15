@@ -30,6 +30,8 @@ public class Aggregate2 extends Aggregate<EventFactoryAbstract> {
 
 
     public void doSomething(String s1, String s2) {
+
+
         apply(eventFactory.createStringUpdatedEvent1(getId(), s1));
         apply(eventFactory.createStringUpdatedEvent2(getId(), s2));
     }
@@ -42,7 +44,6 @@ public class Aggregate2 extends Aggregate<EventFactoryAbstract> {
 
     @EventHandler
     public void handleEvent1(StringUpdatedEvent1 event) {
-
         this.s1 = event.getStr();
     }
 
