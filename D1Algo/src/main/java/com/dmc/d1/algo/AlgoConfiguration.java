@@ -7,10 +7,10 @@ import com.dmc.d1.algo.commandhandler.WaveCommandHandler;
 import com.dmc.d1.cqrs.AbstractCommandHandler;
 import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.AggregateRepository;
+import com.dmc.d1.cqrs.InitialisationEventFactory;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
 import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
-import com.dmc.d1.cqrs.event.EventFactory;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;
@@ -37,26 +37,27 @@ public class AlgoConfiguration {
     }
 
 
-
     @Bean
     AggregateRepository<WaveAggregate> waveAggregateRepository() {
-        return new AggregateRepository<>(aggregateEventStore(), WaveAggregate.class, eventBus(), new EventFactory() {
+        return new AggregateRepository<>(aggregateEventStore(), WaveAggregate.class, eventBus(), new WaveAggregate.Factory(), new InitialisationEventFactory<AggregateInitialisedEvent>() {
+
             @Override
-            public AggregateInitialisedEvent createAggregateInitialisedEvent(String aggregateId) {
+            public AggregateInitialisedEvent newInstance(String str) {
                 return null;
             }
-        }, (id, typeName) -> null);
+        });
 
     }
 
     @Bean
     AggregateRepository<PairsAggregate> pairAggregateRepository() {
-        return new AggregateRepository<>(aggregateEventStore(), PairsAggregate.class, eventBus(), new EventFactory() {
+        return new AggregateRepository<>(aggregateEventStore(), PairsAggregate.class, eventBus(), new PairsAggregate.Factory(), new InitialisationEventFactory<AggregateInitialisedEvent>() {
+
             @Override
-            public AggregateInitialisedEvent createAggregateInitialisedEvent(String aggregateId) {
+            public AggregateInitialisedEvent newInstance(String str) {
                 return null;
             }
-        },(id, typeName) -> null);
+        });
 
     }
 

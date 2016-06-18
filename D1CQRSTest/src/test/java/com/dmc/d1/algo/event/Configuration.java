@@ -1,7 +1,13 @@
 package com.dmc.d1.algo.event;
 
-import com.dmc.d1.cqrs.event.EventFactory;
-import com.dmc.d1.cqrs.util.InstanceAllocator;
+import com.dmc.d1.cqrs.InitialisationEventFactory;
+import com.dmc.d1.cqrs.util.NewInstanceFactory;
+import com.dmc.d1.cqrs.util.Pooled;
+import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
+import com.dmc.d1.test.event.TestAggregateInitialisedEventBuilder;
+import org.reflections.Reflections;
+
+import java.util.Set;
 
 /**
  * Created By davidclelland on 10/06/2016.
@@ -9,20 +15,24 @@ import com.dmc.d1.cqrs.util.InstanceAllocator;
 
 public class Configuration {
 
-    public static final String getChroniclePath(){
-       return  System.getProperty("java.io.tmpdir") + "/d1-events-"+ System.currentTimeMillis();
+    public static final String getChroniclePath() {
+        return System.getProperty("java.io.tmpdir") + "/d1-events-" + System.currentTimeMillis();
     }
 
-    public static InstanceAllocator getInstanceAllocatorChronicle(){
-        return new ChronicleInstanceAllocator();
+    public static InitialisationEventFactory initialisationEventFactoryChronicle() {
+        return id ->
+                TestAggregateInitialisedEventBuilder.startBuilding(id).buildChronicle();
     }
 
-    public static EventFactory getEventFactoryChronicle(){
-        return new EventFactoryChronicle();
+    public static InitialisationEventFactory initialisationEventFactoryBasic() {
+        return id ->
+                TestAggregateInitialisedEventBuilder.startBuilding(id).buildBasic();
     }
 
-    public static EventFactory getEventFactoryBasic(){
-        return new EventFactoryBasic();
+    public void initialiseObjectPool() throws Exception{
+
+
+
     }
 
 }

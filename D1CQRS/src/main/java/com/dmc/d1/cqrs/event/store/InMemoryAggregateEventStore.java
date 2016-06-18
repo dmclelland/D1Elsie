@@ -1,6 +1,10 @@
 package com.dmc.d1.cqrs.event.store;
 
 import com.dmc.d1.cqrs.event.AggregateEventAbstract;
+import com.dmc.d1.cqrs.event.ChronicleAggregateEvent;
+import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
+import net.openhft.chronicle.queue.ExcerptTailer;
+import net.openhft.chronicle.wire.DocumentContext;
 
 import java.util.*;
 
@@ -30,13 +34,37 @@ public class InMemoryAggregateEventStore implements AggregateEventStore<Aggregat
         eventsToAdd.forEach(this::add);
     }
 
-    @Override
-    public List<AggregateEventAbstract> getAll() {
-        return events;
-    }
 
     @Override
-    public List<AggregateEventAbstract> get(String id) {
-        return eventsById.get(id);
+    public Iterator<List<AggregateEventAbstract>> iterator() {
+        return new InMemoryIterator(events);
     }
+
+
+    private static class InMemoryIterator implements Iterator<List<AggregateEventAbstract>> {
+
+        private final List<AggregateEventAbstract> lst;
+        private boolean hasNext = true;
+
+        InMemoryIterator(List<AggregateEventAbstract> lst) {
+            this.lst = lst;
+
+        }
+
+
+
+        @Override
+        public boolean hasNext() {
+            return hasNext;
+        }
+
+        @Override
+        public List<AggregateEventAbstract> next() {
+            this.hasNext = false;
+
+            return lst;
+        }
+    }
+
+
 }

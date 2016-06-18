@@ -1,14 +1,15 @@
 package com.dmc.d1.cqrs;
 
 
-import com.dmc.d1.algo.event.EventFactoryBasic;
+import com.dmc.d1.algo.event.Configuration;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;
 import com.dmc.d1.cqrs.test.aggregate.Aggregate1;
 import com.dmc.d1.cqrs.test.aggregate.Aggregate2;
-import com.dmc.d1.cqrs.test.aggregate.AggregateFactoryImpl;
 import com.dmc.d1.cqrs.test.domain.MyId;
+import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -21,13 +22,19 @@ public class AggregateTest {
     SimpleEventBus bus = new SimpleEventBus();
 
     AggregateEventStore eventStore = new InMemoryAggregateEventStore();
-    AggregateFactory aggregateFactory = new AggregateFactoryImpl();
+    InitialisationEventFactory initialisationEventFactory = Configuration.initialisationEventFactoryBasic();
 
-    AggregateRepository<Aggregate1> aggregate1Repo = new AggregateRepository(eventStore, Aggregate1.class, bus, new EventFactoryBasic(), aggregateFactory);
-    AggregateRepository<Aggregate2> aggregate2Repo = new AggregateRepository(eventStore, Aggregate2.class, bus, new EventFactoryBasic(), aggregateFactory);
+
+    AggregateRepository<Aggregate1> aggregate1Repo = new AggregateRepository(eventStore, Aggregate1.class, bus, new Aggregate1.Factory(), initialisationEventFactory);
+    AggregateRepository<Aggregate2> aggregate2Repo = new AggregateRepository(eventStore, Aggregate2.class, bus, new Aggregate2.Factory(), initialisationEventFactory);
 
     MyId id1 = MyId.from("testId1");
     MyId id2 = MyId.from("testId1");
+
+    @Before
+    public void setup() throws Exception{
+        ThreadLocalObjectPool.initialise();;
+    }
 
     @Test
     public void testAggregate() {

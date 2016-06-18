@@ -1,0 +1,54 @@
+<classes>
+    <domain>
+        <class name="com.dmc.d1.test.domain.BasketConstituent">
+            <field name="ric" type="java.lang.String"/>
+            <field name="adjustedShares" type="java.lang.Integer"/>
+        </class>
+
+          <!--
+        <class name="com.dmc.d1.test.domain.Basket">
+            <field name="ric" type="java.lang.String"/>
+            <field name="tradeDate" type="java.util.Date"/>
+            <field name="divisor" type="java.lang.Integer"/>
+            <field name="basketConstituents" type="java.util.List"
+                   parameterized-type="com.dmc.d1.test.domain.BasketConstituent"/>
+        </class>
+        -->
+    </domain>
+    <event>
+
+        <class name="com.dmc.d1.test.event.TestAggregateInitialisedEvent" initialisationEvent="true">
+        </class>
+
+        <class name="com.dmc.d1.test.event.HandledByExternalHandlersEvent">
+            <field name="nestedId" type="java.lang.String"/>
+            <field name="str" type="java.lang.String"/>
+        </class>
+        <class name="com.dmc.d1.test.event.IntUpdatedEvent1">
+            <field name="i" type="java.lang.Integer" toPrimitive="true"/>
+        </class>
+        <class name="com.dmc.d1.test.event.IntUpdatedEvent2">
+            <field name="i" type="java.lang.Integer" toPrimitive="true"/>
+        </class>
+        <class name="com.dmc.d1.test.event.NestedUpdatedEvent1">
+            <field name="str" type="java.lang.String"/>
+        </class>
+        <class name="com.dmc.d1.test.event.StringUpdatedEvent1">
+            <field name="str" type="java.lang.String"/>
+        </class>
+        <class name="com.dmc.d1.test.event.StringUpdatedEvent2">
+            <field name="str" type="java.lang.String"/>
+        </class>
+        <class name="com.dmc.d1.test.event.TriggerExceptionEvent">
+        </class>
+        <class name="com.dmc.d1.test.event.TriggerExceptionNestedEvent">
+        </class>
+        <class name="com.dmc.d1.test.event.TriggerExceptionInNestedAggregateEvent">
+            <field name="nestedId" type="java.lang.String"/>
+            <field name="str" type="java.lang.String"/>
+        </class>
+    </event>
+    <command>
+
+    </command>
+</classes>

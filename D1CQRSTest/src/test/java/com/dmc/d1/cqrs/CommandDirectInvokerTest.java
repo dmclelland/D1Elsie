@@ -1,16 +1,14 @@
 package com.dmc.d1.cqrs;
 
 import com.dmc.d1.algo.event.Configuration;
-import com.dmc.d1.cqrs.event.EventFactory;
-import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
 import com.dmc.d1.cqrs.event.AbstractEventHandler;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
+import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
 import com.dmc.d1.cqrs.test.aggregate.Aggregate1;
 import com.dmc.d1.cqrs.test.aggregate.Aggregate2;
-import com.dmc.d1.cqrs.test.aggregate.AggregateFactoryImpl;
 import com.dmc.d1.cqrs.test.aggregate.NestedAggregate1;
 import com.dmc.d1.cqrs.test.command.*;
 import com.dmc.d1.cqrs.test.commandhandler.MyCommandHandler1;
@@ -20,7 +18,7 @@ import com.dmc.d1.cqrs.test.domain.MyId;
 import com.dmc.d1.cqrs.test.domain.MyNestedId;
 import com.dmc.d1.cqrs.test.event.Aggregate1EventHandler;
 import com.dmc.d1.cqrs.test.event.Aggregate1EventHandler2;
-import com.dmc.d1.cqrs.util.InstanceAllocator;
+import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -50,22 +48,18 @@ public class CommandDirectInvokerTest {
 
     DeleteStatic deleteOnClose = DeleteStatic.INSTANCE;
 
-    EventFactory chronicleEventFactory = Configuration.getEventFactoryChronicle();
-    InstanceAllocator instanceAllocator = Configuration.getInstanceAllocatorChronicle();
-
-    AggregateFactory aggregateFactory = new AggregateFactoryImpl();
-
+    InitialisationEventFactory initialisationEventFactory = Configuration.initialisationEventFactoryChronicle();
 
     @Before
     public void setup() throws Exception {
-
-        aes = new ChronicleAggregateEventStore(instanceAllocator, Configuration.getChroniclePath());
+        ThreadLocalObjectPool.initialise();;
+        aes = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         SimpleEventBus eventBus = new SimpleEventBus();
 
-        repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, chronicleEventFactory, aggregateFactory);
-        repo2 = new AggregateRepository(aes, Aggregate2.class, eventBus, chronicleEventFactory,aggregateFactory);
-        repo3 = new AggregateRepository(aes, NestedAggregate1.class, eventBus, chronicleEventFactory,aggregateFactory);
+        repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, new Aggregate1.Factory(), initialisationEventFactory);
+        repo2 = new AggregateRepository(aes, Aggregate2.class, eventBus, new Aggregate2.Factory(), initialisationEventFactory);
+        repo3 = new AggregateRepository(aes, NestedAggregate1.class, eventBus, new NestedAggregate1.Factory(), initialisationEventFactory);
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
 
@@ -93,7 +87,7 @@ public class CommandDirectInvokerTest {
 
     @Test
     public void testCreateAndUpdateCommand() {
-        MyId id =  MyId.from("testId1");
+        MyId id = MyId.from("testId1");
 
         CreateAggregate1Command command = new CreateAggregate1Command(id, 3, 5);
         commandBus.dispatch(command);
@@ -120,7 +114,7 @@ public class CommandDirectInvokerTest {
 
     @Test
     public void testNestedCommandTriggeredCorrectly() {
-        MyId id =  MyId.from("testId1");
+        MyId id = MyId.from("testId1");
 
         CreateAggregate1Command command = new CreateAggregate1Command(id, 3, 5);
         commandBus.dispatch(command);
@@ -147,7 +141,7 @@ public class CommandDirectInvokerTest {
     @Test
     public void rollbackTest() {
 
-        MyId id =  MyId.from("testId2");
+        MyId id = MyId.from("testId2");
 
         CreateAggregate2Command command = new CreateAggregate2Command(id, "Hello", "Goodbye");
         commandBus.dispatch(command);
@@ -172,7 +166,7 @@ public class CommandDirectInvokerTest {
     @Test
     public void parentAggregateRollsBackWithNestedAggregateFailure() {
 
-        MyId id =  MyId.from("testId1");
+        MyId id = MyId.from("testId1");
         MyNestedId nestedId = MyNestedId.from("testId1Nested");
 
         CreateAggregate1Command command = new CreateAggregate1Command(id, 3, 5);
@@ -205,6 +199,7 @@ public class CommandDirectInvokerTest {
     enum DeleteStatic {
         INSTANCE;
         final Set<File> toDeleteList = new LinkedHashSet<>();
+
         {
             Runtime.getRuntime().addShutdownHook(new Thread(
                     () -> toDeleteList.forEach(CommandDirectInvokerTest::delete
@@ -216,10 +211,10 @@ public class CommandDirectInvokerTest {
         }
     }
 
-    static void delete(File folder){
-        String[]entries = folder.list();
-        for(String s: entries){
-            File currentFile = new File(folder.getPath(),s);
+    static void delete(File folder) {
+        String[] entries = folder.list();
+        for (String s : entries) {
+            File currentFile = new File(folder.getPath(), s);
             boolean deleted = currentFile.delete();
 
             System.out.print(deleted);

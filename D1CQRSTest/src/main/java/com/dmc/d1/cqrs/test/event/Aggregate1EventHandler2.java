@@ -1,14 +1,11 @@
 package com.dmc.d1.cqrs.test.event;
 
-import com.dmc.d1.algo.event.HandledByExternalHandlersEvent;
 import com.dmc.d1.cqrs.annotations.EventHandler;
-import com.dmc.d1.cqrs.test.domain.MyId;
 import com.dmc.d1.cqrs.event.AbstractEventHandler;
+import com.dmc.d1.test.event.HandledByExternalHandlersEvent;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Created By davidclelland on 31/05/2016.

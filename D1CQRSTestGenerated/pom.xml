@@ -39,10 +39,10 @@
                         <configuration>
                             <mainClass>com.dmc.d1.cqrs.codegen.CodeGen</mainClass>
                             <arguments>
-                                <argument>EVENT</argument>
+                                <argument>EVENT_AND_COMMAND</argument>
                                 <argument>NOT_REQUIRED</argument>
                                 <argument>./D1CQRSTestGenerated/src/generated/java</argument>
-                                <argument>com.dmc.d1.algo.event</argument>
+                                <argument>NOT_REQUIRED</argument>
                             </arguments>
                         </configuration>
                     </execution>

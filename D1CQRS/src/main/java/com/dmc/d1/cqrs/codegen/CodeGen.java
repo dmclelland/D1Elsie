@@ -31,10 +31,9 @@ public class CodeGen {
                         generatedPackageName);
 
                 generator.generate();
-            } else if (CodeGenType.EVENT == codeGenType) {
-                EventGenerator generator = new EventGenerator(
-                        generatedSourceDirectory,
-                        generatedPackageName);
+            } else if (CodeGenType.EVENT_AND_COMMAND == codeGenType) {
+                EventAndCommandGenerator generator = new EventAndCommandGenerator(
+                        generatedSourceDirectory);
 
                 generator.generate();
             }

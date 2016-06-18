@@ -2,14 +2,13 @@ package com.dmc.d1.cqrs;
 
 
 import com.dmc.d1.cqrs.event.AggregateEvent;
-import com.dmc.d1.cqrs.event.AggregateEventAbstract;
-import com.dmc.d1.cqrs.event.EventFactory;
-import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.EventBus;
+import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -17,27 +16,24 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Created by davidclelland on 16/05/2016.
  */
-public abstract class Aggregate<EF extends EventFactory>{
+public abstract class Aggregate {
 
     private static final Logger LOG = LoggerFactory.getLogger(Aggregate.class);
     private final List<AggregateEvent> uncommittedEvents = new ArrayList<>();
     private AnnotatedAggregateEventHandlerInvoker eventHandler;
     private EventBus eventBus;
     private AggregateEventStore aggregateEventStore;
-    private final String id;
+    private String id;
 
-    //concrete class name of this aggregate, no need for reflection as aggregate factories
-    //have this information
-    private final String aggregateClassName;
+    //concrete class name of this aggregate
 
-    protected EF eventFactory;
+    private String aggregateClassName;
 
-    protected Aggregate(String id, String aggregateClassName){
-        this.id = checkNotNull(id);
-        this.aggregateClassName = checkNotNull(aggregateClassName);
+    protected Aggregate() {
     }
 
-    protected final  <E extends AggregateEvent> void apply(E event) {
+
+    protected final <E extends AggregateEvent> void apply(E event) {
         //assign the aggregate class that raised the event
         //this is used if events need to be replayed
         event.setAggregateClassName(aggregateClassName);
@@ -52,9 +48,9 @@ public abstract class Aggregate<EF extends EventFactory>{
 
     protected abstract void rollbackAggregateToInitialState();
 
-    protected final String getId(){
+    protected final String getId() {
         return id;
-    };
+    }
 
     private void applyAggregateEvent(AggregateEvent event) {
         eventHandler.invoke(event, this);
@@ -66,12 +62,17 @@ public abstract class Aggregate<EF extends EventFactory>{
     }
 
     final void rollback() {
-        Iterable<AggregateEventAbstract> eventsToReplay = aggregateEventStore.get(getId());
         clearUncommittedEvents();
         rollbackAggregateToInitialState();
-
-        for (AggregateEventAbstract event : eventsToReplay) {
-            applyAggregateEvent(event);
+        Iterator<List<AggregateEvent>> batches = aggregateEventStore.iterator();
+        List<AggregateEvent> events;
+        while (batches.hasNext()) {
+            events = batches.next();
+            for (AggregateEvent event : events) {
+                if (getId().equals(event.getAggregateId())) {
+                    applyAggregateEvent(event);
+                }
+            }
         }
     }
 
@@ -95,7 +96,11 @@ public abstract class Aggregate<EF extends EventFactory>{
         this.aggregateEventStore = checkNotNull(aggregateEventStore);
     }
 
-    void setEventFactory(EF eventFactory){
-        this.eventFactory = checkNotNull(eventFactory);
+    void setId(String id) {
+        this.id = id;
+    }
+
+    void setAggregateClassName(String aggregateClassName) {
+        this.aggregateClassName = aggregateClassName;
     }
 }

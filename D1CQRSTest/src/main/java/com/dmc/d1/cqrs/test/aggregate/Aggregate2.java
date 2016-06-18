@@ -1,25 +1,23 @@
 package com.dmc.d1.cqrs.test.aggregate;
 
-import com.dmc.d1.algo.event.*;
 import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.annotations.EventHandler;
-import com.dmc.d1.cqrs.test.domain.MyId;
+import com.dmc.d1.cqrs.util.NewInstanceFactory;
+import com.dmc.d1.test.event.*;
 
 /**
  * Created by davidclelland on 17/05/2016.
  */
 @com.dmc.d1.cqrs.annotations.Aggregate
-public class Aggregate2 extends Aggregate<EventFactoryAbstract> {
+public class Aggregate2 extends Aggregate {
     private static String CLASS_NAME = Aggregate2.class.getName();
 
     private String s1;
     private String s2;
 
 
-    Aggregate2(String id) {
-        super(id,CLASS_NAME);
+    Aggregate2() {
     }
-
 
 
     @Override
@@ -30,16 +28,15 @@ public class Aggregate2 extends Aggregate<EventFactoryAbstract> {
 
 
     public void doSomething(String s1, String s2) {
+        apply(StringUpdatedEvent1Builder.startBuilding(getId()).str(s1).buildChronicle());
+        apply(StringUpdatedEvent2Builder.startBuilding(getId()).str(s2).buildChronicle());
 
-
-        apply(eventFactory.createStringUpdatedEvent1(getId(), s1));
-        apply(eventFactory.createStringUpdatedEvent2(getId(), s2));
     }
 
     public void doSomethingWhichCausesException(String s1, String s2) {
-        apply(eventFactory.createStringUpdatedEvent1(getId(), s1));
-        apply(eventFactory.createStringUpdatedEvent2(getId(), s2));
-        apply(eventFactory.createTriggerExceptionEvent(getId()));
+        apply(StringUpdatedEvent1Builder.startBuilding(getId()).str(s1).buildChronicle());
+        apply(StringUpdatedEvent2Builder.startBuilding(getId()).str(s2).buildChronicle());
+        apply(TriggerExceptionEventBuilder.startBuilding(getId()).buildChronicle());
     }
 
     @EventHandler
@@ -66,6 +63,20 @@ public class Aggregate2 extends Aggregate<EventFactoryAbstract> {
 
     public String getS2() {
         return s2;
+    }
+
+
+    public static class Factory implements NewInstanceFactory<Aggregate2> {
+
+        @Override
+        public String getClassName() {
+            return CLASS_NAME;
+        }
+
+        @Override
+        public Aggregate2 newInstance() {
+            return new Aggregate2();
+        }
     }
 
 }

@@ -4,6 +4,7 @@ import com.dmc.d1.cqrs.event.AggregateEvent;
 import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,19 +29,25 @@ public class AggregateEventReplayer {
 
 
     public void replay() {
-        List<AggregateEvent> events = eventStore.getAll();
-        for (AggregateEvent event : events) {
 
-            AggregateRepository repo = repos.get(event.getAggregateClassName());
+        Iterator<List<AggregateEvent>> batches = eventStore.iterator();
+        AggregateRepository repo;;
+        Aggregate agg;
+        List<AggregateEvent> events;
+        while(batches.hasNext()){
+            events =  batches.next();
 
-            if (event instanceof AggregateInitialisedEvent) {
-                AggregateInitialisedEvent aie = (AggregateInitialisedEvent) event;
-                repo.handleAggregateInitialisedEvent(aie);
-            } else {
-                Aggregate agg = repo.find(event.getAggregateId());
-                agg.replay(event);
+            for (AggregateEvent event : events) {
+                repo = repos.get(event.getAggregateClassName());
+                if (event instanceof AggregateInitialisedEvent) {
+                    repo.handleAggregateInitialisedEvent((AggregateInitialisedEvent) event);
+                } else {
+                    agg = repo.find(event.getAggregateId());
+                    agg.replay(event);
+                }
             }
         }
-    }
 
+
+    }
 }

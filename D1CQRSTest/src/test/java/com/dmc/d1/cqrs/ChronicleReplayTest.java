@@ -3,13 +3,11 @@ package com.dmc.d1.cqrs;
 import com.dmc.d1.algo.event.Configuration;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
-import com.dmc.d1.cqrs.event.EventFactory;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
 import com.dmc.d1.cqrs.test.aggregate.Aggregate1;
 import com.dmc.d1.cqrs.test.aggregate.Aggregate2;
-import com.dmc.d1.cqrs.test.aggregate.AggregateFactoryImpl;
 import com.dmc.d1.cqrs.test.command.CreateAggregate1Command;
 import com.dmc.d1.cqrs.test.command.CreateAggregate2Command;
 import com.dmc.d1.cqrs.test.command.UpdateAggregate1Command;
@@ -17,11 +15,10 @@ import com.dmc.d1.cqrs.test.command.UpdateAggregate2Command;
 import com.dmc.d1.cqrs.test.commandhandler.MyCommandHandler1;
 import com.dmc.d1.cqrs.test.commandhandler.MyCommandHandler2;
 import com.dmc.d1.cqrs.test.domain.MyId;
-import com.dmc.d1.cqrs.util.InstanceAllocator;
+import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StopWatch;
 
 import java.util.*;
@@ -35,29 +32,26 @@ import static org.junit.Assert.assertEquals;
 @Ignore
 public class ChronicleReplayTest {
 
-
-    EventFactory chronicleEventFactory = Configuration.getEventFactoryChronicle();
-    InstanceAllocator instanceAllocator = Configuration.getInstanceAllocatorChronicle();
-
     CommandBus commandBus;
 
     AggregateEventReplayer replayer;
+    InitialisationEventFactory initialisationEventFactory = Configuration.initialisationEventFactoryChronicle();
 
 
     AggregateEventStore chronicleAES;
     AggregateRepository<Aggregate1> repo1;
     AggregateRepository<Aggregate2> repo2;
 
-    AggregateFactory aggregateFactory = new AggregateFactoryImpl();
-
 
     private void setup() throws Exception {
-        chronicleAES = new ChronicleAggregateEventStore(instanceAllocator, Configuration.getChroniclePath());
+
+        ThreadLocalObjectPool.initialise();
+        chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         SimpleEventBus eventBus = new SimpleEventBus();
 
-        repo1 = new AggregateRepository(chronicleAES, Aggregate1.class, eventBus, chronicleEventFactory, aggregateFactory);
-        repo2 = new AggregateRepository(chronicleAES, Aggregate2.class, eventBus, chronicleEventFactory, aggregateFactory);
+        repo1 = new AggregateRepository(chronicleAES, Aggregate1.class, eventBus,   new Aggregate1.Factory(), initialisationEventFactory);
+        repo2 = new AggregateRepository(chronicleAES, Aggregate2.class, eventBus,  new Aggregate2.Factory(), initialisationEventFactory);
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
 
@@ -174,14 +168,10 @@ public class ChronicleReplayTest {
 
             Aggregate aggregate = null;
             if (rnd % 2 == 0) {
-                long t0 = System.nanoTime();
                 commandBus.dispatch(new CreateAggregate1Command(id, rnd, rnd + 2));
-
                 aggregate = repo1.find(id.asString());
             } else if (Math.abs(rnd % 2) == 1) {
-                long t0 = System.nanoTime();
                 commandBus.dispatch(new CreateAggregate2Command(id, "" + rnd, "" + (rnd + 2)));
-
                 aggregate = repo2.find(id.asString());
             }
             aggregates.add(aggregate);

@@ -1,13 +1,13 @@
 package com.dmc.d1.cqrs.test.event;
 
-import com.dmc.d1.algo.event.HandledByExternalHandlersEvent;
-import com.dmc.d1.algo.event.TriggerExceptionInNestedAggregateEvent;
 import com.dmc.d1.cqrs.annotations.EventHandler;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.event.AbstractEventHandler;
 import com.dmc.d1.cqrs.test.command.CreateNestedAggregate1Command;
 import com.dmc.d1.cqrs.test.command.ExceptionTriggeringNestedAggregateCommand;
 import com.dmc.d1.cqrs.test.domain.MyNestedId;
+import com.dmc.d1.test.event.HandledByExternalHandlersEvent;
+import com.dmc.d1.test.event.TriggerExceptionInNestedAggregateEvent;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

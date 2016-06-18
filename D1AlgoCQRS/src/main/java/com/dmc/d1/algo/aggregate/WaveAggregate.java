@@ -1,6 +1,7 @@
 package com.dmc.d1.algo.aggregate;
 
 import com.dmc.d1.cqrs.Aggregate;
+import com.dmc.d1.cqrs.util.NewInstanceFactory;
 import com.dmc.d1.domain.WaveId;
 
 /**
@@ -10,17 +11,27 @@ public class WaveAggregate extends Aggregate {
 
     private static String CLASS_NAME = WaveAggregate.class.getName();
 
-    private WaveId waveId;
-
-    public WaveAggregate(WaveId waveId){
-        super(waveId.asString(), CLASS_NAME);
-        this.waveId = waveId;
-
+    WaveAggregate(){
     }
 
     @Override
     protected void rollbackAggregateToInitialState() {
 
+    }
+
+
+
+    public static class Factory implements NewInstanceFactory<WaveAggregate> {
+
+        @Override
+        public String getClassName() {
+            return CLASS_NAME;
+        }
+
+        @Override
+        public WaveAggregate newInstance() {
+            return new WaveAggregate();
+        }
     }
 
 }

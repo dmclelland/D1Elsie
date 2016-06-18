@@ -10,36 +10,62 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Created By davidclelland on 09/06/2016.
  */
-public class ObjectPool<T> {
+class ObjectPool<T> {
 
-    private final Map<String, EntityPool> pool = new HashMap<>();
+    private final Map<String, Slot<T>> slots = new HashMap<>();
+
+    private final int size;
 
     public void reset() {
-        pool.values().forEach(p ->p.clear());
+        slots.values().forEach(p -> {
+            if (p.counter > 0) p.clear();
+        });
     }
 
+    public void createSlot(NewInstanceFactory<T> newInstanceFactory) {
+        String className = newInstanceFactory.getClassName();
+        Slot<T> t = slots.get(className);
+
+        if (t == null) {
+            t = new Slot(className, size, newInstanceFactory);
+            slots.put(className, t);
+        }
+    }
+
+    public int slotSize(String className){
+        return slots.get(className).pool.size();
+    }
+
+
     public T allocateObject(String className) {
-        EntityPool<T> t  =  pool.get(className);
+
+        Slot<T> t = slots.get(className);
+        if (t == null)
+            throw new IllegalStateException("Unable to allocate an object for " + className + " as a slot hasn't been created");
+
         return t.getEntry();
     }
 
-    public ObjectPool(List<String> classNames, InstanceAllocator<T> instanceAllocator, int size) {
-        classNames.forEach(e -> {
-            pool.put(e, new EntityPool(e, size, instanceAllocator));
-        });
+    NewInstanceFactory<T> getNewInstanceFactory(String className) {
+        return slots.get(className).newInstanceFactory;
     }
-    private static class EntityPool<T> {
+
+    public ObjectPool(int size) {
+        this.size = size;
+    }
+
+    private static class Slot<T> {
         final String className;
-        final int initialPoolSize;
+        final int initialSlotSize;
         final List<T> pool;
-        final InstanceAllocator<T> instanceAllocator;
+        final NewInstanceFactory<T> newInstanceFactory;
         int counter = 0;
 
-        public EntityPool(String className, int initialPoolSize, InstanceAllocator<T> instanceAllocator) {
-            this.initialPoolSize = initialPoolSize;
+        public Slot(String className, int initialSlotSize, NewInstanceFactory<T> newInstanceFactory) {
+            this.initialSlotSize = initialSlotSize;
             this.className = className;
-            this.pool = new ArrayList<>(initialPoolSize);
-            this.instanceAllocator = checkNotNull(instanceAllocator);
+            this.pool = new ArrayList<>(initialSlotSize);
+            this.newInstanceFactory = checkNotNull(newInstanceFactory);
             increasePoolSize();
         }
 
@@ -51,9 +77,8 @@ public class ObjectPool<T> {
         }
 
         private void increasePoolSize() {
-
-            for (int i = 0; i < initialPoolSize; i++) {
-                pool.add(instanceAllocator.allocateInstance(className));
+            for (int i = 0; i < initialSlotSize; i++) {
+                pool.add(newInstanceFactory.newInstance());
             }
         }
 

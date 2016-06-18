@@ -1,7 +1,7 @@
 package com.dmc.d1.cqrs.event.store;
 
 import com.dmc.d1.cqrs.event.ChronicleAggregateEvent;
-import com.dmc.d1.cqrs.util.InstanceAllocator;
+import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.queue.ChronicleQueueBuilder;
 import net.openhft.chronicle.queue.ExcerptAppender;
@@ -10,29 +10,30 @@ import net.openhft.chronicle.wire.DocumentContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
  * Created by davidclelland on 17/05/2016.
  */
-public class ChronicleAggregateEventStore implements AggregateEventStore<ChronicleAggregateEvent>{
+public class ChronicleAggregateEventStore implements AggregateEventStore<ChronicleAggregateEvent> {
 
     private final ChronicleQueue chronicle;
     private final ExcerptAppender appender;
     private final ExcerptTailer tailer;
-    private final InstanceAllocator<ChronicleAggregateEvent> instanceAllocator;
     private final String path;
 
+    private final ChronicleIterator iterator;
 
-    public ChronicleAggregateEventStore(InstanceAllocator<ChronicleAggregateEvent> instanceAllocator, String path) throws IOException {
 
+    public ChronicleAggregateEventStore(String path) throws IOException {
         chronicle = ChronicleQueueBuilder.single(path)
                 .blockSize(128 << 20)
                 .build();
 
         appender = chronicle.createAppender();
         tailer = chronicle.createTailer();
-        this.instanceAllocator = instanceAllocator;
+        iterator = new ChronicleIterator(tailer);
         this.path = path;
     }
 
@@ -50,44 +51,60 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Chronic
         }
     }
 
+
     @Override
-    public List<ChronicleAggregateEvent> get(String id) {
+    public Iterator<List<ChronicleAggregateEvent>> iterator() {
+        iterator.reset();
+        return iterator;
+    }
 
-        tailer.toStart();
 
-        List<ChronicleAggregateEvent> lst = new ArrayList<>();
+    private static class ChronicleIterator implements Iterator<List<ChronicleAggregateEvent>> {
+        private final ExcerptTailer tailer;
+        private final List<ChronicleAggregateEvent> lst = new ArrayList();
 
-        String classIdentifier;
-        while ((classIdentifier = tailer.readText()) != null) {
-            try (DocumentContext documentContext = tailer.readingDocument()) {
-                ChronicleAggregateEvent e = instanceAllocator.allocateInstance(classIdentifier);
-                e.readMarshallable(documentContext.wire());
+        private boolean hasNext = true;
 
-                if (id.equals(e.getAggregateId())) {
+
+        ChronicleIterator(ExcerptTailer tailer) {
+            this.tailer = tailer;
+            tailer.toStart();
+        }
+
+        public void reset() {
+            tailer.toStart();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return hasNext;
+        }
+
+        @Override
+        public List<ChronicleAggregateEvent> next() {
+            //iterate until ANY of the thread local pools are filled
+            lst.clear();
+
+            String classIdentifier;
+            while ((classIdentifier = tailer.readText()) != null) {
+                try (DocumentContext documentContext = tailer.readingDocument()) {
+                    ChronicleAggregateEvent e = ThreadLocalObjectPool.allocateObject(classIdentifier);
+                    e.readMarshallable(documentContext.wire());
                     lst.add(e);
+
+                    if (lst.size() == ThreadLocalObjectPool.slotSize(classIdentifier)) {
+                        break;
+                    }
                 }
             }
+
+
+            if (classIdentifier == null)
+                this.hasNext = false;
+
+            return lst;
         }
-        return lst;
     }
-
-    @Override
-    public List<ChronicleAggregateEvent> getAll() {
-        tailer.toStart();
-
-        List<ChronicleAggregateEvent> lst = new ArrayList<>();
-
-        String classIdentifier;
-        while ((classIdentifier = tailer.readText()) != null) {
-            try (DocumentContext documentContext = tailer.readingDocument()) {
-                ChronicleAggregateEvent e = instanceAllocator.allocateInstance(classIdentifier);
-                e.readMarshallable(documentContext.wire());
-                lst.add(e);
-            }
-        }
-        return lst;
-    }
-
 
 
     public String getChroniclePath() {

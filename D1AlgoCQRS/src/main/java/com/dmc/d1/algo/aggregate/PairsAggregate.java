@@ -1,6 +1,7 @@
 package com.dmc.d1.algo.aggregate;
 
 import com.dmc.d1.cqrs.Aggregate;
+import com.dmc.d1.cqrs.util.NewInstanceFactory;
 import com.dmc.d1.domain.Id;
 import com.dmc.d1.domain.PairId;
 
@@ -11,18 +12,26 @@ public class PairsAggregate extends Aggregate{
 
     private static String CLASS_NAME = PairsAggregate.class.getName();
 
-
-    private PairId pairId;
-
-    public PairsAggregate(PairId pairId){
-        super(pairId.asString(), CLASS_NAME);
-
-        this.pairId = pairId;
+    PairsAggregate(){
     }
 
     @Override
     protected void rollbackAggregateToInitialState() {
 
+    }
+
+
+    public static class Factory implements NewInstanceFactory<PairsAggregate> {
+
+        @Override
+        public String getClassName() {
+            return CLASS_NAME;
+        }
+
+        @Override
+        public PairsAggregate newInstance() {
+            return new PairsAggregate();
+        }
     }
 
 
