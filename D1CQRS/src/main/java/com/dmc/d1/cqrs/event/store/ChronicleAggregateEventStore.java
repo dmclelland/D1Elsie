@@ -72,6 +72,7 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Chronic
         }
 
         public void reset() {
+            this.hasNext = true;
             tailer.toStart();
         }
 

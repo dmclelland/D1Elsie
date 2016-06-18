@@ -132,7 +132,6 @@ public class ChronicleReplayTest {
             if (Integer.parseInt(id.asString()) % 2 == 0) {
 
                 UpdateAggregate1Command command = new UpdateAggregate1Command(id, rnd - 5, rnd - 7);
-                long t0 = System.nanoTime();
                 commandBus.dispatch(command);
 
                 Aggregate1 aggregate = repo1.find(id.asString());
@@ -142,7 +141,7 @@ public class ChronicleReplayTest {
             } else {
 
                 UpdateAggregate2Command command = new UpdateAggregate2Command(id, "" + (rnd - 5), "" + (rnd - 7));
-                long t0 = System.nanoTime();
+
                 commandBus.dispatch(command);
 
                 Aggregate2 aggregate = repo2.find(id.asString());
