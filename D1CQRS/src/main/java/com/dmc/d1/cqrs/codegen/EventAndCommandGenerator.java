@@ -1,13 +1,13 @@
 package com.dmc.d1.cqrs.codegen;
 
-import com.dmc.d1.cqrs.util.Pooled;
-import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import com.dmc.d1.cqrs.event.AggregateEvent;
 import com.dmc.d1.cqrs.event.AggregateEventAbstract;
 import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.ChronicleAggregateEvent;
 import com.dmc.d1.cqrs.util.NewInstanceFactory;
+import com.dmc.d1.cqrs.util.Pooled;
 import com.dmc.d1.cqrs.util.Resettable;
+import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import com.squareup.javapoet.*;
 import net.openhft.chronicle.core.io.IORuntimeException;
 import net.openhft.chronicle.wire.Marshallable;
@@ -96,13 +96,10 @@ class EventAndCommandGenerator {
     private ClassVo parseClassElem(Element element) throws Exception {
 
 
-        Class clazz;
-        Class parameterizedClazz;
-
         ClassVo vo = new ClassVo();
         String fullClass = element.getAttributeValue("name");
 
-        if(element.getAttribute("initialisationEvent")!=null && "true".equals(element.getAttributeValue("initialisationEvent"))){
+        if (element.getAttribute("initialisationEvent") != null && "true".equals(element.getAttributeValue("initialisationEvent"))) {
             vo.initialisationEvent = true;
         }
 
@@ -111,14 +108,22 @@ class EventAndCommandGenerator {
         vo.packageName = fullClass.substring(0, pos);
         vo.className = fullClass.substring(pos + 1);
 
+
         for (Element field : element.getChildren("field")) {
             String name = field.getAttributeValue("name");
-            clazz = Class.forName(field.getAttributeValue("type"));
+            Class clazz = Class.forName(field.getAttributeValue("type"));
 
             TypeName typeName;
             if (field.getAttribute("parameterized-type") != null) {
-                parameterizedClazz = clazz = Class.forName(field.getAttributeValue("parameterized-type"));
-                typeName = ParameterizedTypeName.get(clazz, parameterizedClazz);
+                String ptFullName = field.getAttributeValue("parameterized-type");
+
+                int ptPos = ptFullName.lastIndexOf(".");
+
+                String ptPackageName = ptFullName.substring(0, ptPos);
+                String ptClassName = ptFullName.substring(ptPos + 1);
+
+                ClassName parameterizedClazz = ClassName.get(ptPackageName, ptClassName);
+                typeName = ParameterizedTypeName.get(ClassName.get(clazz), parameterizedClazz);
             } else {
                 typeName = TypeName.get(clazz);
             }
@@ -139,7 +144,7 @@ class EventAndCommandGenerator {
                 .addModifiers(Modifier.PUBLIC);
 
         if (Type.EVENT == type) {
-            if(vo.initialisationEvent)
+            if (vo.initialisationEvent)
                 interfaceBuilder.addSuperinterface(AggregateInitialisedEvent.class);
             else
                 interfaceBuilder.addSuperinterface(AggregateEvent.class);
@@ -245,10 +250,6 @@ class EventAndCommandGenerator {
         MethodSpec newInstanceFactoryMethod = MethodSpec.methodBuilder("newInstanceFactory").returns(factoryInterface).addModifiers(Modifier.STATIC)
                 .addStatement("return FACTORY").build();
 
-        MethodSpec getNewInstanceFactoryMethod = MethodSpec.methodBuilder("getNewInstanceFactory").returns(factoryInterface).addModifiers(Modifier.PUBLIC)
-                .addStatement("return FACTORY")
-                .addAnnotation(Override.class)
-                .build();
 
         MethodSpec.Builder readMarshallableMethod = MethodSpec.methodBuilder("readMarshallable")
                 .addParameter(WireIn.class, "wireIn")
@@ -266,9 +267,7 @@ class EventAndCommandGenerator {
                 .addField(CLASS_NAME)
                 .addType(newInstanceFactory)
                 .addField(FACTORY)
-                .addMethod(newInstanceFactoryMethod)
-                .addMethod(getNewInstanceFactoryMethod);
-
+                .addMethod(newInstanceFactoryMethod);
 
 
         if (Type.EVENT == type) {
@@ -399,7 +398,7 @@ class EventAndCommandGenerator {
                 .addModifiers(Modifier.PRIVATE).build());
 
         MethodSpec.Builder startBuilding = MethodSpec.methodBuilder("startBuilding")
-                .addModifiers(Modifier.STATIC,Modifier.PUBLIC)
+                .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
                 .returns(builderName);
 
         if (Type.EVENT == type)
@@ -426,7 +425,7 @@ class EventAndCommandGenerator {
 
         MethodSpec.Builder buildBasicMethod = MethodSpec.methodBuilder("buildBasic")
                 .addModifiers(Modifier.PUBLIC)
-                .returns(vo.initialisationEvent ? ClassName.get(AggregateInitialisedEvent.class) :interfaceClass);
+                .returns(vo.initialisationEvent ? ClassName.get(AggregateInitialisedEvent.class) : interfaceClass);
         CodeBlock.Builder basicNew = CodeBlock.builder().add("$T basic = new $T(", basicClass, basicClass);
 
         int noOfParams = vo.instanceVariables.keySet().size();

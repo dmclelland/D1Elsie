@@ -58,7 +58,6 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Chronic
         return iterator;
     }
 
-
     private static class ChronicleIterator implements Iterator<List<ChronicleAggregateEvent>> {
         private final ExcerptTailer tailer;
         private final List<ChronicleAggregateEvent> lst = new ArrayList();
@@ -85,6 +84,7 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Chronic
         public List<ChronicleAggregateEvent> next() {
             //iterate until ANY of the thread local pools are filled
             lst.clear();
+            ThreadLocalObjectPool.clear();
 
             String classIdentifier;
             while ((classIdentifier = tailer.readText()) != null) {
@@ -98,7 +98,6 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Chronic
                     }
                 }
             }
-
 
             if (classIdentifier == null)
                 this.hasNext = false;

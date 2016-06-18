@@ -26,6 +26,7 @@ public final class ThreadLocalObjectPool {
 
             //for every pooled concrete object set up a slot
             for (Class<? extends Pooled> pooled : pooledSet) {
+
                 if (!(Modifier.isAbstract(pooled.getModifiers()) || Modifier.isInterface(pooled.getModifiers()))) {
                     Method m = pooled.getDeclaredMethod("newInstanceFactory", null);
                     m.setAccessible(true);

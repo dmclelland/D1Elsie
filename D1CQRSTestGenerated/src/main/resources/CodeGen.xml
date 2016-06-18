@@ -5,15 +5,15 @@
             <field name="adjustedShares" type="java.lang.Integer"/>
         </class>
 
-          <!--
-        <class name="com.dmc.d1.test.domain.Basket">
-            <field name="ric" type="java.lang.String"/>
-            <field name="tradeDate" type="java.util.Date"/>
-            <field name="divisor" type="java.lang.Integer"/>
-            <field name="basketConstituents" type="java.util.List"
-                   parameterized-type="com.dmc.d1.test.domain.BasketConstituent"/>
-        </class>
-        -->
+
+        <!--<class name="com.dmc.d1.test.domain.Basket">-->
+            <!--<field name="ric" type="java.lang.String"/>-->
+            <!--<field name="tradeDate" type="java.util.Date"/>-->
+            <!--<field name="divisor" type="java.lang.Integer"/>-->
+            <!--<field name="basketConstituents" type="java.util.List"-->
+                   <!--parameterized-type="com.dmc.d1.test.domain.BasketConstituent"/>-->
+        <!--</class>-->
+
     </domain>
     <event>
 
