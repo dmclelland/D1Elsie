@@ -15,10 +15,12 @@ public class PairsAggregate extends Aggregate{
     PairsAggregate(){
     }
 
-    @Override
-    protected void rollbackAggregateToInitialState() {
 
+    @Override
+    protected void copyState(Aggregate copy) {
+        PairsAggregate agg = (PairsAggregate) copy;
     }
+
 
 
     public static class Factory implements NewInstanceFactory<PairsAggregate> {

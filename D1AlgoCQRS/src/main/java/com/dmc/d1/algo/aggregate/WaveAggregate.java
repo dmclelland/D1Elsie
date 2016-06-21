@@ -14,9 +14,10 @@ public class WaveAggregate extends Aggregate {
     WaveAggregate(){
     }
 
-    @Override
-    protected void rollbackAggregateToInitialState() {
 
+    @Override
+    protected void copyState(Aggregate copy) {
+        WaveAggregate agg = (WaveAggregate) copy;
     }
 
 

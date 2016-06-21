@@ -15,28 +15,27 @@ public class Aggregate2 extends Aggregate {
     private String s1;
     private String s2;
 
-
     Aggregate2() {
     }
 
-
     @Override
-    protected void rollbackAggregateToInitialState() {
-        this.s1 = null;
-        this.s2 = null;
+    protected void copyState(Aggregate copy) {
+        Aggregate2 agg = (Aggregate2) copy;
+        this.s1 = agg.s1;
+        this.s2 = agg.s2;
     }
 
 
     public void doSomething(String s1, String s2) {
-        apply(StringUpdatedEvent1Builder.startBuilding(getId()).str(s1).buildChronicle());
-        apply(StringUpdatedEvent2Builder.startBuilding(getId()).str(s2).buildChronicle());
+        apply(StringUpdatedEvent1Builder.startBuilding(getId()).str(s1).buildMutable(true));
+        apply(StringUpdatedEvent2Builder.startBuilding(getId()).str(s2).buildMutable(true));
 
     }
 
     public void doSomethingWhichCausesException(String s1, String s2) {
-        apply(StringUpdatedEvent1Builder.startBuilding(getId()).str(s1).buildChronicle());
-        apply(StringUpdatedEvent2Builder.startBuilding(getId()).str(s2).buildChronicle());
-        apply(TriggerExceptionEventBuilder.startBuilding(getId()).buildChronicle());
+        apply(StringUpdatedEvent1Builder.startBuilding(getId()).str(s1).buildMutable(true));
+        apply(StringUpdatedEvent2Builder.startBuilding(getId()).str(s2).buildMutable(true));
+        apply(TriggerExceptionEventBuilder.startBuilding(getId()).buildMutable(true));
     }
 
     @EventHandler

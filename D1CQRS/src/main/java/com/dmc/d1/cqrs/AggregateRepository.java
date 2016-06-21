@@ -40,19 +40,17 @@ public class AggregateRepository<A extends Aggregate> {
         this.initialisationEventFactory = checkNotNull(initialisationEventFactory);
     }
 
-    A create(String id) {
+    final A create(String id) {
         //initialized event used for replays - the event is a marker to indicate
         //that a new aggregate of the specified type needs to be created
         AggregateInitialisedEvent initialisationEvent = initialisationEventFactory.newInstance(id);
-
         initialisationEvent.setAggregateClassName(aggregateClassName);
-
         A aggregate = handleAggregateInitialisedEvent(initialisationEvent);
         aggregate.apply(initialisationEvent);
         return aggregate;
     }
 
-    A handleAggregateInitialisedEvent(AggregateInitialisedEvent event) {
+    final A handleAggregateInitialisedEvent(AggregateInitialisedEvent event) {
         A aggregate = newInstanceFactory.newInstance();
         aggregate.setId(event.getAggregateId());
         aggregate.setAggregateClassName(event.getAggregateClassName());
@@ -61,11 +59,16 @@ public class AggregateRepository<A extends Aggregate> {
         aggregate.setEventBus(eventBus);
         aggregate.setAggregateEventStore(aggregateEventStore);
 
+        //copy used for rollback
+        A old = newInstanceFactory.newInstance();
+        old.copy(aggregate);
+        aggregate.setOld(old);
+
         cache.put(aggregate.getId(), aggregate);
         return aggregate;
     }
 
-    A find(String id) {
+    final A find(String id) {
         return cache.get(id);
     }
 
@@ -79,7 +82,7 @@ public class AggregateRepository<A extends Aggregate> {
         }
     }
 
-    String getAggregateClassName() {
+    final String getAggregateClassName() {
         return aggregateClassName;
     }
 }

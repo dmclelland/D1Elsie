@@ -26,12 +26,20 @@ public abstract class Aggregate {
     private String id;
 
     //concrete class name of this aggregate
-
     private String aggregateClassName;
 
-    protected Aggregate() {
+    private Aggregate old;
+
+    final void copy(Aggregate aggregate){
+        this.eventHandler = aggregate.eventHandler;
+        this.eventBus = aggregate.eventBus;
+        this.aggregateEventStore = aggregate.aggregateEventStore;
+        this.id = aggregate.id;
+
+        copyState(aggregate);
     }
 
+    protected abstract void copyState(Aggregate aggregate);
 
     protected final <E extends AggregateEvent> void apply(E event) {
         //assign the aggregate class that raised the event
@@ -42,11 +50,9 @@ public abstract class Aggregate {
         eventBus.publish(event);
     }
 
-    void replay(AggregateEvent event) {
+    final void replay(AggregateEvent event) {
         applyAggregateEvent(event);
     }
-
-    protected abstract void rollbackAggregateToInitialState();
 
     protected final String getId() {
         return id;
@@ -59,22 +65,14 @@ public abstract class Aggregate {
     final void commit() {
         aggregateEventStore.add(uncommittedEvents);
         clearUncommittedEvents();
+        old.copyState(this);
     }
 
     final void rollback() {
         clearUncommittedEvents();
-        rollbackAggregateToInitialState();
-        Iterator<List<AggregateEvent>> batches = aggregateEventStore.iterator();
-        List<AggregateEvent> events;
-        while (batches.hasNext()) {
-            events = batches.next();
-            for (AggregateEvent event : events) {
-                if (getId().equals(event.getAggregateId())) {
-                    applyAggregateEvent(event);
-                }
-            }
-        }
+        this.copyState(old);
     }
+
 
     private void addToUncommitted(AggregateEvent e) {
         uncommittedEvents.add(e);
@@ -84,23 +82,27 @@ public abstract class Aggregate {
         uncommittedEvents.clear();
     }
 
-    void setEventHandler(AnnotatedAggregateEventHandlerInvoker eventHandler) {
+    final void setEventHandler(AnnotatedAggregateEventHandlerInvoker eventHandler) {
         this.eventHandler = checkNotNull(eventHandler);
     }
 
-    void setEventBus(EventBus eventBus) {
+    final void setEventBus(EventBus eventBus) {
         this.eventBus = checkNotNull(eventBus);
     }
 
-    void setAggregateEventStore(AggregateEventStore aggregateEventStore) {
+    final void setAggregateEventStore(AggregateEventStore aggregateEventStore) {
         this.aggregateEventStore = checkNotNull(aggregateEventStore);
     }
 
-    void setId(String id) {
+    final void setId(String id) {
         this.id = id;
     }
 
-    void setAggregateClassName(String aggregateClassName) {
+    final void setAggregateClassName(String aggregateClassName) {
         this.aggregateClassName = aggregateClassName;
+    }
+
+    final void setOld(Aggregate old) {
+        this.old = old;
     }
 }

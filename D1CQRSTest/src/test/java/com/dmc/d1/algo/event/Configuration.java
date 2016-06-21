@@ -21,18 +21,12 @@ public class Configuration {
 
     public static InitialisationEventFactory initialisationEventFactoryChronicle() {
         return id ->
-                TestAggregateInitialisedEventBuilder.startBuilding(id).buildChronicle();
+                TestAggregateInitialisedEventBuilder.startBuilding(id).buildMutable(true);
     }
 
     public static InitialisationEventFactory initialisationEventFactoryBasic() {
         return id ->
-                TestAggregateInitialisedEventBuilder.startBuilding(id).buildBasic();
-    }
-
-    public void initialiseObjectPool() throws Exception{
-
-
-
+                TestAggregateInitialisedEventBuilder.startBuilding(id).buildMutable(false);
     }
 
 }

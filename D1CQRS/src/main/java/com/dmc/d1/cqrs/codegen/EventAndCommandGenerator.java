@@ -21,8 +21,11 @@ import org.jetbrains.annotations.NotNull;
 import javax.lang.model.element.Modifier;
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -111,21 +114,16 @@ class EventAndCommandGenerator {
 
         for (Element field : element.getChildren("field")) {
             String name = field.getAttributeValue("name");
-            Class clazz = Class.forName(field.getAttributeValue("type"));
+            ClassName className = getClassNameFromPackage(field.getAttributeValue("type"));
 
             TypeName typeName;
             if (field.getAttribute("parameterized-type") != null) {
                 String ptFullName = field.getAttributeValue("parameterized-type");
 
-                int ptPos = ptFullName.lastIndexOf(".");
-
-                String ptPackageName = ptFullName.substring(0, ptPos);
-                String ptClassName = ptFullName.substring(ptPos + 1);
-
-                ClassName parameterizedClazz = ClassName.get(ptPackageName, ptClassName);
-                typeName = ParameterizedTypeName.get(ClassName.get(clazz), parameterizedClazz);
+                ClassName parameterizedClazz = getClassNameFromPackage(ptFullName);
+                typeName = ParameterizedTypeName.get(className, parameterizedClazz);
             } else {
-                typeName = TypeName.get(clazz);
+                typeName = className;
             }
 
 
@@ -134,6 +132,17 @@ class EventAndCommandGenerator {
         }
 
         return vo;
+    }
+
+    @NotNull
+    private ClassName getClassNameFromPackage(String fullName) {
+
+        int ptPos = fullName.lastIndexOf(".");
+
+        String ptPackageName = fullName.substring(0, ptPos);
+        String ptClassName = fullName.substring(ptPos + 1);
+
+        return ClassName.get(ptPackageName, ptClassName);
     }
 
     private ClassName generateInterface(ClassVo vo, Type type) throws Exception {
@@ -293,36 +302,47 @@ class EventAndCommandGenerator {
             setBuilder.addStatement("setClassName(CLASS_NAME)");
         }
 
-//        @Override
-//        public void readMarshallable(WireIn wireIn) throws IORuntimeException {
-//            wireIn.read(()-> "id").text(this, (o, b) -> o.setAggregateId(b));
-//            wireIn.read(()-> "i").int32(this, (o, b) -> o.i = b);
-//            setClassName(CLASS_NAME);
-//        }
-//
-//        @Override
-//        public void writeMarshallable(WireOut wireOut) {
-//            wireOut.write(()-> "id").text(getAggregateId());
-//            wireOut.write(()-> "i").int32(i);
-//        }
 
         if (Type.EVENT == type) {
             readMarshallableMethod.addStatement("wireIn.read(()-> \"aggregateId\").text(this, (o, b) -> o.setAggregateId(b))");
             readMarshallableMethod.addStatement("setClassName(CLASS_NAME)");
-            readMarshallableMethod.addStatement("wireIn.read(() -> \"aggregateClassName\").text(this, (o, b) -> o.setAggregateClassName(b));");
+            readMarshallableMethod.addStatement("wireIn.read(() -> \"aggregateClassName\").text(this, (o, b) -> o.setAggregateClassName(b))");
             writeMarshallableMethod.addStatement("wireOut.write(()-> \"aggregateId\").text(getAggregateId())");
-            writeMarshallableMethod.addStatement("wireOut.write(() -> \"aggregateClassName\").text(getAggregateClassName());");
+            writeMarshallableMethod.addStatement("wireOut.write(() -> \"aggregateClassName\").text(getAggregateClassName())");
 
         }
+//
+//
+//        wireIn.read(() -> "basketConstituents").sequence(this.basketConstituents, (l, v) -> {
+//            while (v.hasNextSequenceItem()) l.add(v.object(BasketConstituent.class));
+//        });
+//        wireOut.write(() -> "basketConstituents").sequence(this.basketConstituents);
 
         for (String key : vo.instanceVariables.keySet()) {
+
 
             TypeName typeName = getFieldTypeName(vo, key);
             String dataTypeMethod = getChronicleDataTypeMethod(typeName);
 
             if (!key.equals("id")) {
-                readMarshallableMethod.addStatement("wireIn.read(()-> $S).$L(this, (o, b) -> o.$L = b)", key, dataTypeMethod, key);
-                writeMarshallableMethod.addStatement("wireOut.write(()-> $S).$L($L)", key, dataTypeMethod, key);
+                if ("sequence".equals(dataTypeMethod)) {
+                    ParameterizedTypeName ptn = (ParameterizedTypeName) typeName;
+                    TypeName parameterizedType = ptn.typeArguments.get(0);
+
+                    readMarshallableMethod.addCode("wireIn.read(()-> $S).sequence(this.$L,(l,v) -> {", key, key);
+                    readMarshallableMethod.addCode("while (v.hasNextSequenceItem())");
+                    readMarshallableMethod.addCode("l.add(v.object($T.class));", parameterizedType);
+                    readMarshallableMethod.addCode(" });");
+
+                    writeMarshallableMethod.addCode("wireOut.write(() -> $S)", key);
+                    writeMarshallableMethod.addCode(".sequence(this.$L);", key);
+                } else if ("object".equals(dataTypeMethod)) {
+                    readMarshallableMethod.addStatement("wireIn.read(()-> $S).object($T.class,this, (o,b) -> o.$L = b)", key, typeName, key);
+                    writeMarshallableMethod.addStatement("wireOut.write(()-> $S).object($T.class, this.$L)", key, typeName, key);
+                } else {
+                    readMarshallableMethod.addStatement("wireIn.read(()-> $S).$L(this, (o, b) -> o.$L = b)", key, dataTypeMethod, key);
+                    writeMarshallableMethod.addStatement("wireOut.write(()-> $S).$L($L)", key, dataTypeMethod, key);
+                }
             }
 
             eventBuilder.addField(typeName, key, Modifier.PRIVATE);
@@ -365,8 +385,40 @@ class EventAndCommandGenerator {
 
     }
 
+
     @NotNull
     private String getChronicleDataTypeMethod(TypeName typeName) {
+        if (typeName.isPrimitive()) {
+            if (TypeName.BOOLEAN == typeName)
+                return "bool";
+            else if (TypeName.DOUBLE == typeName)
+                return "float64";
+            else if (TypeName.FLOAT == typeName)
+                return "float32";
+            else if (TypeName.INT == typeName || TypeName.BYTE == typeName || TypeName.SHORT == typeName)
+                return "int32";
+            else if (TypeName.LONG == typeName)
+                return "int64";
+        } else {
+
+            String className;
+            if (typeName instanceof ParameterizedTypeName) {
+                className = ((ParameterizedTypeName) typeName).rawType.toString();
+            } else {
+                className = typeName.toString();
+            }
+
+            if ("java.lang.String".equals(className))
+                return "text";
+            else if ("java.time.LocalDate".equals(className))
+                return "date";
+            else if ("java.util.List".equals(className) || "java.util.Set".equals(className))
+                return "sequence";
+            else
+                return "object";
+        }
+
+
         return typeName.isPrimitive() ? "int32" : "text";
     }
 
@@ -388,7 +440,6 @@ class EventAndCommandGenerator {
         ClassName builderName = ClassName.get(vo.packageName, className);
 
         ParameterizedTypeName threadLocalBuilder = ParameterizedTypeName.get(threadLocalName, builderName);
-
 
         FieldSpec THREAD_LOCAL = FieldSpec.builder(threadLocalBuilder, "THREAD_LOCAL", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
                 .initializer("new ThreadLocal<>()").build();
@@ -416,17 +467,42 @@ class EventAndCommandGenerator {
         ClassName chronicleClass = ClassName.get(vo.packageName, vo.className + "Chronicle");
         ClassName basicClass = ClassName.get(vo.packageName, vo.className + "Basic");
 
-        MethodSpec.Builder buildChronicleMethod = MethodSpec.methodBuilder("buildChronicle")
+        MethodSpec.Builder buildMutableMethod = MethodSpec.methodBuilder("buildMutable")
                 .addModifiers(Modifier.PUBLIC)
+                .addParameter(TypeName.BOOLEAN, "pooled")
                 .returns(vo.initialisationEvent ? ClassName.get(AggregateInitialisedEvent.class) : interfaceClass);
-        buildChronicleMethod.addStatement("$T chronicleEvent = $T.allocateObject($T.CLASS_NAME)", chronicleClass, ThreadLocalObjectPool.class, chronicleClass);
+
+
+        buildMutableMethod.addStatement("$T chronicleEvent = pooled ? $T.allocateObject($T.CLASS_NAME) : $T.newInstanceFactory().newInstance()", chronicleClass, ThreadLocalObjectPool.class, chronicleClass, chronicleClass);
         CodeBlock.Builder chronicleSet = CodeBlock.builder().add("chronicleEvent.set(");
 
 
-        MethodSpec.Builder buildBasicMethod = MethodSpec.methodBuilder("buildBasic")
+        MethodSpec.Builder buildImmutableMethod = MethodSpec.methodBuilder("buildImmutable")
                 .addModifiers(Modifier.PUBLIC)
                 .returns(vo.initialisationEvent ? ClassName.get(AggregateInitialisedEvent.class) : interfaceClass);
         CodeBlock.Builder basicNew = CodeBlock.builder().add("$T basic = new $T(", basicClass, basicClass);
+
+//
+//
+//    public static BasketBuilder copyBuilder(Basket basket) {
+//        BasketBuilder builder = THREAD_LOCAL.get();
+//
+//
+//        List<BasketConstituent> basketConstituents = new ArrayList<>(basket.getBasketConstituents().size());
+//        for (BasketConstituent constituent : basket.getBasketConstituents()) {
+//            basketConstituents.add( BasketConstituentBuilder.copy(constituent));
+//        }
+//        return builder.ric(basket.getRic()).tradeDate(basket.getTradeDate())
+//                .divisor(basket.getDivisor()).basketConstituents(basketConstituents);
+//
+//    }
+
+        MethodSpec.Builder buildMutableCopyBuilderMethod = MethodSpec.methodBuilder("mutableCopyBuilder")
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                .addParameter(TypeName.BOOLEAN, "pooled")
+        .addParameter(interfaceClass, uncapitalize(vo.className));
+        buildMutableCopyBuilderMethod.addStatement("$T builder = THREAD_LOCAL.get()", builderName);
+        buildMutableCopyBuilderMethod.returns(builderName);
 
         int noOfParams = vo.instanceVariables.keySet().size();
 
@@ -443,7 +519,6 @@ class EventAndCommandGenerator {
         for (String key : vo.instanceVariables.keySet()) {
 
             TypeName typeName = getFieldTypeName(vo, key);
-
 
             builderBuilder.addField(typeName, key, Modifier.PRIVATE);
 
@@ -465,6 +540,42 @@ class EventAndCommandGenerator {
 
             builderBuilder.addMethod(parameterBuilder);
 
+            String dataTypeMethod = getChronicleDataTypeMethod(typeName);
+
+            if ("sequence".equals(dataTypeMethod)) {
+
+                TypeName ptn = ((ParameterizedTypeName) typeName).typeArguments.get(0);
+
+                ClassName argClassName = getClassNameFromPackage(ptn.toString());
+                ClassName nestedBuilder = ClassName.get(argClassName.packageName(), argClassName.simpleName()+"Builder");
+
+
+                buildMutableCopyBuilderMethod.addStatement("$T $L = new $T<>($L.get$Ts().size());", typeName, key, ArrayList.class,uncapitalize(vo.className), ptn);
+
+                buildMutableCopyBuilderMethod.beginControlFlow("for($T var: $L.get$Ts())", ptn, uncapitalize(vo.className), ptn);
+
+                buildMutableCopyBuilderMethod.addStatement("$L.add($T.mutableCopyBuilder(pooled, var).buildMutable(pooled))", key, nestedBuilder);
+                buildMutableCopyBuilderMethod.endControlFlow();
+
+                buildMutableCopyBuilderMethod.addStatement("builder.$L($L)", key, key);
+
+
+//                List<BasketConstituent> basketConstituents = new ArrayList<>(basket.getBasketConstituents().size());
+//                for (BasketConstituent constituent : basket.getBasketConstituents()) {
+//                    basketConstituents.add(BasketConstituentBuilder.mutableCopyBuilder(var).buildMutable(pooled));
+//                }
+
+            }else if("object".equals(dataTypeMethod)){
+                ClassName argClassName = getClassNameFromPackage(typeName.toString());
+                ClassName nestedBuilder = ClassName.get(argClassName.packageName(), argClassName.simpleName()+"Builder");
+
+                buildMutableCopyBuilderMethod.addStatement("builder.$L($T.mutableCopyBuilder(pooled, $L.get$T()).buildMutable(pooled))", key, nestedBuilder,uncapitalize(vo.className),typeName);
+                //builder.security(SecurityBuilder.mutableCopyBuilder(basket.getSecurity()).buildMutable(pooled));
+            }else{
+                //builder.divisor(basket.getDivisor());
+                buildMutableCopyBuilderMethod.addStatement("builder.$L($L.get$L())", key, uncapitalize(vo.className), capitalize(key));
+            }
+
             chronicleSet.add("$L$L", key, i == noOfParams ? "" : ",");
             basicNew.add("$L$L", key, i == noOfParams ? "" : ",");
             i++;
@@ -472,18 +583,20 @@ class EventAndCommandGenerator {
         chronicleSet.add(");");
         basicNew.add(");");
 
-        buildChronicleMethod.addCode(chronicleSet.build());
-        buildChronicleMethod.addStatement("return chronicleEvent");
+        buildMutableMethod.addCode(chronicleSet.build());
+        buildMutableMethod.addStatement("return chronicleEvent");
 
-        buildBasicMethod.addCode(basicNew.build());
-        buildBasicMethod.addStatement("return basic");
+        buildImmutableMethod.addCode(basicNew.build());
+        buildImmutableMethod.addStatement("return basic");
 
         startBuilding.addStatement("return builder");
 
         builderBuilder.addMethod(startBuilding.build());
-        builderBuilder.addMethod(buildChronicleMethod.build());
-        builderBuilder.addMethod(buildBasicMethod.build());
+        builderBuilder.addMethod(buildMutableMethod.build());
+        builderBuilder.addMethod(buildImmutableMethod.build());
 
+        buildMutableCopyBuilderMethod.addStatement("return builder");
+        builderBuilder.addMethod(buildMutableCopyBuilderMethod.build());
 
         JavaFile javaFile = JavaFile.builder(vo.packageName, builderBuilder.build())
                 .build();
@@ -497,6 +610,18 @@ class EventAndCommandGenerator {
         StringBuilder sb = new StringBuilder(str.length());
 
         sb.append(Character.toUpperCase(str.charAt(0)));
+
+        sb.append(str.substring(1));
+        return sb.toString();
+
+    }
+
+
+    private String uncapitalize(String str) {
+
+        StringBuilder sb = new StringBuilder(str.length());
+
+        sb.append(Character.toLowerCase(str.charAt(0)));
 
         sb.append(str.substring(1));
         return sb.toString();

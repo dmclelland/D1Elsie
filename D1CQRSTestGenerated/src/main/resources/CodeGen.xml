@@ -1,22 +1,25 @@
 <classes>
     <domain>
-        <class name="com.dmc.d1.test.domain.BasketConstituent">
-            <field name="ric" type="java.lang.String"/>
-            <field name="adjustedShares" type="java.lang.Integer"/>
+        <class name="com.dmc.d1.test.domain.Security">
+            <field name="name" type="java.lang.String"/>
+            <field name="adv20Day" type="java.lang.Integer" toPrimitive="true"/>
         </class>
 
+        <class name="com.dmc.d1.test.domain.BasketConstituent">
+            <field name="ric" type="java.lang.String"/>
+            <field name="adjustedShares" type="java.lang.Integer" toPrimitive="true"/>
+        </class>
 
-        <!--<class name="com.dmc.d1.test.domain.Basket">-->
-            <!--<field name="ric" type="java.lang.String"/>-->
-            <!--<field name="tradeDate" type="java.util.Date"/>-->
-            <!--<field name="divisor" type="java.lang.Integer"/>-->
-            <!--<field name="basketConstituents" type="java.util.List"-->
-                   <!--parameterized-type="com.dmc.d1.test.domain.BasketConstituent"/>-->
-        <!--</class>-->
-
+        <class name="com.dmc.d1.test.domain.Basket">
+            <field name="ric" type="java.lang.String"/>
+            <field name="tradeDate" type="java.time.LocalDate"/>
+            <field name="divisor" type="java.lang.Integer"/>
+            <field name="security" type="com.dmc.d1.test.domain.Security"/>
+            <field name="basketConstituents" type="java.util.List"
+                   parameterized-type="com.dmc.d1.test.domain.BasketConstituent"/>
+        </class>
     </domain>
     <event>
-
         <class name="com.dmc.d1.test.event.TestAggregateInitialisedEvent" initialisationEvent="true">
         </class>
 
@@ -47,6 +50,11 @@
             <field name="nestedId" type="java.lang.String"/>
             <field name="str" type="java.lang.String"/>
         </class>
+
+        <class name="com.dmc.d1.test.event.BasketCreatedEvent">
+            <field name="basket" type="com.dmc.d1.test.domain.Basket"/>
+        </class>
+
     </event>
     <command>
 

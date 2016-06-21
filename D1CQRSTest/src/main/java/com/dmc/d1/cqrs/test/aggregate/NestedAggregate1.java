@@ -21,18 +21,20 @@ public class NestedAggregate1 extends Aggregate {
 
     NestedAggregate1() {}
 
+
     @Override
-    protected void rollbackAggregateToInitialState() {
-        this.nestedProperty = null;
+    protected void copyState(Aggregate copy) {
+        NestedAggregate1 agg = (NestedAggregate1) copy;
+        this.nestedProperty = agg.nestedProperty;
     }
 
     public void doSomething(String nestedProperty) {
-        apply(NestedUpdatedEvent1Builder.startBuilding(getId()).str(nestedProperty).buildChronicle());
+        apply(NestedUpdatedEvent1Builder.startBuilding(getId()).str(nestedProperty).buildMutable(true));
     }
 
     public void doSomethingCausingError(String nestedProperty) {
-        apply(NestedUpdatedEvent1Builder.startBuilding(getId()).str(nestedProperty).buildChronicle());
-        apply(TriggerExceptionNestedEventBuilder.startBuilding(getId()).buildChronicle());
+        apply(NestedUpdatedEvent1Builder.startBuilding(getId()).str(nestedProperty).buildMutable(true));
+        apply(TriggerExceptionNestedEventBuilder.startBuilding(getId()).buildMutable(true));
     }
 
 
