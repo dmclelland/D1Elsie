@@ -16,7 +16,7 @@ public class WaveAggregate extends Aggregate {
 
 
     @Override
-    protected void copyState(Aggregate copy) {
+    protected void revertState(Aggregate copy) {
         WaveAggregate agg = (WaveAggregate) copy;
     }
 

@@ -21,23 +21,23 @@ public class Aggregate1 extends Aggregate {
     }
 
     @Override
-    protected void copyState(Aggregate copy) {
-        Aggregate1 agg = (Aggregate1)copy;
+    protected void revertState(Aggregate old) {
+        Aggregate1 agg = (Aggregate1) old;
         this.i1 = agg.i1;
         this.i2 = agg.i2;
         this.str = agg.str;
     }
 
     public void doSomething(int i1, int i2) {
-        apply(IntUpdatedEvent1Builder.startBuilding(getId()).i(i1).buildMutable(true));
-        apply(IntUpdatedEvent2Builder.startBuilding(getId()).i(i2).buildMutable(true));
+        apply(IntUpdatedEvent1Builder.startBuilding(getId()).i(i1).buildPooledJournalable());
+        apply(IntUpdatedEvent2Builder.startBuilding(getId()).i(i2).buildPooledJournalable());
     }
 
     public void doSomething2(String str) {
 
         String nestedId = generateNestedId(getId());
         apply(HandledByExternalHandlersEventBuilder.startBuilding(getId())
-                .nestedId(nestedId).str(str).buildMutable(true));
+                .nestedId(nestedId).str(str).buildPooledJournalable());
 
     }
 
@@ -45,7 +45,7 @@ public class Aggregate1 extends Aggregate {
     public void triggerExceptionInNestedAggregate(String str) {
         String nestedId = generateNestedId(getId());
         apply(TriggerExceptionInNestedAggregateEventBuilder.startBuilding(getId())
-                .nestedId(nestedId).str(str).buildMutable(true));
+                .nestedId(nestedId).str(str).buildPooledJournalable());
     }
 
     private String generateNestedId(String id) {

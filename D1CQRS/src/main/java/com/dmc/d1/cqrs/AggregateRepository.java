@@ -52,21 +52,26 @@ public class AggregateRepository<A extends Aggregate> {
 
     final A handleAggregateInitialisedEvent(AggregateInitialisedEvent event) {
         A aggregate = newInstanceFactory.newInstance();
+        initialise(aggregate, event);
+
+        //copy used for rollback
+        A old = newInstanceFactory.newInstance();
+        initialise(old, event);
+        aggregate.setOld(old);
+
+        cache.put(aggregate.getId(), aggregate);
+        return aggregate;
+    }
+
+    private void initialise(A aggregate, AggregateInitialisedEvent event){
         aggregate.setId(event.getAggregateId());
         aggregate.setAggregateClassName(event.getAggregateClassName());
 
         aggregate.setEventHandler(annotatedAggregateEventHandlerInvoker);
         aggregate.setEventBus(eventBus);
         aggregate.setAggregateEventStore(aggregateEventStore);
-
-        //copy used for rollback
-        A old = newInstanceFactory.newInstance();
-        old.copy(aggregate);
-        aggregate.setOld(old);
-
-        cache.put(aggregate.getId(), aggregate);
-        return aggregate;
     }
+
 
     final A find(String id) {
         return cache.get(id);

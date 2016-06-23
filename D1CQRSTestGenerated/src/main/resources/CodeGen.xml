@@ -1,22 +1,30 @@
 <classes>
     <domain>
-        <class name="com.dmc.d1.test.domain.Security">
+        <class name="com.dmc.d1.test.domain.Security" updateable="true">
             <field name="name" type="java.lang.String"/>
             <field name="adv20Day" type="java.lang.Integer" toPrimitive="true"/>
         </class>
 
-        <class name="com.dmc.d1.test.domain.BasketConstituent">
+        <class name="com.dmc.d1.test.domain.BasketConstituent" updateable="false">
             <field name="ric" type="java.lang.String"/>
             <field name="adjustedShares" type="java.lang.Integer" toPrimitive="true"/>
         </class>
 
-        <class name="com.dmc.d1.test.domain.Basket">
+        <class name="com.dmc.d1.test.domain.Basket" updateable="true">
             <field name="ric" type="java.lang.String"/>
             <field name="tradeDate" type="java.time.LocalDate"/>
-            <field name="divisor" type="java.lang.Integer"/>
+            <field name="divisor" type="java.lang.Integer" toPrimitive="true"/>
             <field name="security" type="com.dmc.d1.test.domain.Security"/>
-            <field name="basketConstituents" type="java.util.List"
-                   parameterized-type="com.dmc.d1.test.domain.BasketConstituent"/>
+
+            <field name="basketConstituents" type="java.util.List" concrete-type="java.util.ArrayList"
+                   parameterized-type="com.dmc.d1.test.domain.BasketConstituent" updatable="true"/>
+
+            <field name="basketConstituents2" type="java.util.Map" concrete-type="java.util.HashMap"
+                   parameterized-type="com.dmc.d1.test.domain.BasketConstituent" key="ric" updatable="true"/>
+
+            <!--<field name="basketConstituents3" type="java.util.Set" concrete="java.util.HashSet"
+                   parameterized-type="com.dmc.d1.test.domain.BasketConstituent"/> -->
+
         </class>
     </domain>
     <event>

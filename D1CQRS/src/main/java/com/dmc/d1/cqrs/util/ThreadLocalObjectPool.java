@@ -16,16 +16,16 @@ public final class ThreadLocalObjectPool {
 
     private static ThreadLocal<ObjectPool> THREAD_LOCAL = new ThreadLocal<>();
 
-    public static <T extends Pooled> void initialise() throws Exception {
+    public static <T extends Poolable> void initialise() throws Exception {
         if (THREAD_LOCAL.get() == null) {
             ObjectPool<T> pool = new ObjectPool(20);
             THREAD_LOCAL.set(pool);
 
             Reflections ref = new Reflections("com.dmc.d1");
-            Set<Class<? extends Pooled>> pooledSet = ref.getSubTypesOf(Pooled.class);
+            Set<Class<? extends Poolable>> pooledSet = ref.getSubTypesOf(Poolable.class);
 
             //for every pooled concrete object set up a slot
-            for (Class<? extends Pooled> pooled : pooledSet) {
+            for (Class<? extends Poolable> pooled : pooledSet) {
 
                 if (!(Modifier.isAbstract(pooled.getModifiers()) || Modifier.isInterface(pooled.getModifiers()))) {
                     Method m = pooled.getDeclaredMethod("newInstanceFactory", null);
@@ -48,7 +48,7 @@ public final class ThreadLocalObjectPool {
         THREAD_LOCAL.get().reset();
     }
 
-    public static <T> T allocateObject(String className){
+    public static <T extends Poolable> T allocateObject(String className){
         if (THREAD_LOCAL.get() == null)
             throw new IllegalStateException("Object pool has not been initialized");
 
@@ -57,7 +57,7 @@ public final class ThreadLocalObjectPool {
         return pool.allocateObject(className);
     }
 
-    public static <T> int slotSize(String className){
+    public static <T extends Poolable> int slotSize(String className){
         if (THREAD_LOCAL.get() == null)
             throw new IllegalStateException("Object pool has not been initialized");
 
@@ -67,7 +67,7 @@ public final class ThreadLocalObjectPool {
     }
 
 
-    private static <T> void createSlot(NewInstanceFactory<T> newInstanceFactory) {
+    private static <T extends Poolable> void createSlot(NewInstanceFactory<T> newInstanceFactory) {
         if (THREAD_LOCAL.get() == null)
             throw new IllegalStateException("Object pool has not been initialized");
 

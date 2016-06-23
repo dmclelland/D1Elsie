@@ -10,7 +10,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Created By davidclelland on 09/06/2016.
  */
-class ObjectPool<T> {
+class ObjectPool<T extends Poolable> {
 
     private final Map<String, Slot<T>> slots = new HashMap<>();
 
@@ -46,15 +46,11 @@ class ObjectPool<T> {
         return t.getEntry();
     }
 
-    NewInstanceFactory<T> getNewInstanceFactory(String className) {
-        return slots.get(className).newInstanceFactory;
-    }
-
     public ObjectPool(int size) {
         this.size = size;
     }
 
-    private static class Slot<T> {
+    private static class Slot<T extends Poolable> {
         final String className;
         final int initialSlotSize;
         final List<T> pool;

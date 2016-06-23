@@ -13,7 +13,6 @@ import com.dmc.d1.cqrs.test.domain.MyId;
 import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import com.dmc.d1.test.domain.*;
 import net.openhft.chronicle.bytes.Bytes;
-import net.openhft.chronicle.core.pool.ClassAliasPool;
 import net.openhft.chronicle.wire.Marshallable;
 import net.openhft.chronicle.wire.TextWire;
 import net.openhft.chronicle.wire.Wire;
@@ -29,6 +28,7 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -94,21 +94,18 @@ public class ComplexAggregateTest {
 
         //ClassAliasPool.CLASS_ALIASES.addAlias(SecurityChronicle.class);
         //ClassAliasPool.CLASS_ALIASES.addAlias(BasketConstituentChronicle.class);
-
-
-
         Wire wire = new TextWire(Bytes.elasticByteBuffer());
         Basket basket = createBasket(111);
         ((Marshallable) basket).writeMarshallable(wire);
 
         System.out.println(wire);
 
-        //empty basket
-        Basket basket2 = BasketBuilder.startBuilding().buildMutable(false);
+
+        Basket basket2 = BasketBuilder.startBuilding().buildJournalable();
         ((Marshallable) basket2).readMarshallable(wire);
 
-        assertEquals(basket.getDivisor(), basket2.getDivisor() );
-        assertEquals(basket.getSecurity().getName(), basket2.getSecurity().getName() );
+        assertEquals(basket.getDivisor(), basket2.getDivisor());
+        assertEquals(basket.getSecurity().getName(), basket2.getSecurity().getName());
 
 
     }
@@ -117,8 +114,8 @@ public class ComplexAggregateTest {
     @Test
     public void testCreateAndReplayComplexEvents() throws Exception {
 
-        int noOfCreatesWarmup = 100000;
-        int noOfCreates = 100000;
+        int noOfCreatesWarmup = 100_000;
+        int noOfCreates = 100_000;
 
         setup();
         int rnd = ((this.hashCode() ^ (int) System.nanoTime()));
@@ -151,6 +148,8 @@ public class ComplexAggregateTest {
             assertEquals(aggExpected.getBasket().getSecurity().getName(), agg.getBasket().getSecurity().getName());
             assertEquals(aggExpected.getBasket().getSecurity().getAdv20Day(), agg.getBasket().getSecurity().getAdv20Day());
 
+            assertTrue(agg.getBasket().getBasketConstituents().size() > 0);
+
             assertEquals(aggExpected.getBasket().getBasketConstituents().size(), agg.getBasket().getBasketConstituents().size());
 
             for (int i = 0; i < aggExpected.getBasket().getBasketConstituents().size(); i++) {
@@ -181,7 +180,7 @@ public class ComplexAggregateTest {
             Basket basket = createBasket(rnd);
             commandBus.dispatch(new CreateComplexAggregateCommand(id, basket));
 
-            if(!warmup)
+            if (!warmup)
                 CREATE_HISTOGRAM.recordValue((System.nanoTime() - t0) / 1000);
 
             Aggregate aggregate = repo1.find(id.asString());
@@ -197,13 +196,14 @@ public class ComplexAggregateTest {
 
     private Basket createBasket(int rnd) {
 
+        String ric = ric(rnd);
         return BasketBuilder.startBuilding()
                 .tradeDate(LocalDate.now())
                 .divisor(divisor(rnd))
-                .ric(ric(rnd))
+                .ric(ric)
                 .security(security(rnd))
-                .basketConstituents(constituents())
-                .buildMutable(true);
+                .basketConstituents(new ArrayList(constituents(ric)))
+                .buildJournalable();
     }
 
 
@@ -211,15 +211,14 @@ public class ComplexAggregateTest {
 
         if (rnd % 4 == 0)
             return 50000;
-        else if (rnd % 5 == 3)
+        else if (rnd % 4 == 3)
             return 10000;
-        else if (rnd % 5 == 2)
+        else if (rnd % 4 == 2)
             return 5000;
-        else if (rnd % 1 == 1)
+        else if (rnd % 4 == 1)
             return 1000;
         else
             return 100;
-
     }
 
 
@@ -254,18 +253,25 @@ public class ComplexAggregateTest {
             name = "X4PS.DE";
 
 
-        return SecurityBuilder.startBuilding().name(name).adv20Day(12000).buildMutable(true);
+        return SecurityBuilder.startBuilding().name(name).adv20Day(12000).buildJournalable();
     }
 
     Random rnd = new Random();
 
-    private List<BasketConstituent> constituents() {
-        int rnd = this.rnd.nextInt(100);
+    Map<String, List<BasketConstituent>> constituentsMap = new HashMap<>();
+
+    private List<BasketConstituent> constituents(String ric) {
+        if (constituentsMap.containsKey(ric))
+            return constituentsMap.get(ric);
+
+        int rnd = this.rnd.nextInt(99) + 1;
         List<BasketConstituent> lst = new ArrayList<>();
         for (int i = 0; i < rnd; i++) {
-            lst.add(BasketConstituentBuilder.startBuilding().adjustedShares(i).ric("ric" + i).buildMutable(true));
-
+            String constituentRic = ("ric" + i).intern();
+            lst.add(BasketConstituentBuilder.startBuilding().adjustedShares(i).ric(constituentRic).buildJournalable());
         }
+
+        constituentsMap.put(ric, lst);
 
         return lst;
 

@@ -30,16 +30,7 @@ public abstract class Aggregate {
 
     private Aggregate old;
 
-    final void copy(Aggregate aggregate){
-        this.eventHandler = aggregate.eventHandler;
-        this.eventBus = aggregate.eventBus;
-        this.aggregateEventStore = aggregate.aggregateEventStore;
-        this.id = aggregate.id;
-
-        copyState(aggregate);
-    }
-
-    protected abstract void copyState(Aggregate aggregate);
+    protected abstract void revertState(Aggregate old);
 
     protected final <E extends AggregateEvent> void apply(E event) {
         //assign the aggregate class that raised the event
@@ -64,13 +55,18 @@ public abstract class Aggregate {
 
     final void commit() {
         aggregateEventStore.add(uncommittedEvents);
+
+        //apply events to old
+        for(AggregateEvent event : uncommittedEvents){
+            old.applyAggregateEvent(event);
+        }
+
         clearUncommittedEvents();
-        old.copyState(this);
     }
 
     final void rollback() {
         clearUncommittedEvents();
-        this.copyState(old);
+        this.revertState(old);
     }
 
 

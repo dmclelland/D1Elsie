@@ -5,7 +5,7 @@ import com.dmc.d1.cqrs.event.AggregateEventAbstract;
 import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.ChronicleAggregateEvent;
 import com.dmc.d1.cqrs.util.NewInstanceFactory;
-import com.dmc.d1.cqrs.util.Pooled;
+import com.dmc.d1.cqrs.util.Poolable;
 import com.dmc.d1.cqrs.util.Resettable;
 import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import com.squareup.javapoet.*;
@@ -16,16 +16,13 @@ import net.openhft.chronicle.wire.WireOut;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
-import org.jetbrains.annotations.NotNull;
 
 import javax.lang.model.element.Modifier;
 import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -47,6 +44,8 @@ class EventAndCommandGenerator {
         this.generatedSourceDirectory = checkNotNull(generatedSourceDirectory);
     }
 
+    private Map<String, ClassVo> vos = new HashMap<>();
+
     public void generate() throws Exception {
         URL fileName = getClass().getClassLoader().getResource("CodeGen.xml");
 
@@ -61,9 +60,10 @@ class EventAndCommandGenerator {
             ClassVo vo = parseClassElem(elem);
 
             ClassName interfaceName = generateInterface(vo, Type.DOMAIN);
-            generateBasicClass(vo, interfaceName, Type.DOMAIN);
+            generateImmutableClass(vo, interfaceName, Type.DOMAIN);
             generateChronicleClass(vo, interfaceName, Type.DOMAIN);
             generateBuilder(vo, interfaceName, Type.DOMAIN);
+            vos.put(vo.getFullClassname(), vo);
         }
 
         //create chronicle initialised event
@@ -71,9 +71,10 @@ class EventAndCommandGenerator {
             ClassVo vo = parseClassElem(elem);
 
             ClassName interfaceName = generateInterface(vo, Type.EVENT);
-            generateBasicClass(vo, interfaceName, Type.EVENT);
+            generateImmutableClass(vo, interfaceName, Type.EVENT);
             generateChronicleClass(vo, interfaceName, Type.EVENT);
             generateBuilder(vo, interfaceName, Type.EVENT);
+            vos.put(vo.getFullClassname(), vo);
         }
 
         for (Element elem : root.getChild("command").getChildren()) {
@@ -81,18 +82,10 @@ class EventAndCommandGenerator {
 //
 //            ClassName interfaceName = generateInterface(vo);
 //
-//            generateBasicClass(vo, interfaceName);
+//            generateImmutableClass(vo, interfaceName);
 //            generateChronicleClass(vo, interfaceName, Command.class);
 //            generateBuilder(vo, interfaceName);
         }
-    }
-
-    private static class ClassVo {
-        String packageName;
-        String className;
-        boolean initialisationEvent;
-
-        Map<String, TypeName> instanceVariables = new LinkedHashMap<>();
     }
 
 
@@ -111,43 +104,85 @@ class EventAndCommandGenerator {
         vo.packageName = fullClass.substring(0, pos);
         vo.className = fullClass.substring(pos + 1);
 
+        if (element.getAttribute("updatable") != null && "true".equals(element.getAttributeValue("updatable"))) {
+            vo.updatable = true;
+        }
+
 
         for (Element field : element.getChildren("field")) {
             String name = field.getAttributeValue("name");
-            ClassName className = getClassNameFromPackage(field.getAttributeValue("type"));
+            String classNameStr = field.getAttributeValue("type");
+
+            ClassName className = classFromFullName(classNameStr);
+            ClassName parameterizedClazz = null;
 
             TypeName typeName;
+            String keyName = null;
+            ClassName keyType = null;
             if (field.getAttribute("parameterized-type") != null) {
                 String ptFullName = field.getAttributeValue("parameterized-type");
+                parameterizedClazz = classFromFullName(ptFullName);
 
-                ClassName parameterizedClazz = getClassNameFromPackage(ptFullName);
-                typeName = ParameterizedTypeName.get(className, parameterizedClazz);
+
+                if (field.getAttribute("key") != null) {
+                    keyName = field.getAttributeValue("key");
+                    FieldDataVo keyData = vos.get(ptFullName).instanceVariables.get(keyName);
+
+                    typeName = ParameterizedTypeName.get(className, keyData.type, parameterizedClazz);
+                } else {
+
+                    typeName = ParameterizedTypeName.get(className, parameterizedClazz);
+                }
+
             } else {
-                typeName = className;
+                if (className.isBoxedPrimitive()) {
+
+                    if (field.getAttribute("toPrimitive") == null ||
+                            "true".equals(field.getAttributeValue("toPrimitive"))) {
+                        typeName = className.unbox();
+                    } else {
+                        typeName = className;
+                    }
+                } else {
+                    typeName = className;
+                }
+            }
+
+            ClassName concreteType = null;
+            if (field.getAttribute("concrete-type") != null) {
+                concreteType = classFromFullName(field.getAttributeValue("concrete-type"));
             }
 
 
-            vo.instanceVariables.put(name, typeName);
+            FieldDataVo fieldData = new FieldDataVo();
+            if (!typeName.isPrimitive())
+                fieldData.className = classNameStr;
+
+            fieldData.type = typeName;
+            fieldData.concreteType = concreteType;
+            fieldData.chronicleType = chronicleType(typeName);
+            fieldData.parameterizedClass = parameterizedClazz;
+            fieldData.updatable = field.getAttribute("updatable") == null
+                    || field.getAttributeValue("updatable").equals("false") ? false : true;
+
+
+            fieldData.keyName = keyName;
+            fieldData.keyType = keyType;
+
+
+            vo.instanceVariables.put(name, fieldData);
 
         }
 
         return vo;
     }
 
-    @NotNull
-    private ClassName getClassNameFromPackage(String fullName) {
-
-        int ptPos = fullName.lastIndexOf(".");
-
-        String ptPackageName = fullName.substring(0, ptPos);
-        String ptClassName = fullName.substring(ptPos + 1);
-
-        return ClassName.get(ptPackageName, ptClassName);
-    }
 
     private ClassName generateInterface(ClassVo vo, Type type) throws Exception {
 
         String interfaceName = vo.className;
+
+        ClassName interfaceClass =  ClassName.get((vo.packageName), interfaceName);
 
         TypeSpec.Builder interfaceBuilder = TypeSpec.interfaceBuilder(interfaceName)
                 .addModifiers(Modifier.PUBLIC);
@@ -160,27 +195,36 @@ class EventAndCommandGenerator {
         }
         for (String key : vo.instanceVariables.keySet()) {
 
-            TypeName typeName = getFieldTypeName(vo, key);
+            FieldDataVo fieldData = getFieldData(vo, key);
 
             interfaceBuilder.addMethod(
                     MethodSpec.methodBuilder("get" + capitalize(key))
                             .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                            .returns(typeName)
+                            .returns(fieldData.type)
                             .build()
             );
         }
+
+
+        interfaceBuilder.addMethod(  MethodSpec.methodBuilder("deepClone")
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .returns(interfaceClass)
+                .build());
 
         JavaFile javaFile = JavaFile.builder(vo.packageName, interfaceBuilder.build())
                 .build();
 
         javaFile.writeTo(new File(this.generatedSourceDirectory));
 
-        return ClassName.get((vo.packageName), interfaceName);
+        return interfaceClass;
     }
 
-    private void generateBasicClass(ClassVo vo, ClassName interfaceClass, Type type) throws Exception {
+    private void generateImmutableClass(ClassVo vo, ClassName interfaceClass, Type type) throws Exception {
 
-        String className = vo.className + "Basic";
+        String className = vo.className + "Immutable";
+
+        ClassName immutableClass = ClassName.get(vo.packageName, className);
+
 
         //class name is the interface
         FieldSpec CLASS_NAME = FieldSpec.builder(String.class, "CLASS_NAME", Modifier.FINAL, Modifier.STATIC)
@@ -204,11 +248,11 @@ class EventAndCommandGenerator {
 
         for (String key : vo.instanceVariables.keySet()) {
 
-            TypeName typeName = getFieldTypeName(vo, key);
+            FieldDataVo fieldData = getFieldData(vo, key);
 
-            eventBuilder.addField(typeName, key, Modifier.PRIVATE, Modifier.FINAL);
+            eventBuilder.addField(fieldData.type, key, Modifier.PRIVATE, Modifier.FINAL);
 
-            constructorBuilder.addParameter(typeName, key)
+            constructorBuilder.addParameter(fieldData.type, key)
                     .addStatement("this.$N = $N", key, key);
 
             eventBuilder.addMethod(
@@ -216,12 +260,16 @@ class EventAndCommandGenerator {
                             .addModifiers(Modifier.PUBLIC)
                             .addAnnotation(Override.class)
                             .addStatement("return $N", key)
-                            .returns(typeName)
+                            .returns(fieldData.type)
                             .build()
             );
         }
 
         eventBuilder.addMethod(constructorBuilder.build());
+
+        eventBuilder.addMethod(deepCloneBuilder(vo, immutableClass, type));
+        eventBuilder.addMethod(equalsBuilder(vo, immutableClass, type));
+        eventBuilder.addMethod(hashCodeBuilder(vo, type));
 
         JavaFile javaFile = JavaFile.builder(vo.packageName, eventBuilder.build())
                 .build();
@@ -284,7 +332,7 @@ class EventAndCommandGenerator {
         } else if (Type.DOMAIN == type) {
             eventBuilder.addSuperinterface(Resettable.class);
             eventBuilder.addSuperinterface(Marshallable.class);
-            eventBuilder.addSuperinterface(Pooled.class);
+            eventBuilder.addSuperinterface(Poolable.class);
         }
 
 
@@ -319,54 +367,67 @@ class EventAndCommandGenerator {
 //        wireOut.write(() -> "basketConstituents").sequence(this.basketConstituents);
 
         for (String key : vo.instanceVariables.keySet()) {
-
-
-            TypeName typeName = getFieldTypeName(vo, key);
-            String dataTypeMethod = getChronicleDataTypeMethod(typeName);
+            FieldDataVo fieldData = getFieldData(vo, key);
 
             if (!key.equals("id")) {
-                if ("sequence".equals(dataTypeMethod)) {
-                    ParameterizedTypeName ptn = (ParameterizedTypeName) typeName;
-                    TypeName parameterizedType = ptn.typeArguments.get(0);
+                if ("sequence".equals(fieldData.chronicleType)) {
+                    TypeName parameterizedType = fieldData.parameterizedClass;
 
                     readMarshallableMethod.addCode("wireIn.read(()-> $S).sequence(this.$L,(l,v) -> {", key, key);
-                    readMarshallableMethod.addCode("while (v.hasNextSequenceItem())");
-                    readMarshallableMethod.addCode("l.add(v.object($T.class));", parameterizedType);
-                    readMarshallableMethod.addCode(" });");
+                    readMarshallableMethod.addCode("while (v.hasNextSequenceItem()){");
+
+                    if ("java.util.Map".equals(fieldData.className)) {
+                        readMarshallableMethod.addCode("$T constituent = v.object($T.class);", parameterizedType, parameterizedType);
+                        readMarshallableMethod.addCode("l.put(constituent.get$L(), constituent);}", capitalize(fieldData.keyName));
+                    } else {
+                        readMarshallableMethod.addCode("l.add(v.object($T.class));}", parameterizedType);
+                    }
+                    readMarshallableMethod.addCode(" });\n");
 
                     writeMarshallableMethod.addCode("wireOut.write(() -> $S)", key);
-                    writeMarshallableMethod.addCode(".sequence(this.$L);", key);
-                } else if ("object".equals(dataTypeMethod)) {
-                    readMarshallableMethod.addStatement("wireIn.read(()-> $S).object($T.class,this, (o,b) -> o.$L = b)", key, typeName, key);
-                    writeMarshallableMethod.addStatement("wireOut.write(()-> $S).object($T.class, this.$L)", key, typeName, key);
+                    if ("java.util.Map".equals(fieldData.className)) {
+                        writeMarshallableMethod.addCode(".sequence(this.$L.values());\n", key);
+                    } else {
+                        writeMarshallableMethod.addCode(".sequence(this.$L);\n", key);
+                    }
+                } else if ("object".equals(fieldData.chronicleType)) {
+                    readMarshallableMethod.addStatement("wireIn.read(()-> $S).object($T.class,this, (o,b) -> o.$L = b)", key, fieldData.type, key);
+                    writeMarshallableMethod.addStatement("wireOut.write(()-> $S).object($T.class, this.$L)", key, fieldData.type, key);
                 } else {
-                    readMarshallableMethod.addStatement("wireIn.read(()-> $S).$L(this, (o, b) -> o.$L = b)", key, dataTypeMethod, key);
-                    writeMarshallableMethod.addStatement("wireOut.write(()-> $S).$L($L)", key, dataTypeMethod, key);
+                    readMarshallableMethod.addStatement("wireIn.read(()-> $S).$L(this, (o, b) -> o.$L = b)", key, fieldData.chronicleType, key);
+                    writeMarshallableMethod.addStatement("wireOut.write(()-> $S).$L($L)", key, fieldData.chronicleType, key);
                 }
             }
 
-            eventBuilder.addField(typeName, key, Modifier.PRIVATE);
+            FieldSpec.Builder field = FieldSpec.builder(fieldData.type, key, Modifier.PRIVATE);
+            if ("sequence".equals(fieldData.chronicleType)) {
+                field.initializer(CodeBlock.builder().add("new $T()", fieldData.concreteType).build());
+            }
 
-            setBuilder.addParameter(typeName, key)
+            eventBuilder.addField(field.build());
+
+
+            setBuilder.addParameter(fieldData.type, key)
                     .addStatement("this.$N = $N", key, key);
 
             if (Type.EVENT == type)
                 resetBuilder.addStatement("setAggregateId(null)");
 
-            if (typeName.isPrimitive()) {
-                if (TypeName.BOOLEAN == typeName)
+            if (fieldData.type.isPrimitive()) {
+                if (TypeName.BOOLEAN == fieldData.type)
                     resetBuilder.addStatement("this.$N = false", key);
                 else
                     resetBuilder.addStatement("this.$N = 0", key);
             } else {
                 resetBuilder.addStatement("this.$N = null", key);
             }
+
             eventBuilder.addMethod(
                     MethodSpec.methodBuilder("get" + capitalize(key))
                             .addModifiers(Modifier.PUBLIC)
                             .addAnnotation(Override.class)
                             .addStatement("return $N", key)
-                            .returns(typeName)
+                            .returns(fieldData.type)
                             .build()
             );
         }
@@ -376,57 +437,170 @@ class EventAndCommandGenerator {
 
         eventBuilder.addMethod(setBuilder.build());
         eventBuilder.addMethod(resetBuilder.build());
+        eventBuilder.addMethod(deepCloneBuilder(vo, chronicleClass, type));
+        eventBuilder.addMethod(equalsBuilder(vo, chronicleClass, type));
+        eventBuilder.addMethod(hashCodeBuilder(vo, type));
         eventBuilder.addMethod(constructor);
 
         JavaFile javaFile = JavaFile.builder(vo.packageName, eventBuilder.build())
                 .build();
 
         javaFile.writeTo(new File(this.generatedSourceDirectory));
-
     }
 
 
-    @NotNull
-    private String getChronicleDataTypeMethod(TypeName typeName) {
-        if (typeName.isPrimitive()) {
-            if (TypeName.BOOLEAN == typeName)
-                return "bool";
-            else if (TypeName.DOUBLE == typeName)
-                return "float64";
-            else if (TypeName.FLOAT == typeName)
-                return "float32";
-            else if (TypeName.INT == typeName || TypeName.BYTE == typeName || TypeName.SHORT == typeName)
-                return "int32";
-            else if (TypeName.LONG == typeName)
-                return "int64";
-        } else {
+    private MethodSpec equalsBuilder(ClassVo vo, ClassName className, Type type) {
 
-            String className;
-            if (typeName instanceof ParameterizedTypeName) {
-                className = ((ParameterizedTypeName) typeName).rawType.toString();
-            } else {
-                className = typeName.toString();
-            }
+        MethodSpec.Builder equalsBuilder = MethodSpec.methodBuilder("equals")
+                .addParameter(Object.class, "o")
+                .addAnnotation(Override.class)
+                .addModifiers(Modifier.PUBLIC)
+                .returns(TypeName.BOOLEAN);
 
-            if ("java.lang.String".equals(className))
-                return "text";
-            else if ("java.time.LocalDate".equals(className))
-                return "date";
-            else if ("java.util.List".equals(className) || "java.util.Set".equals(className))
-                return "sequence";
-            else
-                return "object";
+        equalsBuilder.addStatement("if (this == o) return true");
+        equalsBuilder.addStatement("if (o == null || getClass() != o.getClass()) return false");
+        equalsBuilder.addStatement("$T that = ($T)o", className, className);
+
+        if(Type.EVENT == type){
+
+            equalsBuilder.addStatement("if (getAggregateId() != null ? !getAggregateId().equals(that.getAggregateId()) : that.getAggregateId() != null) return false");
+            equalsBuilder.addStatement("if (getClassName() != null ? !getClassName().equals(that.getClassName()) : that.getClassName() != null) return false");
+            equalsBuilder.addStatement("if (getAggregateClassName() != null ? !getAggregateClassName().equals(that.getAggregateClassName()) : that.getAggregateClassName() != null) return false");
         }
 
 
-        return typeName.isPrimitive() ? "int32" : "text";
+        for (String key : vo.instanceVariables.keySet()) {
+            FieldDataVo fieldData = vo.instanceVariables.get(key);
+            if (fieldData.type.isPrimitive()) {
+                equalsBuilder.addStatement("if ($L!=that.$L) return false", key, key);
+            } else {
+                equalsBuilder.addStatement("if ($L != null ? !$L.equals(that.$L) : that.$L != null) return false", key, key, key, key);
+            }
+        }
+        equalsBuilder.addStatement("return true");
+        return equalsBuilder.build();
+
+//        if (divisor != that.divisor) return false;
+//        if (ric != null ? !ric.equals(that.ric) : that.ric != null) return false;
+//        if (tradeDate != null ? !tradeDate.equals(that.tradeDate) : that.tradeDate != null) return false;
+//        if (security != null ? !security.equals(that.security) : that.security != null) return false;
+//        if (basketConstituents != null ? !basketConstituents.equals(that.basketConstituents) : that.basketConstituents != null)
+//            return false;
+
+
     }
 
-    private TypeName getFieldTypeName(ClassVo vo, String key) {
-        TypeName typeName = vo.instanceVariables.get(key);
-        if (typeName.isBoxedPrimitive())
-            typeName = typeName.unbox();
-        return typeName;
+
+    private MethodSpec hashCodeBuilder(ClassVo vo, Type type) {
+
+        MethodSpec.Builder hashCodeBuilder = MethodSpec.methodBuilder("hashCode")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .returns(TypeName.INT);
+
+        if(Type.EVENT == type){
+            hashCodeBuilder.addStatement("int result = getAggregateId() != null ? getAggregateId().hashCode() : 0");
+            hashCodeBuilder.addStatement("result = 31 * result +  (getClassName() != null ? getClassName().hashCode() : 0)");
+            hashCodeBuilder.addStatement("result = 31 * result +  (getAggregateClassName() != null ? getAggregateClassName().hashCode() : 0)");
+        }
+
+
+        int count = 0;
+
+        for (String key : vo.instanceVariables.keySet()) {
+            FieldDataVo fieldData = vo.instanceVariables.get(key);
+            if (count == 0 && Type.EVENT != type) {
+                if (fieldData.type.isPrimitive()) {
+                    hashCodeBuilder.addStatement("int result = $L", key);
+                } else {
+                    hashCodeBuilder.addStatement("int result = $L != null ? $L.hashCode() : 0", key, key);
+                }
+            } else {
+                if (fieldData.type.isPrimitive()) {
+                    hashCodeBuilder.addStatement("result = 31 * result + $L", key);
+                } else {
+                    hashCodeBuilder.addStatement("result = 31 * result + ($L != null ? $L.hashCode() : 0)", key, key);
+                }
+            }
+            count++;
+        }
+
+        hashCodeBuilder.addStatement("return result");
+        return hashCodeBuilder.build();
+    }
+
+
+    private MethodSpec deepCloneBuilder(ClassVo vo, ClassName className, Type type) {
+
+        MethodSpec.Builder deepCloneBuilder = MethodSpec.methodBuilder("deepClone")
+                .addModifiers(Modifier.PUBLIC)
+                .returns(className);
+
+        //if immutable then just return this
+        if(className.toString().endsWith("Immutable")){
+            deepCloneBuilder.addStatement("return this");
+            return deepCloneBuilder.build();
+        }
+
+        CodeBlock.Builder cloneSet = CodeBlock.builder().add("clone.set(");
+
+
+
+        int i = 1;
+        int noOfParams = vo.instanceVariables.size();
+
+        if (Type.EVENT == type)
+            cloneSet.add("getAggregateId()$L",noOfParams==0 ? "" : ",");
+
+
+        for (String key : vo.instanceVariables.keySet()) {
+            FieldDataVo fieldData = vo.instanceVariables.get(key);
+            if ("sequence".equals(fieldData.chronicleType)) {
+                String colName = "col" + i;
+
+                deepCloneBuilder.addStatement("$T $L = new $T<>()", fieldData.type, colName, fieldData.concreteType);
+                if ("java.util.Map".equals(fieldData.className)) {
+                    deepCloneBuilder.beginControlFlow("for($T entry : this.$L.values())", fieldData.parameterizedClass, key);
+                    deepCloneBuilder.addStatement("$L.put(entry.get$L(),entry.deepClone())", colName, capitalize(fieldData.keyName));
+                    deepCloneBuilder.endControlFlow();
+                } else {
+                    deepCloneBuilder.beginControlFlow("for($T entry : this.$L)", fieldData.parameterizedClass, key);
+                    deepCloneBuilder.addStatement("$L.add(entry.deepClone())", colName);
+                    deepCloneBuilder.endControlFlow();
+                }
+
+                key = colName;
+            }
+
+            cloneSet.add("$L$L", key, i == noOfParams ? "" : ",");
+            i++;
+        }
+
+        cloneSet.add(");");
+
+        deepCloneBuilder.addStatement("$T clone = new $T()", className, className);
+
+        deepCloneBuilder.addCode(cloneSet.build());
+        deepCloneBuilder.addStatement("return clone");
+
+
+//
+//        BasketChronicle deepClone() {
+//            //make deep copy of security
+//            //make deep copy of basket
+//            Security security = SecurityBuilder.copyBuilder(this.security).buildJournalable();
+//            List<BasketConstituent> constituents = new ArrayList<>();
+//            for (BasketConstituent constituent : this.basketConstituents) {
+//                constituents.add(BasketConstituentBuilder.copyBuilder(constituent).buildJournalable());
+//            }
+//            BasketChronicle clone = new BasketChronicle();
+//            clone.set(ric, tradeDate, divisor, security, constituents, new HashMap<>());
+//
+//            return clone;
+//        }
+
+
+        return deepCloneBuilder.build();
     }
 
 
@@ -465,51 +639,43 @@ class EventAndCommandGenerator {
 
 
         ClassName chronicleClass = ClassName.get(vo.packageName, vo.className + "Chronicle");
-        ClassName basicClass = ClassName.get(vo.packageName, vo.className + "Basic");
+        ClassName immutableClass = ClassName.get(vo.packageName, vo.className + "Immutable");
 
-        MethodSpec.Builder buildMutableMethod = MethodSpec.methodBuilder("buildMutable")
+        MethodSpec.Builder buildJournalableMethod = MethodSpec.methodBuilder("buildJournalable")
                 .addModifiers(Modifier.PUBLIC)
-                .addParameter(TypeName.BOOLEAN, "pooled")
                 .returns(vo.initialisationEvent ? ClassName.get(AggregateInitialisedEvent.class) : interfaceClass);
 
 
-        buildMutableMethod.addStatement("$T chronicleEvent = pooled ? $T.allocateObject($T.CLASS_NAME) : $T.newInstanceFactory().newInstance()", chronicleClass, ThreadLocalObjectPool.class, chronicleClass, chronicleClass);
-        CodeBlock.Builder chronicleSet = CodeBlock.builder().add("chronicleEvent.set(");
+        MethodSpec.Builder buildPooledJournalableMethod = MethodSpec.methodBuilder("buildPooledJournalable")
+                .addModifiers(Modifier.PUBLIC)
+                .returns(vo.initialisationEvent ? ClassName.get(AggregateInitialisedEvent.class) : interfaceClass);
+
+
+        buildJournalableMethod.addStatement("$T chronicle =  $T.newInstanceFactory().newInstance()", chronicleClass, chronicleClass);
+        buildPooledJournalableMethod.addStatement("$T chronicle = $T.allocateObject($T.CLASS_NAME)", chronicleClass, ThreadLocalObjectPool.class, chronicleClass);
+
+
+        CodeBlock.Builder chronicleSet = CodeBlock.builder().add("chronicle.set(");
 
 
         MethodSpec.Builder buildImmutableMethod = MethodSpec.methodBuilder("buildImmutable")
                 .addModifiers(Modifier.PUBLIC)
                 .returns(vo.initialisationEvent ? ClassName.get(AggregateInitialisedEvent.class) : interfaceClass);
-        CodeBlock.Builder basicNew = CodeBlock.builder().add("$T basic = new $T(", basicClass, basicClass);
+        CodeBlock.Builder immutableNew = CodeBlock.builder().add("$T immutable = new $T(", immutableClass, immutableClass);
 
-//
-//
-//    public static BasketBuilder copyBuilder(Basket basket) {
-//        BasketBuilder builder = THREAD_LOCAL.get();
-//
-//
-//        List<BasketConstituent> basketConstituents = new ArrayList<>(basket.getBasketConstituents().size());
-//        for (BasketConstituent constituent : basket.getBasketConstituents()) {
-//            basketConstituents.add( BasketConstituentBuilder.copy(constituent));
-//        }
-//        return builder.ric(basket.getRic()).tradeDate(basket.getTradeDate())
-//                .divisor(basket.getDivisor()).basketConstituents(basketConstituents);
-//
-//    }
 
-        MethodSpec.Builder buildMutableCopyBuilderMethod = MethodSpec.methodBuilder("mutableCopyBuilder")
+        MethodSpec.Builder buildCopyBuilderMethod = MethodSpec.methodBuilder("copyBuilder")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .addParameter(TypeName.BOOLEAN, "pooled")
-        .addParameter(interfaceClass, uncapitalize(vo.className));
-        buildMutableCopyBuilderMethod.addStatement("$T builder = THREAD_LOCAL.get()", builderName);
-        buildMutableCopyBuilderMethod.returns(builderName);
+                .addParameter(interfaceClass, uncapitalize(vo.className));
+        buildCopyBuilderMethod.addStatement("$T builder = THREAD_LOCAL.get()", builderName);
+        buildCopyBuilderMethod.returns(builderName);
 
         int noOfParams = vo.instanceVariables.keySet().size();
 
 
         if (Type.EVENT == type) {
             chronicleSet.add("id$L", noOfParams == 0 ? "" : ",");
-            basicNew.add("id$L", noOfParams == 0 ? "" : ",");
+            immutableNew.add("id$L", noOfParams == 0 ? "" : ",");
         }
 
         int i = 1;
@@ -518,90 +684,237 @@ class EventAndCommandGenerator {
         }
         for (String key : vo.instanceVariables.keySet()) {
 
-            TypeName typeName = getFieldTypeName(vo, key);
+            FieldDataVo fieldData = getFieldData(vo, key);
 
-            builderBuilder.addField(typeName, key, Modifier.PRIVATE);
+            FieldSpec.Builder field = FieldSpec.builder(fieldData.type, key, Modifier.PRIVATE);
 
+            if ("sequence".equals(fieldData.chronicleType)) {
+                field.initializer(CodeBlock.builder().add("new $T()", fieldData.concreteType).build());
+            }
+            builderBuilder.addField(field.build());
 
-            if (typeName.isPrimitive()) {
-                if (TypeName.BOOLEAN == typeName)
+            if (fieldData.type.isPrimitive()) {
+                if (TypeName.BOOLEAN == fieldData.type)
                     startBuilding.addStatement("builder.$N = false", key);
                 else
                     startBuilding.addStatement("builder.$N = 0", key);
             } else {
-                startBuilding.addStatement("builder.$N = null", key);
+                if ("sequence".equals(fieldData.chronicleType)) {
+                    startBuilding.addStatement("builder.$N = new $T()", key, fieldData.concreteType);
+                } else {
+                    startBuilding.addStatement("builder.$N = null", key);
+                }
             }
 
-            MethodSpec parameterBuilder = MethodSpec.methodBuilder(key).addParameter(typeName, key)
+            MethodSpec parameterBuilder = MethodSpec.methodBuilder(key).addParameter(fieldData.type, key)
                     .returns(builderName)
                     .addModifiers(Modifier.PUBLIC)
                     .addStatement("THREAD_LOCAL.get().$L = $L", key, key)
                     .addStatement("return THREAD_LOCAL.get()").build();
 
             builderBuilder.addMethod(parameterBuilder);
-
-            String dataTypeMethod = getChronicleDataTypeMethod(typeName);
-
-            if ("sequence".equals(dataTypeMethod)) {
-
-                TypeName ptn = ((ParameterizedTypeName) typeName).typeArguments.get(0);
-
-                ClassName argClassName = getClassNameFromPackage(ptn.toString());
-                ClassName nestedBuilder = ClassName.get(argClassName.packageName(), argClassName.simpleName()+"Builder");
+            buildCopyBuilderMethod.addStatement("builder.$L($L.get$L())", key, uncapitalize(vo.className), capitalize(key));
 
 
-                buildMutableCopyBuilderMethod.addStatement("$T $L = new $T<>($L.get$Ts().size());", typeName, key, ArrayList.class,uncapitalize(vo.className), ptn);
-
-                buildMutableCopyBuilderMethod.beginControlFlow("for($T var: $L.get$Ts())", ptn, uncapitalize(vo.className), ptn);
-
-                buildMutableCopyBuilderMethod.addStatement("$L.add($T.mutableCopyBuilder(pooled, var).buildMutable(pooled))", key, nestedBuilder);
-                buildMutableCopyBuilderMethod.endControlFlow();
-
-                buildMutableCopyBuilderMethod.addStatement("builder.$L($L)", key, key);
-
-
-//                List<BasketConstituent> basketConstituents = new ArrayList<>(basket.getBasketConstituents().size());
-//                for (BasketConstituent constituent : basket.getBasketConstituents()) {
-//                    basketConstituents.add(BasketConstituentBuilder.mutableCopyBuilder(var).buildMutable(pooled));
+//            if ("sequence".equals(fieldData.chronicleType)) {
+//
+//                ClassName argClassName = fieldData.parameterizedClass;
+//
+//                String prefix = "java.util.Map".equals(fieldData.className) ? "addOrReplace" : "add";
+//
+//                MethodSpec.Builder addToCollectionBuilder = MethodSpec.methodBuilder(prefix + argClassName.simpleName()).addParameter(argClassName, "entry")
+//                        .returns(builderName)
+//                        .addModifiers(Modifier.PUBLIC);
+//
+//
+//                if ("java.util.Map".equals(fieldData.className)) {
+//                    addToCollectionBuilder.addStatement("THREAD_LOCAL.get().$L.put(entry.get$L(), entry)", key, capitalize(fieldData.keyName));
+//                } else {
+//                    addToCollectionBuilder.addStatement("THREAD_LOCAL.get().$L.add(entry)", key);
 //                }
+//                addToCollectionBuilder.addStatement("return THREAD_LOCAL.get()");
+//                builderBuilder.addMethod(addToCollectionBuilder.build());
+//
+//            }
 
-            }else if("object".equals(dataTypeMethod)){
-                ClassName argClassName = getClassNameFromPackage(typeName.toString());
-                ClassName nestedBuilder = ClassName.get(argClassName.packageName(), argClassName.simpleName()+"Builder");
-
-                buildMutableCopyBuilderMethod.addStatement("builder.$L($T.mutableCopyBuilder(pooled, $L.get$T()).buildMutable(pooled))", key, nestedBuilder,uncapitalize(vo.className),typeName);
-                //builder.security(SecurityBuilder.mutableCopyBuilder(basket.getSecurity()).buildMutable(pooled));
-            }else{
-                //builder.divisor(basket.getDivisor());
-                buildMutableCopyBuilderMethod.addStatement("builder.$L($L.get$L())", key, uncapitalize(vo.className), capitalize(key));
-            }
+//            if ("sequence".equals(fieldData.chronicleType)) {
+//                ClassName argClassName = fieldData.parameterizedClass;
+//
+//                ClassName nestedBuilder = ClassName.get(argClassName.packageName(), argClassName.simpleName() + "Builder");
+//
+//
+//                buildCopyBuilderMethod.addStatement("$T $L = new $T<>($L.get$Ts().size());", fieldData.type, key, fieldData.concreteType, uncapitalize(vo.className), argClassName);
+//
+//                buildCopyBuilderMethod.beginControlFlow("for($T var: $L.get$Ts())", argClassName, uncapitalize(vo.className), argClassName);
+//
+//
+//                String parameterizedClass = fullNameFromClass(fieldData.parameterizedClass);
+//                //boolean updatable = vos.get(parameterizedClass).updatable;
+//                //TODO if the collection is not updatable then just pass a copy of the collection
+////                if ("java.util.Map".equals(fieldData.className)) {
+////
+////
+////                    // if the parameterized class is not updatable then just pass the reference
+////                    if (updatable) {
+////                        buildCopyBuilderMethod.addStatement("$L.put(var.get$L(), $T.copyBuilder(var).buildJournalable(pooled))", key, capitalize(fieldData.keyName), nestedBuilder);
+////                    } else {
+////                        buildCopyBuilderMethod.addStatement("$L.put(var.get$L(), var)", key, capitalize(fieldData.keyName));
+////
+////                    }
+////
+////                } else {
+////                    //simply copy reference if not pooled and not updatable
+////                    if (updatable) {
+////                        buildCopyBuilderMethod.addStatement("$L.add($T.copyBuilder(var).buildJournalable(pooled))", key, nestedBuilder);
+////                    } else {
+////                        buildCopyBuilderMethod.addStatement("$L.add(var)", key);
+////                    }
+////                }
+//
+//                buildCopyBuilderMethod.endControlFlow();
+//                buildCopyBuilderMethod.addStatement("builder.$L($L)", key, key);
+//
+////                List<BasketConstituent> basketConstituents = new ArrayList<>(basket.getBasketConstituents().size());
+////                for (BasketConstituent constituent : basket.getBasketConstituents()) {
+////                    basketConstituents.add(BasketConstituentBuilder.copyBuilder(var).buildJournalable(pooled));
+////                }
+//
+//            } else if ("object".equals(fieldData.chronicleType)) {
+//                ClassName argClassName = (ClassName) fieldData.type;
+//                ClassName nestedBuilder = ClassName.get(argClassName.packageName(), argClassName.simpleName() + "Builder");
+//
+//                buildCopyBuilderMethod.addStatement("builder.$L($T.copyBuilder($L.get$T()).buildJournalable(pooled))", key, nestedBuilder, uncapitalize(vo.className), fieldData.type);
+//                //builder.security(SecurityBuilder.copyBuilder(basket.getSecurity()).buildJournalable(pooled));
+//            } else {
+//                //builder.divisor(basket.getDivisor());
+//                buildCopyBuilderMethod.addStatement("builder.$L($L.get$L())", key, uncapitalize(vo.className), capitalize(key));
+//            }
 
             chronicleSet.add("$L$L", key, i == noOfParams ? "" : ",");
-            basicNew.add("$L$L", key, i == noOfParams ? "" : ",");
+            immutableNew.add("$L$L", key, i == noOfParams ? "" : ",");
             i++;
         }
         chronicleSet.add(");");
-        basicNew.add(");");
+        immutableNew.add(");");
 
-        buildMutableMethod.addCode(chronicleSet.build());
-        buildMutableMethod.addStatement("return chronicleEvent");
+        buildJournalableMethod.addCode(chronicleSet.build());
+        buildJournalableMethod.addStatement("return chronicle");
 
-        buildImmutableMethod.addCode(basicNew.build());
-        buildImmutableMethod.addStatement("return basic");
+        buildPooledJournalableMethod.addCode(chronicleSet.build());
+        buildPooledJournalableMethod.addStatement("return chronicle");
+
+        buildImmutableMethod.addCode(immutableNew.build());
+        buildImmutableMethod.addStatement("return immutable");
 
         startBuilding.addStatement("return builder");
 
         builderBuilder.addMethod(startBuilding.build());
-        builderBuilder.addMethod(buildMutableMethod.build());
+        builderBuilder.addMethod(buildJournalableMethod.build());
+        builderBuilder.addMethod(buildPooledJournalableMethod.build());
         builderBuilder.addMethod(buildImmutableMethod.build());
 
-        buildMutableCopyBuilderMethod.addStatement("return builder");
-        builderBuilder.addMethod(buildMutableCopyBuilderMethod.build());
+        buildCopyBuilderMethod.addStatement("return builder");
+        builderBuilder.addMethod(buildCopyBuilderMethod.build());
 
         JavaFile javaFile = JavaFile.builder(vo.packageName, builderBuilder.build())
                 .build();
 
         javaFile.writeTo(new File(this.generatedSourceDirectory));
+    }
+
+
+    private static class ClassVo {
+        String packageName;
+        String className;
+        boolean initialisationEvent;
+        boolean updatable;
+
+        String getFullClassname() {
+            return packageName + "." + className;
+        }
+
+        Map<String, FieldDataVo> instanceVariables = new LinkedHashMap<>();
+    }
+
+
+    private class FieldDataVo {
+        String className;
+        TypeName type;
+        TypeName concreteType;
+
+        ClassName parameterizedClass;
+
+        String chronicleType;
+        boolean updatable;
+
+        String keyName;
+        TypeName keyType;
+
+
+//        int ptPos = fullName.lastIndexOf(".");
+//
+//        String ptPackageName = fullName.substring(0, ptPos);
+//        String ptClassName = fullName.substring(ptPos + 1);
+//
+//        return ClassName.get(ptPackageName, ptClassName);
+
+    }
+
+    private FieldDataVo getFieldData(ClassVo vo, String key) {
+        FieldDataVo fieldData = vo.instanceVariables.get(key);
+
+        return fieldData;
+    }
+
+
+    private ClassName classFromFullName(String fullName) {
+        int ptPos = fullName.lastIndexOf(".");
+
+        String ptPackageName = fullName.substring(0, ptPos);
+        String ptClassName = fullName.substring(ptPos + 1);
+
+        return ClassName.get(ptPackageName, ptClassName);
+    }
+
+    private String fullNameFromClass(ClassName className) {
+
+        return className.packageName() + "." + className.simpleName();
+    }
+
+
+    private String chronicleType(TypeName typeName) {
+        if (typeName.isPrimitive()) {
+            if (TypeName.BOOLEAN == typeName)
+                return "bool";
+            else if (TypeName.DOUBLE == typeName)
+                return "float64";
+            else if (TypeName.FLOAT == typeName)
+                return "float32";
+            else if (TypeName.INT == typeName || TypeName.BYTE == typeName || TypeName.SHORT == typeName)
+                return "int32";
+            else if (TypeName.LONG == typeName)
+                return "int64";
+        } else {
+
+            String className;
+            if (typeName instanceof ParameterizedTypeName) {
+                className = ((ParameterizedTypeName) typeName).rawType.toString();
+            } else {
+                className = typeName.toString();
+            }
+
+            if ("java.lang.String".equals(className))
+                return "text";
+            else if ("java.time.LocalDate".equals(className))
+                return "date";
+            else if ("java.util.List".equals(className) || "java.util.Map".equals(className))
+                return "sequence";
+            else
+                return "object";
+        }
+
+
+        throw new RuntimeException("Type not configured: " + typeName);
     }
 
 

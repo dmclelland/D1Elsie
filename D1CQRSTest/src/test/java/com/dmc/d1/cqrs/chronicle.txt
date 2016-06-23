@@ -1,0 +1,79 @@
+1)  Any state field on an aggregate should not be referenced by an object in the ThreadLocalPool.
+    If it is then it will get modified when the object is reused.
+
+2)  Any aggregate initial state is aggregate specific so doesn't benefit from pooling.  For example a
+    Basket might be set by a BasketCreatedEvent.  The event itself might be pooled but pooling the basket would
+    complicate things as a copy of the basket would need to be taken before it is stored on the aggregate.
+    There is no object allocation reduction in this case so don't bother pooling in the first place.
+
+    However, as a caveat, if we have a large number of a particular aggregate (StockExecutionAggregate as an example),
+    then it makes sense to pool events which set the state.  In these instances the create event would simply store immutable
+    objects and primitives which can safely be transferred to the aggregate, without any danger of being overriden when
+    the pool reassigns the object.
+
+3)  If an object is "journalable" then it can be written to a journal.
+
+4)  The "InMemoryEventStore" cannot be used with pooling.  This is obvious since as soon as an object in the pool
+    is reused then any references in the event store would be updated with the new values.
+
+5)  When an aggregate is committed the unprocessed events get played on the "old" aggregate to ensure it has the same
+    status as the current aggregate.
+
+6)  With object builders you can build an "immutable", a "journalable"  or a "pooled journalable" version of an object.
+    "Pooled immutabl
+    e"  doesn't make sense as a pooled object needs to be instantiated and available to have it's state set
+    at a later point. "Pooled journalable" reduces object allocation (and hence gc) for events/objects.
+
+7)  The object builders also provide copy builders.  If the object being copied is complex and contains fields which
+    are themselves objects/collections then it is necessary to determine how these nested objects are copied.
+    If the object being copied is pooled and we want to transfer the state to an aggregate (say), then any nested objects/
+    collections need to be cloned or changes to the pooled object will detrimentally be reflected on the aggregate.
+    If the object being copied is immutable then
+
+8)  "Journalable" objects which are updatable have static set methods provided by the companion builder.
+
+9)  A "journalable" object can be treated as immutable if we know that it is not poolable, and that it's state is not changed
+    after it has been created.
+
+10) A copy builder for an immutable "journalable" objects can directly assign any nested objects/collections on the
+    object being copied to the new object.  If a "journalable" object is not immutable but has objects/collections
+    that are then they can be copied in the same manner.
+
+11) It is necessary that we can create a pooled event which contains a reference to an unpooled object.????
+
+12) The object pool is thread local and is cleared when the initiating aggregate has been committed or rolled back.
+
+13) Events are pooled in latency centric apps (ie command of CQRS) to reduce latency.  In these applications all
+    commands are handled by the same single thread and a thread local object assigns objects from the pool when
+    events (and possibly their associated state objects) are created and clears them when the aggregates are
+    committed or rolled back.
+
+    In IO centric apps (ie the read of CQRS) events should not be pooled - immutable versions of the events
+    should be created and published as multiple threads will handle them (ie one thread pool will be responsible
+    for database persistence, another for sending broadcast messages to the UI).
+
+
+14) Object Builder scenarios:
+
+        a)  immutable -> immutable
+                reference can be copied, deep clone not required
+
+        b)  journalable,not poolable -> journalable,not poolable
+                if the journalable only contains immutable fields then reference can be copied
+                otherwise
+                if the journalable has complex types that are guaranteed to not be modified after creation then
+                the reference can be copied and no deep clone is required
+
+        c)  journalable, poolable -> journalable, poolable
+                same as b
+
+        d)  immutable -> journalable, not poolable
+
+
+        e)  immutable -> journalable, poolable
+
+        f)  journalable,not poolable -> immutable
+        g)  journalable,not poolable -> journalable, poolable
+
+        f)  journalable, poolable -> immutable
+        g)  journalable, poolable -> journalable, not poolable

@@ -17,7 +17,7 @@ public class PairsAggregate extends Aggregate{
 
 
     @Override
-    protected void copyState(Aggregate copy) {
+    protected void revertState(Aggregate copy) {
         PairsAggregate agg = (PairsAggregate) copy;
     }
 
