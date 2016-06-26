@@ -1,6 +1,6 @@
 package com.dmc.d1.cqrs.event.store;
 
-import com.dmc.d1.cqrs.event.ChronicleAggregateEvent;
+import com.dmc.d1.cqrs.event.JournalableAggregateEvent;
 import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.queue.ChronicleQueueBuilder;
@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * Created by davidclelland on 17/05/2016.
  */
-public class ChronicleAggregateEventStore implements AggregateEventStore<ChronicleAggregateEvent> {
+public class ChronicleAggregateEventStore implements AggregateEventStore<JournalableAggregateEvent> {
 
     private final ChronicleQueue chronicle;
     private final ExcerptAppender appender;
@@ -38,14 +38,14 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Chronic
     }
 
     @Override
-    public void add(ChronicleAggregateEvent event) {
+    public void add(JournalableAggregateEvent event) {
         appender.writeText(event.getClassName());
         appender.writeDocument(event);
     }
 
     @Override
-    public void add(List<ChronicleAggregateEvent> events) {
-        for (ChronicleAggregateEvent event : events) {
+    public void add(List<JournalableAggregateEvent> events) {
+        for (JournalableAggregateEvent event : events) {
             appender.writeText(event.getClassName());
             appender.writeDocument(event);
         }
@@ -53,14 +53,14 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Chronic
 
 
     @Override
-    public Iterator<List<ChronicleAggregateEvent>> iterator() {
+    public Iterator<List<JournalableAggregateEvent>> iterator() {
         iterator.reset();
         return iterator;
     }
 
-    private static class ChronicleIterator implements Iterator<List<ChronicleAggregateEvent>> {
+    private static class ChronicleIterator implements Iterator<List<JournalableAggregateEvent>> {
         private final ExcerptTailer tailer;
-        private final List<ChronicleAggregateEvent> lst = new ArrayList();
+        private final List<JournalableAggregateEvent> lst = new ArrayList();
 
         private boolean hasNext = true;
 
@@ -81,7 +81,7 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Chronic
         }
 
         @Override
-        public List<ChronicleAggregateEvent> next() {
+        public List<JournalableAggregateEvent> next() {
             //iterate until ANY of the thread local pools are filled
             lst.clear();
             ThreadLocalObjectPool.clear();
@@ -89,7 +89,7 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Chronic
             String classIdentifier;
             while ((classIdentifier = tailer.readText()) != null) {
                 try (DocumentContext documentContext = tailer.readingDocument()) {
-                    ChronicleAggregateEvent e = ThreadLocalObjectPool.allocateObject(classIdentifier);
+                    JournalableAggregateEvent e = ThreadLocalObjectPool.allocateObject(classIdentifier);
                     e.readMarshallable(documentContext.wire());
                     lst.add(e);
 

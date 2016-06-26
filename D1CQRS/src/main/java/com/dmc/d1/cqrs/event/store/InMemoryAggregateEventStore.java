@@ -1,10 +1,6 @@
 package com.dmc.d1.cqrs.event.store;
 
 import com.dmc.d1.cqrs.event.AggregateEventAbstract;
-import com.dmc.d1.cqrs.event.ChronicleAggregateEvent;
-import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
-import net.openhft.chronicle.queue.ExcerptTailer;
-import net.openhft.chronicle.wire.DocumentContext;
 
 import java.util.*;
 

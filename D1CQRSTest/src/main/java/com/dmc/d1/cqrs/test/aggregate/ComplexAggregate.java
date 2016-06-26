@@ -34,15 +34,6 @@ public class ComplexAggregate extends Aggregate {
     public void createBasket(Basket basket) {
         //TODO the basket and its nested objects should not be pooled
 //        //to pool -> BasketBuilder.copyBuilder(basket).buildPooledJournalable();
-//
-//        //example of how to create a pooled version from the existing one
-//        Security security = SecurityBuilder.copyBuilder(basket.getSecurity()).buildPooledJournalable();
-//        //provide helper methods on builder to do this
-//        List<BasketConstituent> constituentList = new ArrayList<>();
-//        for(BasketConstituent constituent : basket.getBasketConstituents()){
-//            constituentList.add(BasketConstituentBuilder.copyBuilder(constituent).buildPooledJournalable());
-//        }
-//        Basket pooledBasket = BasketBuilder.copyBuilder(basket).security(security).basketConstituents(constituentList).buildPooledJournalable();
 
         // buildPooled on builder -> takes in entity, if existing entity is pooled then just return
         // otherwise do as above
@@ -53,13 +44,12 @@ public class ComplexAggregate extends Aggregate {
         //if ever we need to change form pooled ->not pooled or not pooled-> pooled then a copy is required
         //Security security2 = SecurityBuilder.copyBuilder(basket.getSecurity()).buildJournalable(false);
 
-        //basket here is NOT pooled as it stands
         apply(BasketCreatedEventBuilder.startBuilding(getId()).basket(basket).buildPooledJournalable());
     }
 
     @EventHandler
     public void handleEvent(BasketCreatedEvent event) {
-        this.basket = BasketBuilder.copyBuilder(event.getBasket()).buildJournalable();
+        this.basket = BasketBuilder.copyBuilder(event.getBasket()).buildMutable();
     }
 
     public Basket getBasket() {

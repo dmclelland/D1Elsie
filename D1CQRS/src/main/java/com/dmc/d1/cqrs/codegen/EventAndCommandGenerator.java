@@ -3,7 +3,7 @@ package com.dmc.d1.cqrs.codegen;
 import com.dmc.d1.cqrs.event.AggregateEvent;
 import com.dmc.d1.cqrs.event.AggregateEventAbstract;
 import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
-import com.dmc.d1.cqrs.event.ChronicleAggregateEvent;
+import com.dmc.d1.cqrs.event.JournalableAggregateEvent;
 import com.dmc.d1.cqrs.util.NewInstanceFactory;
 import com.dmc.d1.cqrs.util.Poolable;
 import com.dmc.d1.cqrs.util.Resettable;
@@ -16,6 +16,7 @@ import net.openhft.chronicle.wire.WireOut;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import javax.lang.model.element.Modifier;
 import java.io.File;
@@ -61,18 +62,18 @@ class EventAndCommandGenerator {
 
             ClassName interfaceName = generateInterface(vo, Type.DOMAIN);
             generateImmutableClass(vo, interfaceName, Type.DOMAIN);
-            generateChronicleClass(vo, interfaceName, Type.DOMAIN);
+            generateJournalableClass(vo, interfaceName, Type.DOMAIN);
             generateBuilder(vo, interfaceName, Type.DOMAIN);
             vos.put(vo.getFullClassname(), vo);
         }
 
-        //create chronicle initialised event
+        //create Journalable initialised event
         for (Element elem : root.getChild("event").getChildren()) {
             ClassVo vo = parseClassElem(elem);
 
             ClassName interfaceName = generateInterface(vo, Type.EVENT);
             generateImmutableClass(vo, interfaceName, Type.EVENT);
-            generateChronicleClass(vo, interfaceName, Type.EVENT);
+            generateJournalableClass(vo, interfaceName, Type.EVENT);
             generateBuilder(vo, interfaceName, Type.EVENT);
             vos.put(vo.getFullClassname(), vo);
         }
@@ -83,7 +84,7 @@ class EventAndCommandGenerator {
 //            ClassName interfaceName = generateInterface(vo);
 //
 //            generateImmutableClass(vo, interfaceName);
-//            generateChronicleClass(vo, interfaceName, Command.class);
+//            generateJournalableClass(vo, interfaceName, Command.class);
 //            generateBuilder(vo, interfaceName);
         }
     }
@@ -182,7 +183,7 @@ class EventAndCommandGenerator {
 
         String interfaceName = vo.className;
 
-        ClassName interfaceClass =  ClassName.get((vo.packageName), interfaceName);
+        ClassName interfaceClass = ClassName.get((vo.packageName), interfaceName);
 
         TypeSpec.Builder interfaceBuilder = TypeSpec.interfaceBuilder(interfaceName)
                 .addModifiers(Modifier.PUBLIC);
@@ -205,11 +206,11 @@ class EventAndCommandGenerator {
             );
         }
 
-
-        interfaceBuilder.addMethod(  MethodSpec.methodBuilder("deepClone")
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .returns(interfaceClass)
-                .build());
+//
+//        interfaceBuilder.addMethod(MethodSpec.methodBuilder("deepClone")
+//                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+//                .returns(interfaceClass)
+//                .build());
 
         JavaFile javaFile = JavaFile.builder(vo.packageName, interfaceBuilder.build())
                 .build();
@@ -232,6 +233,7 @@ class EventAndCommandGenerator {
 
         TypeSpec.Builder eventBuilder = TypeSpec.classBuilder(className)
                 .addSuperinterface(interfaceClass)
+                .addSuperinterface(Immutable.class)
                 .addField(CLASS_NAME);
 
         if (Type.EVENT == type)
@@ -247,27 +249,52 @@ class EventAndCommandGenerator {
         }
 
         for (String key : vo.instanceVariables.keySet()) {
-
             FieldDataVo fieldData = getFieldData(vo, key);
-
             eventBuilder.addField(fieldData.type, key, Modifier.PRIVATE, Modifier.FINAL);
 
-            constructorBuilder.addParameter(fieldData.type, key)
-                    .addStatement("this.$N = $N", key, key);
+            //if domain object then create a immutable copy method
+            if ("object".equals(fieldData.chronicleType) || "sequence".equals(fieldData.chronicleType)) {
 
-            eventBuilder.addMethod(
-                    MethodSpec.methodBuilder("get" + capitalize(key))
-                            .addModifiers(Modifier.PUBLIC)
-                            .addAnnotation(Override.class)
-                            .addStatement("return $N", key)
-                            .returns(fieldData.type)
-                            .build()
-            );
+                String name = fullNameFromClass("object".equals(fieldData.chronicleType) ?(ClassName) fieldData.type : fieldData.parameterizedClass);
+                ClassVo domain = vos.get(name);
+
+                if (domain != null) {
+                    eventBuilder.addMethod(
+                            buildImmutableCopy(domain, key, fieldData));
+
+                    constructorBuilder.addParameter(fieldData.type, key)
+                            .addStatement("this.$L = immutable$L($L)", key, capitalize(key), key);
+                } else {
+                    if ("sequence".equals(fieldData.chronicleType)){
+                        constructorBuilder.addParameter(fieldData.type, key)
+                                .addStatement("this.$L = new $T($L)", key, fieldData.concreteType, key);
+                    }else{
+                        constructorBuilder.addParameter(fieldData.type, key)
+                                .addStatement("this.$L = $L", key, key);
+                    }
+                }
+            } else {
+                constructorBuilder.addParameter(fieldData.type, key)
+                        .addStatement("this.$L = $L", key, key);
+            }
+
+            MethodSpec.Builder accessorBuilder = MethodSpec.methodBuilder("get" + capitalize(key))
+                    .addModifiers(Modifier.PUBLIC)
+                    .addAnnotation(Override.class)
+                    .returns(fieldData.type);
+
+            if ("sequence".equals(fieldData.chronicleType)) {
+                accessorBuilder.addStatement("return new $T($L)", fieldData.concreteType, key);
+            } else {
+                accessorBuilder.addStatement("return $L", key);
+            }
+
+            eventBuilder.addMethod(accessorBuilder.build());
         }
 
         eventBuilder.addMethod(constructorBuilder.build());
 
-        eventBuilder.addMethod(deepCloneBuilder(vo, immutableClass, type));
+        //eventBuilder.addMethod(deepCloneBuilder(vo, immutableClass, type));
         eventBuilder.addMethod(equalsBuilder(vo, immutableClass, type));
         eventBuilder.addMethod(hashCodeBuilder(vo, type));
 
@@ -277,12 +304,90 @@ class EventAndCommandGenerator {
         javaFile.writeTo(new File(this.generatedSourceDirectory));
     }
 
+    @NotNull
+    private MethodSpec buildImmutableCopy(ClassVo domain, String key, FieldDataVo fieldData) {
+        ClassName builderClass = ClassName.get(domain.packageName, domain.className + "Builder");
 
-    private void generateChronicleClass(ClassVo vo, ClassName interfaceClass, Type type) throws Exception {
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("immutable" + capitalize(key))
+                .addParameter(fieldData.type, key)
+                .addModifiers(Modifier.PRIVATE)
+                .returns(fieldData.type);
 
-        String className = vo.className + "Chronicle";
+        if ("object".equals(fieldData.chronicleType)) {
 
-        ClassName chronicleClass = ClassName.get(vo.packageName, className);
+
+            builder.addStatement("return $L instanceof $T ? " +
+                    "$L : $T.copyBuilder($L).buildImmutable()", key, Immutable.class, key, builderClass, key);
+        } else if ("sequence".equals(fieldData.chronicleType)) {
+
+
+            if ("java.util.Map".equals(fieldData.className)) {
+
+                builder.addStatement("$T newMap = new $T()", fieldData.type, fieldData.concreteType);
+                builder.addStatement("$L.forEach((key, val) -> newMap.put(key, val instanceof $T ? val : $T.copyBuilder(val).buildImmutable()))", key, Immutable.class, builderClass);
+                builder.addStatement("return newMap");
+            } else {
+                builder.addStatement("$T newList = new $T()", fieldData.type, fieldData.concreteType);
+                builder.addStatement("$L.forEach((val) -> newList.add(val instanceof $T ? val : $T.copyBuilder(val).buildImmutable()))", key,  Immutable.class, builderClass);
+                builder.addStatement("return newList");
+
+            }
+        }
+        return builder.build();
+
+    }
+
+
+    @NotNull
+    private MethodSpec buildJournalableCopy(ClassVo domain, String key, FieldDataVo fieldData) {
+        ClassName builderClass = ClassName.get(domain.packageName, domain.className + "Builder");
+
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("journalable" + capitalize(key))
+                .addParameter(fieldData.type, key)
+                .addModifiers(Modifier.PRIVATE)
+                .returns(fieldData.type);
+
+        if ("object".equals(fieldData.chronicleType)) {
+
+           // return basket instanceof Journalable ? basket : pooled ?  BasketBuilder.copyBuilder(basket).buildPooledJournalable() : BasketBuilder.copyBuilder(basket).buildJournalable();
+
+            builder.addStatement("return $L instanceof $T ? " +
+                    "$L :pooled ?  $T.copyBuilder($L).buildPooledJournalable() : $T.copyBuilder($L).buildJournalable()",
+                    key, Journalable.class, key, builderClass, key, builderClass, key);
+        } else if ("sequence".equals(fieldData.chronicleType)) {
+
+            if ("java.util.Map".equals(fieldData.className)) {
+                builder.beginControlFlow("if (!$L.isEmpty() && $L.values().iterator().next() instanceof Journalable)", key, key);
+                builder.addStatement("return this.$L", key);
+                builder.endControlFlow();
+
+                builder.addStatement("$T newMap = new $T()", fieldData.type, fieldData.concreteType);
+
+                builder.addStatement("$L.forEach((key, val) -> newMap.put(key, val instanceof $T ? val : pooled ?  $T.copyBuilder(val).buildPooledJournalable() : $T.copyBuilder(val).buildJournalable()))",
+                        key, Journalable.class, builderClass, builderClass);
+                builder.addStatement("return newMap");
+            } else {
+                builder.beginControlFlow("if (!$L.isEmpty() && $L.get(0) instanceof Journalable)", key, key);
+                builder.addStatement("return this.$L", key);
+                builder.endControlFlow();
+                builder.addStatement("$T newList = new $T()", fieldData.type, fieldData.concreteType);
+
+
+                builder.addStatement("$L.forEach((val) -> newList.add(val instanceof $T ? val :  pooled ?  $T.copyBuilder(val).buildPooledJournalable() : $T.copyBuilder(val).buildJournalable()))",
+                        key,  Journalable.class, builderClass, builderClass);
+                builder.addStatement("return newList");
+
+            }
+        }
+        return builder.build();
+
+    }
+
+    private void generateJournalableClass(ClassVo vo, ClassName interfaceClass, Type type) throws Exception {
+
+        String className = vo.className + "Journalable";
+
+        ClassName journalableClass = ClassName.get(vo.packageName, className);
 
         String eventInterfaceName = interfaceClass.packageName() + "." + interfaceClass.simpleName();
 
@@ -292,13 +397,13 @@ class EventAndCommandGenerator {
 
         ClassName factory = ClassName.get(NewInstanceFactory.class);
 
-        ParameterizedTypeName factoryInterface = ParameterizedTypeName.get(factory, chronicleClass);
+        ParameterizedTypeName factoryInterface = ParameterizedTypeName.get(factory, journalableClass);
 
         TypeSpec newInstanceFactory = TypeSpec.classBuilder("Factory")
                 .addSuperinterface(factoryInterface)
                 .addModifiers(Modifier.STATIC, Modifier.PRIVATE)
                 .addMethod(MethodSpec.methodBuilder("getClassName").addModifiers(Modifier.PUBLIC).returns(String.class).addStatement("return CLASS_NAME").build())
-                .addMethod(MethodSpec.methodBuilder("newInstance").addModifiers(Modifier.PUBLIC).returns(chronicleClass).addStatement("return new $T()", chronicleClass).build())
+                .addMethod(MethodSpec.methodBuilder("newInstance").addModifiers(Modifier.PUBLIC).returns(journalableClass).addStatement("return new $T()", journalableClass).build())
                 .build();
 
         FieldSpec FACTORY = FieldSpec.builder(factoryInterface, "FACTORY", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
@@ -321,14 +426,26 @@ class EventAndCommandGenerator {
 
         TypeSpec.Builder eventBuilder = TypeSpec.classBuilder(className)
                 .addSuperinterface(interfaceClass)
+                .addSuperinterface(Journalable.class)
                 .addField(CLASS_NAME)
                 .addType(newInstanceFactory)
                 .addField(FACTORY)
                 .addMethod(newInstanceFactoryMethod);
 
+        eventBuilder.addField(FieldSpec.builder(TypeName.BOOLEAN,"pooled",Modifier.PRIVATE).build());
+
+        eventBuilder.addMethod(
+                MethodSpec.methodBuilder("setPooled")
+                        .addModifiers(Modifier.PUBLIC)
+                        .addParameter(TypeName.BOOLEAN,"pooled")
+                        .addStatement("this.pooled = pooled")
+                        .build()
+        );
+
+
 
         if (Type.EVENT == type) {
-            eventBuilder.superclass(ChronicleAggregateEvent.class);
+            eventBuilder.superclass(JournalableAggregateEvent.class);
         } else if (Type.DOMAIN == type) {
             eventBuilder.addSuperinterface(Resettable.class);
             eventBuilder.addSuperinterface(Marshallable.class);
@@ -399,6 +516,35 @@ class EventAndCommandGenerator {
                 }
             }
 
+            //if domain object then create a immutable copy method
+            if ("object".equals(fieldData.chronicleType) || "sequence".equals(fieldData.chronicleType)) {
+
+                String name = fullNameFromClass("object".equals(fieldData.chronicleType) ?(ClassName) fieldData.type : fieldData.parameterizedClass);
+                ClassVo domain = vos.get(name);
+
+                if (domain != null) {
+                    eventBuilder.addMethod(
+                            buildJournalableCopy(domain, key, fieldData));
+
+                    setBuilder.addParameter(fieldData.type, key)
+                            .addStatement("this.$L = journalable$L($L)", key, capitalize(key), key);
+                } else {
+                    if ("sequence".equals(fieldData.chronicleType)){
+                        setBuilder.addParameter(fieldData.type, key)
+                                .addStatement("this.$L = new $T($L)", key, fieldData.concreteType, key);
+                    }else{
+                        setBuilder.addParameter(fieldData.type, key)
+                                .addStatement("this.$L = $L", key, key);
+                    }
+                }
+            } else {
+                setBuilder.addParameter(fieldData.type, key)
+                        .addStatement("this.$L = $L", key, key);
+            }
+
+
+
+
             FieldSpec.Builder field = FieldSpec.builder(fieldData.type, key, Modifier.PRIVATE);
             if ("sequence".equals(fieldData.chronicleType)) {
                 field.initializer(CodeBlock.builder().add("new $T()", fieldData.concreteType).build());
@@ -406,9 +552,6 @@ class EventAndCommandGenerator {
 
             eventBuilder.addField(field.build());
 
-
-            setBuilder.addParameter(fieldData.type, key)
-                    .addStatement("this.$N = $N", key, key);
 
             if (Type.EVENT == type)
                 resetBuilder.addStatement("setAggregateId(null)");
@@ -432,13 +575,15 @@ class EventAndCommandGenerator {
             );
         }
 
+
+
         eventBuilder.addMethod(readMarshallableMethod.build());
         eventBuilder.addMethod(writeMarshallableMethod.build());
 
         eventBuilder.addMethod(setBuilder.build());
         eventBuilder.addMethod(resetBuilder.build());
-        eventBuilder.addMethod(deepCloneBuilder(vo, chronicleClass, type));
-        eventBuilder.addMethod(equalsBuilder(vo, chronicleClass, type));
+        //eventBuilder.addMethod(deepCloneBuilder(vo, journalableClass, type));
+        eventBuilder.addMethod(equalsBuilder(vo, journalableClass, type));
         eventBuilder.addMethod(hashCodeBuilder(vo, type));
         eventBuilder.addMethod(constructor);
 
@@ -461,7 +606,7 @@ class EventAndCommandGenerator {
         equalsBuilder.addStatement("if (o == null || getClass() != o.getClass()) return false");
         equalsBuilder.addStatement("$T that = ($T)o", className, className);
 
-        if(Type.EVENT == type){
+        if (Type.EVENT == type) {
 
             equalsBuilder.addStatement("if (getAggregateId() != null ? !getAggregateId().equals(that.getAggregateId()) : that.getAggregateId() != null) return false");
             equalsBuilder.addStatement("if (getClassName() != null ? !getClassName().equals(that.getClassName()) : that.getClassName() != null) return false");
@@ -491,6 +636,29 @@ class EventAndCommandGenerator {
     }
 
 
+    private MethodSpec hasSameState(ClassVo vo) {
+
+        MethodSpec.Builder hasSameStateBuilder = MethodSpec.methodBuilder("hasSameState")
+                .addParameter(classFromFullName(vo.getFullClassname()), "o")
+                .addModifiers(Modifier.PRIVATE)
+                .returns(TypeName.BOOLEAN);
+
+        for (String key : vo.instanceVariables.keySet()) {
+            FieldDataVo fieldData = vo.instanceVariables.get(key);
+
+
+            if (fieldData.type.isPrimitive()) {
+                hasSameStateBuilder.addStatement("if (o.get$L()!=this.$L) return false", capitalize(key), key);
+            } else {
+                hasSameStateBuilder.addStatement("if (o.get$L() != null ? !o.get$L().equals(this.$L) : this.$L != null) return false", capitalize(key), capitalize(key), key, key);
+            }
+
+        }
+        hasSameStateBuilder.addStatement("return true");
+        return hasSameStateBuilder.build();
+    }
+
+
     private MethodSpec hashCodeBuilder(ClassVo vo, Type type) {
 
         MethodSpec.Builder hashCodeBuilder = MethodSpec.methodBuilder("hashCode")
@@ -498,7 +666,7 @@ class EventAndCommandGenerator {
                 .addAnnotation(Override.class)
                 .returns(TypeName.INT);
 
-        if(Type.EVENT == type){
+        if (Type.EVENT == type) {
             hashCodeBuilder.addStatement("int result = getAggregateId() != null ? getAggregateId().hashCode() : 0");
             hashCodeBuilder.addStatement("result = 31 * result +  (getClassName() != null ? getClassName().hashCode() : 0)");
             hashCodeBuilder.addStatement("result = 31 * result +  (getAggregateClassName() != null ? getAggregateClassName().hashCode() : 0)");
@@ -529,79 +697,83 @@ class EventAndCommandGenerator {
         return hashCodeBuilder.build();
     }
 
-
-    private MethodSpec deepCloneBuilder(ClassVo vo, ClassName className, Type type) {
-
-        MethodSpec.Builder deepCloneBuilder = MethodSpec.methodBuilder("deepClone")
-                .addModifiers(Modifier.PUBLIC)
-                .returns(className);
-
-        //if immutable then just return this
-        if(className.toString().endsWith("Immutable")){
-            deepCloneBuilder.addStatement("return this");
-            return deepCloneBuilder.build();
-        }
-
-        CodeBlock.Builder cloneSet = CodeBlock.builder().add("clone.set(");
-
-
-
-        int i = 1;
-        int noOfParams = vo.instanceVariables.size();
-
-        if (Type.EVENT == type)
-            cloneSet.add("getAggregateId()$L",noOfParams==0 ? "" : ",");
-
-
-        for (String key : vo.instanceVariables.keySet()) {
-            FieldDataVo fieldData = vo.instanceVariables.get(key);
-            if ("sequence".equals(fieldData.chronicleType)) {
-                String colName = "col" + i;
-
-                deepCloneBuilder.addStatement("$T $L = new $T<>()", fieldData.type, colName, fieldData.concreteType);
-                if ("java.util.Map".equals(fieldData.className)) {
-                    deepCloneBuilder.beginControlFlow("for($T entry : this.$L.values())", fieldData.parameterizedClass, key);
-                    deepCloneBuilder.addStatement("$L.put(entry.get$L(),entry.deepClone())", colName, capitalize(fieldData.keyName));
-                    deepCloneBuilder.endControlFlow();
-                } else {
-                    deepCloneBuilder.beginControlFlow("for($T entry : this.$L)", fieldData.parameterizedClass, key);
-                    deepCloneBuilder.addStatement("$L.add(entry.deepClone())", colName);
-                    deepCloneBuilder.endControlFlow();
-                }
-
-                key = colName;
-            }
-
-            cloneSet.add("$L$L", key, i == noOfParams ? "" : ",");
-            i++;
-        }
-
-        cloneSet.add(");");
-
-        deepCloneBuilder.addStatement("$T clone = new $T()", className, className);
-
-        deepCloneBuilder.addCode(cloneSet.build());
-        deepCloneBuilder.addStatement("return clone");
-
-
 //
-//        BasketChronicle deepClone() {
-//            //make deep copy of security
-//            //make deep copy of basket
-//            Security security = SecurityBuilder.copyBuilder(this.security).buildJournalable();
-//            List<BasketConstituent> constituents = new ArrayList<>();
-//            for (BasketConstituent constituent : this.basketConstituents) {
-//                constituents.add(BasketConstituentBuilder.copyBuilder(constituent).buildJournalable());
-//            }
-//            BasketChronicle clone = new BasketChronicle();
-//            clone.set(ric, tradeDate, divisor, security, constituents, new HashMap<>());
+//    private MethodSpec deepCloneBuilder(ClassVo vo, ClassName className, Type type) {
 //
-//            return clone;
+//        MethodSpec.Builder deepCloneBuilder = MethodSpec.methodBuilder("deepClone")
+//                .addModifiers(Modifier.PUBLIC)
+//                .returns(className);
+//
+//        //if immutable then just return this
+//        if (className.toString().endsWith("Immutable")) {
+//            deepCloneBuilder.addStatement("return this");
+//            return deepCloneBuilder.build();
 //        }
-
-
-        return deepCloneBuilder.build();
-    }
+//
+//        CodeBlock.Builder cloneSet = CodeBlock.builder().add("clone.set(");
+//
+//
+//        int i = 1;
+//        int noOfParams = vo.instanceVariables.size();
+//
+//        if (Type.EVENT == type)
+//            cloneSet.add("getAggregateId()$L", noOfParams == 0 ? "" : ",");
+//
+//
+//        for (String key : vo.instanceVariables.keySet()) {
+//            FieldDataVo fieldData = vo.instanceVariables.get(key);
+//            if ("sequence".equals(fieldData.chronicleType)) {
+//                String colName = "col" + i;
+//
+//                deepCloneBuilder.addStatement("$T $L = new $T<>()", fieldData.type, colName, fieldData.concreteType);
+//                if ("java.util.Map".equals(fieldData.className)) {
+//                    deepCloneBuilder.beginControlFlow("for($T entry : this.$L.values())", fieldData.parameterizedClass, key);
+//                    deepCloneBuilder.addStatement("$L.put(entry.get$L(),entry.deepClone())", colName, capitalize(fieldData.keyName));
+//                    deepCloneBuilder.endControlFlow();
+//                } else {
+//                    deepCloneBuilder.beginControlFlow("for($T entry : this.$L)", fieldData.parameterizedClass, key);
+//                    deepCloneBuilder.addStatement("$L.add(entry.deepClone())", colName);
+//                    deepCloneBuilder.endControlFlow();
+//                }
+//
+//                key = colName;
+//                cloneSet.add("$L$L", key, i == noOfParams ? "" : ",");
+//            } else if ("object".equals(fieldData.chronicleType)) {
+//                cloneSet.add("$L.deepClone()$L", key, i == noOfParams ? "" : ",");
+//            } else {
+//                cloneSet.add("$L$L", key, i == noOfParams ? "" : ",");
+//            }
+//
+//
+//            i++;
+//        }
+//
+//        cloneSet.add(");");
+//
+//        deepCloneBuilder.addStatement("$T clone = new $T()", className, className);
+//
+//        deepCloneBuilder.addCode(cloneSet.build());
+//        deepCloneBuilder.addStatement("return clone");
+//
+//
+////
+////        BasketChronicle deepClone() {
+////            //make deep copy of security
+////            //make deep copy of basket
+////            Security security = SecurityBuilder.copyBuilder(this.security).buildJournalable();
+////            List<BasketConstituent> constituents = new ArrayList<>();
+////            for (BasketConstituent constituent : this.basketConstituents) {
+////                constituents.add(BasketConstituentBuilder.copyBuilder(constituent).buildJournalable());
+////            }
+////            BasketChronicle clone = new BasketChronicle();
+////            clone.set(ric, tradeDate, divisor, security, constituents, new HashMap<>());
+////
+////            return clone;
+////        }
+//
+//
+//        return deepCloneBuilder.build();
+//    }
 
 
     private void generateBuilder(ClassVo vo, ClassName interfaceClass, Type type) throws Exception {
@@ -638,7 +810,7 @@ class EventAndCommandGenerator {
             startBuilding.addStatement("builder.id = id");
 
 
-        ClassName chronicleClass = ClassName.get(vo.packageName, vo.className + "Chronicle");
+        ClassName journalableClass = ClassName.get(vo.packageName, vo.className + "Journalable");
         ClassName immutableClass = ClassName.get(vo.packageName, vo.className + "Immutable");
 
         MethodSpec.Builder buildJournalableMethod = MethodSpec.methodBuilder("buildJournalable")
@@ -651,11 +823,13 @@ class EventAndCommandGenerator {
                 .returns(vo.initialisationEvent ? ClassName.get(AggregateInitialisedEvent.class) : interfaceClass);
 
 
-        buildJournalableMethod.addStatement("$T chronicle =  $T.newInstanceFactory().newInstance()", chronicleClass, chronicleClass);
-        buildPooledJournalableMethod.addStatement("$T chronicle = $T.allocateObject($T.CLASS_NAME)", chronicleClass, ThreadLocalObjectPool.class, chronicleClass);
+        buildJournalableMethod.addStatement("$T journalable =  $T.newInstanceFactory().newInstance()", journalableClass, journalableClass);
+        buildJournalableMethod.addStatement("journalable.setPooled(false)");
 
+        buildPooledJournalableMethod.addStatement("$T journalable = $T.allocateObject($T.CLASS_NAME)", journalableClass, ThreadLocalObjectPool.class, journalableClass);
+        buildPooledJournalableMethod.addStatement("journalable.setPooled(true)");
 
-        CodeBlock.Builder chronicleSet = CodeBlock.builder().add("chronicle.set(");
+        CodeBlock.Builder journalableSet = CodeBlock.builder().add("journalable.set(");
 
 
         MethodSpec.Builder buildImmutableMethod = MethodSpec.methodBuilder("buildImmutable")
@@ -674,7 +848,7 @@ class EventAndCommandGenerator {
 
 
         if (Type.EVENT == type) {
-            chronicleSet.add("id$L", noOfParams == 0 ? "" : ",");
+            journalableSet.add("id$L", noOfParams == 0 ? "" : ",");
             immutableNew.add("id$L", noOfParams == 0 ? "" : ",");
         }
 
@@ -790,18 +964,18 @@ class EventAndCommandGenerator {
 //                buildCopyBuilderMethod.addStatement("builder.$L($L.get$L())", key, uncapitalize(vo.className), capitalize(key));
 //            }
 
-            chronicleSet.add("$L$L", key, i == noOfParams ? "" : ",");
+            journalableSet.add("$L$L", key, i == noOfParams ? "" : ",");
             immutableNew.add("$L$L", key, i == noOfParams ? "" : ",");
             i++;
         }
-        chronicleSet.add(");");
+        journalableSet.add(");");
         immutableNew.add(");");
 
-        buildJournalableMethod.addCode(chronicleSet.build());
-        buildJournalableMethod.addStatement("return chronicle");
+        buildJournalableMethod.addCode(journalableSet.build());
+        buildJournalableMethod.addStatement("return journalable");
 
-        buildPooledJournalableMethod.addCode(chronicleSet.build());
-        buildPooledJournalableMethod.addStatement("return chronicle");
+        buildPooledJournalableMethod.addCode(journalableSet.build());
+        buildPooledJournalableMethod.addStatement("return journalable");
 
         buildImmutableMethod.addCode(immutableNew.build());
         buildImmutableMethod.addStatement("return immutable");
@@ -812,6 +986,8 @@ class EventAndCommandGenerator {
         builderBuilder.addMethod(buildJournalableMethod.build());
         builderBuilder.addMethod(buildPooledJournalableMethod.build());
         builderBuilder.addMethod(buildImmutableMethod.build());
+
+        builderBuilder.addMethod(hasSameState(vo));
 
         buildCopyBuilderMethod.addStatement("return builder");
         builderBuilder.addMethod(buildCopyBuilderMethod.build());

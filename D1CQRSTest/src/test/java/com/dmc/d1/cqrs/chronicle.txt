@@ -20,26 +20,30 @@
     status as the current aggregate.
 
 6)  With object builders you can build an "immutable", a "journalable"  or a "pooled journalable" version of an object.
-    "Pooled immutabl
-    e"  doesn't make sense as a pooled object needs to be instantiated and available to have it's state set
+    "Pooled immutable"  doesn't make sense as a pooled object needs to be instantiated and available to have it's state set
     at a later point. "Pooled journalable" reduces object allocation (and hence gc) for events/objects.
 
 7)  The object builders also provide copy builders.  If the object being copied is complex and contains fields which
     are themselves objects/collections then it is necessary to determine how these nested objects are copied.
     If the object being copied is pooled and we want to transfer the state to an aggregate (say), then any nested objects/
     collections need to be cloned or changes to the pooled object will detrimentally be reflected on the aggregate.
-    If the object being copied is immutable then
 
-8)  "Journalable" objects which are updatable have static set methods provided by the companion builder.
+8)  "Mutable" objects which are updatable have static set methods provided by the companion builder.
 
 9)  A "journalable" object can be treated as immutable if we know that it is not poolable, and that it's state is not changed
     after it has been created.
 
-10) A copy builder for an immutable "journalable" objects can directly assign any nested objects/collections on the
+10) A copy builder for an immutable "journalable" object can directly assign any nested objects/collections on the
     object being copied to the new object.  If a "journalable" object is not immutable but has objects/collections
     that are then they can be copied in the same manner.
 
-11) It is necessary that we can create a pooled event which contains a reference to an unpooled object.????
+11)  The following constraints are enforced by the builder:
+
+    If a top level object is journalable then any complex field objects must also be journalable.
+    If a top level object is pooled then any complex field objects are also pooled.
+    If a top level object is immutable obviously it's fields must be immutable
+    If a top level object is mutable it can (and should where necessary) have immutable fields.
+
 
 12) The object pool is thread local and is cleared when the initiating aggregate has been committed or rolled back.
 

@@ -203,7 +203,7 @@ public class ComplexAggregateTest {
                 .ric(ric)
                 .security(security(rnd))
                 .basketConstituents(new ArrayList(constituents(ric)))
-                .buildJournalable();
+                .buildPooledJournalable();
     }
 
 

@@ -31,7 +31,7 @@ public class AggregateEventReplayer {
     public void replay() {
 
         Iterator<List<AggregateEvent>> batches = eventStore.iterator();
-        AggregateRepository repo;;
+        AggregateRepository repo;
         Aggregate agg;
         List<AggregateEvent> events;
         while(batches.hasNext()){

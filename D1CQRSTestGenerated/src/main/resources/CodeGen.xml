@@ -1,11 +1,11 @@
 <classes>
     <domain>
         <class name="com.dmc.d1.test.domain.Security" updateable="true">
-            <field name="name" type="java.lang.String"/>
+            <field name="name" type="java.lang.String" updatable="true"/>
             <field name="adv20Day" type="java.lang.Integer" toPrimitive="true"/>
         </class>
 
-        <class name="com.dmc.d1.test.domain.BasketConstituent" updateable="false">
+        <class name="com.dmc.d1.test.domain.BasketConstituent" updateable="false" cachable="true">
             <field name="ric" type="java.lang.String"/>
             <field name="adjustedShares" type="java.lang.Integer" toPrimitive="true"/>
         </class>
