@@ -4,10 +4,7 @@ import com.dmc.d1.cqrs.event.AggregateEvent;
 import com.dmc.d1.cqrs.event.AggregateEventAbstract;
 import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.JournalableAggregateEvent;
-import com.dmc.d1.cqrs.util.NewInstanceFactory;
-import com.dmc.d1.cqrs.util.Poolable;
-import com.dmc.d1.cqrs.util.Resettable;
-import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
+import com.dmc.d1.cqrs.util.*;
 import com.squareup.javapoet.*;
 import net.openhft.chronicle.core.io.IORuntimeException;
 import net.openhft.chronicle.wire.Marshallable;
@@ -110,6 +107,9 @@ class EventAndCommandGenerator {
             vo.updatable = true;
         }
 
+        if (element.getAttribute("cache-key") != null) {
+            vo.cacheKey = element.getAttributeValue("cache-key");
+        }
 
         for (Element field : element.getChildren("field")) {
             String name = field.getAttributeValue("name");
@@ -195,6 +195,10 @@ class EventAndCommandGenerator {
             else
                 interfaceBuilder.addSuperinterface(AggregateEvent.class);
         }
+
+        ParameterizedTypeName stateEquals = ParameterizedTypeName.get(ClassName.get(StateEquals.class), interfaceClass);
+        interfaceBuilder.addSuperinterface(stateEquals);
+
         for (String key : vo.instanceVariables.keySet()) {
 
             FieldDataVo fieldData = getFieldData(vo, key);
@@ -298,6 +302,7 @@ class EventAndCommandGenerator {
         //eventBuilder.addMethod(deepCloneBuilder(vo, immutableClass, type));
         eventBuilder.addMethod(equalsBuilder(vo, immutableClass, type));
         eventBuilder.addMethod(hashCodeBuilder(vo, type));
+        eventBuilder.addMethod(stateEqualsBuilder(vo));
 
         JavaFile javaFile = JavaFile.builder(vo.packageName, eventBuilder.build())
                 .build();
@@ -375,7 +380,7 @@ class EventAndCommandGenerator {
                     .addAnnotation(Override.class)
                     .returns(fieldData.type);
 
-            if ("sequence".equals(fieldData.chronicleType) && !fieldData.updatable ) {
+            if ("sequence".equals(fieldData.chronicleType) && !fieldData.updatable) {
                 accessorBuilder.addStatement("return new $T($L)", fieldData.concreteType, key);
             } else {
                 accessorBuilder.addStatement("return $L", key);
@@ -389,6 +394,7 @@ class EventAndCommandGenerator {
         //eventBuilder.addMethod(deepCloneBuilder(vo, immutableClass, type));
         eventBuilder.addMethod(equalsBuilder(vo, mutableClass, type));
         eventBuilder.addMethod(hashCodeBuilder(vo, type));
+        eventBuilder.addMethod(stateEqualsBuilder(vo));
 
         JavaFile javaFile = JavaFile.builder(vo.packageName, eventBuilder.build())
                 .build();
@@ -617,11 +623,15 @@ class EventAndCommandGenerator {
                     readMarshallableMethod.addCode("wireIn.read(()-> $S).sequence(this.$L,(l,v) -> {", key, key);
                     readMarshallableMethod.addCode("while (v.hasNextSequenceItem()){");
 
+
                     if ("java.util.Map".equals(fieldData.className)) {
-                        readMarshallableMethod.addCode("$T constituent = v.object($T.class);", parameterizedType, parameterizedType);
-                        readMarshallableMethod.addCode("l.put(constituent.get$L(), constituent);}", capitalize(fieldData.keyName));
+
+                        readMarshallableMethod.addCode("$T e = $T.allocateObject($T.class.getName());", parameterizedType, ThreadLocalObjectPool.class, parameterizedType);
+                        readMarshallableMethod.addCode("$T o = v.object(e,$T.class);", parameterizedType, parameterizedType);
+                        readMarshallableMethod.addCode("l.put(o.get$L(), o);}", capitalize(fieldData.keyName));
                     } else {
-                        readMarshallableMethod.addCode("l.add(v.object($T.class));}", parameterizedType);
+                        readMarshallableMethod.addCode("$T e = $T.allocateObject($T.class.getName());", parameterizedType, ThreadLocalObjectPool.class, parameterizedType);
+                        readMarshallableMethod.addCode("l.add(v.object(e, $T.class));}", parameterizedType);
                     }
                     readMarshallableMethod.addCode(" });\n");
 
@@ -632,7 +642,15 @@ class EventAndCommandGenerator {
                         writeMarshallableMethod.addCode(".sequence(this.$L);\n", key);
                     }
                 } else if ("object".equals(fieldData.chronicleType)) {
-                    readMarshallableMethod.addStatement("wireIn.read(()-> $S).object($T.class,this, (o,b) -> o.$L = b)", key, fieldData.type, key);
+
+                    //                    Security e = ThreadLocalObjectPool.allocateObject(Security.class.getName());
+//                    wireIn.read(() -> "security").object(e, Security.class);
+//                    this.security = e;
+                    readMarshallableMethod.addStatement("$T $L = $T.allocateObject($T.class.getName())", fieldData.type, key, ThreadLocalObjectPool.class, fieldData.type);
+                    readMarshallableMethod.addStatement("wireIn.read(() -> $S).object($L, $T.class)", key, key, fieldData.type);
+                    readMarshallableMethod.addStatement("this.$L=$L", key, key);
+
+                    //readMarshallableMethod.addStatement("wireIn.read(()-> $S).object($T.class,this, (o,b) -> o.$L = b)", key, fieldData.type, key);
                     writeMarshallableMethod.addStatement("wireOut.write(()-> $S).object($T.class, this.$L)", key, fieldData.type, key);
                 } else {
                     readMarshallableMethod.addStatement("wireIn.read(()-> $S).$L(this, (o, b) -> o.$L = b)", key, fieldData.chronicleType, key);
@@ -684,7 +702,11 @@ class EventAndCommandGenerator {
                 else
                     resetBuilder.addStatement("this.$N = 0", key);
             } else {
-                resetBuilder.addStatement("this.$N = null", key);
+                if ("sequence".equals(fieldData.chronicleType)) {
+                    resetBuilder.addStatement("this.$N.clear()", key);
+                } else {
+                    resetBuilder.addStatement("this.$N = null", key);
+                }
             }
 
             eventBuilder.addMethod(
@@ -704,6 +726,7 @@ class EventAndCommandGenerator {
         eventBuilder.addMethod(setBuilder.build());
         eventBuilder.addMethod(resetBuilder.build());
         //eventBuilder.addMethod(deepCloneBuilder(vo, journalableClass, type));
+        eventBuilder.addMethod(stateEqualsBuilder(vo));
         eventBuilder.addMethod(equalsBuilder(vo, journalableClass, type));
         eventBuilder.addMethod(hashCodeBuilder(vo, type));
         eventBuilder.addMethod(constructor);
@@ -757,11 +780,12 @@ class EventAndCommandGenerator {
     }
 
 
-    private MethodSpec hasSameState(ClassVo vo) {
+    private MethodSpec stateEqualsBuilder(ClassVo vo) {
 
-        MethodSpec.Builder hasSameStateBuilder = MethodSpec.methodBuilder("hasSameState")
+        MethodSpec.Builder hasSameStateBuilder = MethodSpec.methodBuilder("stateEquals")
                 .addParameter(classFromFullName(vo.getFullClassname()), "o")
-                .addModifiers(Modifier.PRIVATE)
+                .addAnnotation(Override.class)
+                .addModifiers(Modifier.PUBLIC)
                 .returns(TypeName.BOOLEAN);
 
         for (String key : vo.instanceVariables.keySet()) {
@@ -771,9 +795,27 @@ class EventAndCommandGenerator {
             if (fieldData.type.isPrimitive()) {
                 hasSameStateBuilder.addStatement("if (o.get$L()!=this.$L) return false", capitalize(key), key);
             } else {
-                hasSameStateBuilder.addStatement("if (o.get$L() != null ? !o.get$L().equals(this.$L) : this.$L != null) return false", capitalize(key), capitalize(key), key, key);
-            }
+                if ("object".equals(fieldData.chronicleType)) {
+                    hasSameStateBuilder.addStatement("if ($L != null ? !$L.stateEquals(o.get$L()) : o.get$L() != null) return false", key, key, capitalize(key), capitalize(key));
+                }else if ("sequence".equals(fieldData.chronicleType)) {
+//                    if (ric != null ? !ric.equals(o.getRic()) : o.getRic() != null) return false;
+//                    if (tradeDate != null ? !tradeDate.equals(o.getTradeDate()) : o.getTradeDate()!= null) return false;
+//                    if (divisor!=o.getDivisor()) return false;
+//                    if (security != null ? !security.stateEquals(o.getSecurity()) : o.getSecurity() != null) return false;
+//                    if (basketConstituents != null ? !StateEquals.listStateEquals(basketConstituents,o.getBasketConstituents()) : o.getBasketConstituents() != null) return false;
+//                    if (basketConstituents2 != null ? !StateEquals.mapStateEquals(basketConstituents2,o.getBasketConstituents2()) : o.getBasketConstituents2()!=null) return false;
 
+
+                    if("java.util.Map".equals(fieldData.className)){
+                        hasSameStateBuilder.addStatement("if ($L != null ? !$T.mapStateEquals($L,o.get$L()) : o.get$L() != null) return false", key, StateEquals.class,key, capitalize(key), capitalize(key));
+                    }else{
+                        hasSameStateBuilder.addStatement("if ($L != null ? !$T.listStateEquals($L,o.get$L()) : o.get$L() != null) return false", key, StateEquals.class,key, capitalize(key), capitalize(key));
+                    }
+
+                } else {
+                    hasSameStateBuilder.addStatement("if ($L != null ? !$L.equals(o.get$L()) : o.get$L() != null) return false", key, key, capitalize(key), capitalize(key));
+                }
+            }
         }
         hasSameStateBuilder.addStatement("return true");
         return hasSameStateBuilder.build();
@@ -824,6 +866,9 @@ class EventAndCommandGenerator {
         TypeSpec.Builder builderBuilder = TypeSpec.classBuilder(className).addModifiers(Modifier.PUBLIC);
 
 
+        ParameterizedTypeName stateEquals = ParameterizedTypeName.get(ClassName.get(StateEquals.class), interfaceClass);
+        builderBuilder.addSuperinterface(stateEquals);
+
         ClassName threadLocalName = ClassName.get("java.lang", "ThreadLocal");
         ClassName builderName = ClassName.get(vo.packageName, className);
 
@@ -873,10 +918,40 @@ class EventAndCommandGenerator {
 
         CodeBlock.Builder journalableSet = CodeBlock.builder().add("journalable.set(");
 
+        String cacheName = null;
+
+        if (vo.cacheKey != null) {
+            cacheName = uncapitalize(vo.className) + "Cache";
+            TypeName keyType = vo.instanceVariables.get(vo.cacheKey).type;
+            TypeName cacheMap = ParameterizedTypeName.get(ClassName.get(Map.class), keyType, immutableClass);
+            TypeName concreteCacheMap = ParameterizedTypeName.get(ClassName.get(HashMap.class), keyType, immutableClass);
+            builderBuilder.addField(
+                    FieldSpec.builder(cacheMap, cacheName).initializer("new $T()", concreteCacheMap).build()
+            );
+        }
+
+//        BasketImmutable basket = immutableCache.get(ric);
+//
+//        if (basket == null || !this.hasSameState(basket)) {
+//            basket = new BasketImmutable(ric, tradeDate, divisor, security, basketConstituents, basketConstituents2);
+//            immutableCache.put(ric, basket);
+//        }
+//        return basket;
+
         MethodSpec.Builder buildImmutableMethod = MethodSpec.methodBuilder("buildImmutable")
                 .addModifiers(Modifier.PUBLIC)
                 .returns(vo.initialisationEvent ? ClassName.get(AggregateInitialisedEvent.class) : interfaceClass);
-        CodeBlock.Builder immutableNew = CodeBlock.builder().add("$T immutable = new $T(", immutableClass, immutableClass);
+
+        CodeBlock.Builder immutableNew = CodeBlock.builder();
+
+        if (vo.cacheKey != null) {
+
+            immutableNew.addStatement("$T immutable = $L.get($L)", immutableClass, cacheName, vo.cacheKey);
+            immutableNew.add("if (immutable == null || !this.stateEquals(immutable)) {");
+            immutableNew.add("immutable = new $T(", immutableClass);
+        } else {
+            immutableNew.add("$T immutable = new $T(", immutableClass, immutableClass);
+        }
 
         MethodSpec.Builder buildMutableMethod = MethodSpec.methodBuilder("buildMutable")
                 .addModifiers(Modifier.PUBLIC)
@@ -945,7 +1020,16 @@ class EventAndCommandGenerator {
             i++;
         }
         journalableSet.add(");");
-        immutableNew.add(");");
+
+        if (vo.cacheKey != null) {
+            immutableNew.add(");");
+            immutableNew.add("$L.put($L, immutable);", cacheName, vo.cacheKey);
+            immutableNew.add("}");
+        } else {
+            immutableNew.add(");");
+        }
+
+
         mutableNew.add(");");
 
         buildJournalableMethod.addCode(journalableSet.build());
@@ -972,7 +1056,7 @@ class EventAndCommandGenerator {
         if (vo.updatable)
             builderBuilder.addMethod(buildMutableMethod.build());
 
-        builderBuilder.addMethod(hasSameState(vo));
+        builderBuilder.addMethod(stateEqualsBuilder(vo));
 
         buildCopyBuilderMethod.addStatement("return builder");
         builderBuilder.addMethod(buildCopyBuilderMethod.build());
@@ -989,6 +1073,7 @@ class EventAndCommandGenerator {
         String className;
         boolean initialisationEvent;
         boolean updatable;
+        String cacheKey;
 
         String getFullClassname() {
             return packageName + "." + className;

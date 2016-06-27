@@ -33,23 +33,13 @@ public class ComplexAggregate extends Aggregate {
 
     public void createBasket(Basket basket) {
         //TODO the basket and its nested objects should not be pooled
-//        //to pool -> BasketBuilder.copyBuilder(basket).buildPooledJournalable();
-
-        // buildPooled on builder -> takes in entity, if existing entity is pooled then just return
-        // otherwise do as above
-
-        //contrary, if the builder parameter is pooled, and we don't want the copy to be pooled
-        //then we likewise need to take a copy
-
-        //if ever we need to change form pooled ->not pooled or not pooled-> pooled then a copy is required
-        //Security security2 = SecurityBuilder.copyBuilder(basket.getSecurity()).buildJournalable(false);
 
         apply(BasketCreatedEventBuilder.startBuilding(getId()).basket(basket).buildPooledJournalable());
     }
 
     @EventHandler
     public void handleEvent(BasketCreatedEvent event) {
-        this.basket = BasketBuilder.copyBuilder(event.getBasket()).buildMutable();
+        this.basket = BasketBuilder.copyBuilder(event.getBasket()).buildImmutable();
     }
 
     public Basket getBasket() {

@@ -101,7 +101,8 @@ public class ComplexAggregateTest {
         System.out.println(wire);
 
 
-        Basket basket2 = BasketBuilder.startBuilding().buildJournalable();
+        Basket basket2 = BasketBuilder.startBuilding()
+                .security(SecurityBuilder.startBuilding().buildJournalable()).buildJournalable();
         ((Marshallable) basket2).readMarshallable(wire);
 
         assertEquals(basket.getDivisor(), basket2.getDivisor());
@@ -117,6 +118,9 @@ public class ComplexAggregateTest {
         int noOfCreatesWarmup = 100_000;
         int noOfCreates = 100_000;
 
+//         int noOfCreatesWarmup = 100;
+//        int noOfCreates = 100;
+
         setup();
         int rnd = ((this.hashCode() ^ (int) System.nanoTime()));
 
@@ -128,7 +132,7 @@ public class ComplexAggregateTest {
 
         Map<String, ComplexAggregate> aggregate1Repo = (Map<String, ComplexAggregate>) ReflectionTestUtils.getField(repo1, "cache");
         Map<String, ComplexAggregate> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
-
+        aggregate1Repo.clear();
         StopWatch watch = new StopWatch();
         watch.start();
         replayer.replay();
@@ -166,6 +170,36 @@ public class ComplexAggregateTest {
 
     }
 
+    @Test
+    public void testCreateAndReplayComplexEventsNoAssertions() throws Exception {
+
+        int noOfCreatesWarmup = 100_000;
+        int noOfCreates = 100_000;
+
+//         int noOfCreatesWarmup = 100;
+//        int noOfCreates = 100;
+
+        setup();
+        int rnd = ((this.hashCode() ^ (int) System.nanoTime()));
+
+        List<MyId> ids = new ArrayList<>();
+        List<Aggregate> aggregates = new ArrayList<>();
+
+        rnd = createAggregates(commandBus, rnd, ids, aggregates, noOfCreatesWarmup, true);
+        rnd = createAggregates(commandBus, rnd, ids, aggregates, noOfCreates, false);
+
+        Map<String, ComplexAggregate> aggregate1Repo = (Map<String, ComplexAggregate>) ReflectionTestUtils.getField(repo1, "cache");
+        aggregate1Repo.clear();
+        StopWatch watch = new StopWatch();
+        watch.start();
+        replayer.replay();
+        watch.stop();
+        System.out.println("It took " + watch.getTotalTimeSeconds() + " to replay");
+        CREATE_HISTOGRAM.getHistogramData().outputPercentileDistribution(System.out, 10d);
+
+    }
+
+
 
     private int createAggregates(CommandBus commandBus, int rnd, List<MyId> ids, List<Aggregate> aggregates, int iterations, boolean warmup) {
 
@@ -193,7 +227,6 @@ public class ComplexAggregateTest {
         return rnd;
     }
 
-
     private Basket createBasket(int rnd) {
 
         String ric = ric(rnd);
@@ -203,7 +236,7 @@ public class ComplexAggregateTest {
                 .ric(ric)
                 .security(security(rnd))
                 .basketConstituents(new ArrayList(constituents(ric)))
-                .buildPooledJournalable();
+                .buildJournalable();
     }
 
 
@@ -268,7 +301,7 @@ public class ComplexAggregateTest {
         List<BasketConstituent> lst = new ArrayList<>();
         for (int i = 0; i < rnd; i++) {
             String constituentRic = ("ric" + i).intern();
-            lst.add(BasketConstituentBuilder.startBuilding().adjustedShares(i).ric(constituentRic).buildJournalable());
+            lst.add(BasketConstituentBuilder.startBuilding().adjustedShares(i).ric(constituentRic).buildPooledJournalable());
         }
 
         constituentsMap.put(ric, lst);
