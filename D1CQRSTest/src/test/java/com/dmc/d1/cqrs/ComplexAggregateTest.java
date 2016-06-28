@@ -3,6 +3,7 @@ package com.dmc.d1.cqrs;
 import com.dmc.d1.algo.event.Configuration;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
+import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
@@ -12,6 +13,7 @@ import com.dmc.d1.cqrs.test.commandhandler.ComplexCommandHandler;
 import com.dmc.d1.cqrs.test.domain.MyId;
 import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import com.dmc.d1.test.domain.*;
+import com.dmc.d1.test.event.TestAggregateInitialisedEventBuilder;
 import net.openhft.chronicle.bytes.Bytes;
 import net.openhft.chronicle.wire.Marshallable;
 import net.openhft.chronicle.wire.TextWire;
@@ -27,6 +29,7 @@ import org.springframework.util.StopWatch;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -41,8 +44,9 @@ public class ComplexAggregateTest {
     CommandBus commandBus;
 
     AggregateEventReplayer replayer;
-    InitialisationEventFactory initialisationEventFactory = Configuration.initialisationEventFactoryChronicle();
 
+    Function<String, AggregateInitialisedEvent> initialisationFactory =
+            (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
     private static final Histogram CREATE_HISTOGRAM =
             new Histogram(TimeUnit.SECONDS.toNanos(30), 2);
@@ -73,7 +77,8 @@ public class ComplexAggregateTest {
 
         SimpleEventBus eventBus = new SimpleEventBus();
 
-        repo1 = new AggregateRepository(chronicleAES, ComplexAggregate.class, eventBus, new ComplexAggregate.Factory(), initialisationEventFactory);
+        repo1 = new AggregateRepository(chronicleAES, ComplexAggregate.class, eventBus,
+                ComplexAggregate.newInstanceFactory(), initialisationFactory);
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
 
@@ -145,13 +150,13 @@ public class ComplexAggregateTest {
 
             assertEquals(aggExpected.getId(), agg.getId());
 
-            assertTrue(aggExpected.getBasket().getDivisor()>0);
+            assertTrue(aggExpected.getBasket().getDivisor() > 0);
             assertEquals(aggExpected.getBasket().getDivisor(), agg.getBasket().getDivisor());
 
-            assertTrue(aggExpected.getBasket().getRic().length()>0);
+            assertTrue(aggExpected.getBasket().getRic().length() > 0);
             assertEquals(aggExpected.getBasket().getRic(), agg.getBasket().getRic());
 
-            assertTrue(aggExpected.getBasket().getSecurity().getName().length()>0);
+            assertTrue(aggExpected.getBasket().getSecurity().getName().length() > 0);
             assertEquals(aggExpected.getBasket().getSecurity().getName(), agg.getBasket().getSecurity().getName());
             assertEquals(aggExpected.getBasket().getSecurity().getAdv20Day(), agg.getBasket().getSecurity().getAdv20Day());
 
@@ -161,11 +166,11 @@ public class ComplexAggregateTest {
 
             for (int i = 0; i < aggExpected.getBasket().getBasketConstituents().size(); i++) {
 
-                assertTrue(aggExpected.getBasket().getBasketConstituents().get(i).getRic().length()>0);
+                assertTrue(aggExpected.getBasket().getBasketConstituents().get(i).getRic().length() > 0);
                 assertEquals(aggExpected.getBasket().getBasketConstituents().get(i).getRic(),
                         agg.getBasket().getBasketConstituents().get(i).getRic());
 
-                assertTrue(aggExpected.getBasket().getBasketConstituents().get(i).getAdjustedShares()>0);
+                assertTrue(aggExpected.getBasket().getBasketConstituents().get(i).getAdjustedShares() > 0);
                 assertEquals(aggExpected.getBasket().getBasketConstituents().get(i).getAdjustedShares(),
                         agg.getBasket().getBasketConstituents().get(i).getAdjustedShares());
 

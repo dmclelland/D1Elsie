@@ -4,6 +4,7 @@ import com.dmc.d1.algo.event.Configuration;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
 import com.dmc.d1.cqrs.event.AbstractEventHandler;
+import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
@@ -19,6 +20,7 @@ import com.dmc.d1.cqrs.test.domain.MyNestedId;
 import com.dmc.d1.cqrs.test.event.Aggregate1EventHandler;
 import com.dmc.d1.cqrs.test.event.Aggregate1EventHandler2;
 import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
+import com.dmc.d1.test.event.TestAggregateInitialisedEventBuilder;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -27,6 +29,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 
@@ -48,18 +51,20 @@ public class CommandDirectInvokerTest {
 
     DeleteStatic deleteOnClose = DeleteStatic.INSTANCE;
 
-    InitialisationEventFactory initialisationEventFactory = Configuration.initialisationEventFactoryChronicle();
+    Function<String, AggregateInitialisedEvent> initialisationFactory =
+            (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
     @Before
     public void setup() throws Exception {
-        ThreadLocalObjectPool.initialise();;
+        ThreadLocalObjectPool.initialise();
+        ;
         aes = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         SimpleEventBus eventBus = new SimpleEventBus();
 
-        repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, new Aggregate1.Factory(), initialisationEventFactory);
-        repo2 = new AggregateRepository(aes, Aggregate2.class, eventBus, new Aggregate2.Factory(), initialisationEventFactory);
-        repo3 = new AggregateRepository(aes, NestedAggregate1.class, eventBus, new NestedAggregate1.Factory(), initialisationEventFactory);
+        repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, Aggregate1.newInstanceFactory(), initialisationFactory);
+        repo2 = new AggregateRepository(aes, Aggregate2.class, eventBus, Aggregate2.newInstanceFactory(), initialisationFactory);
+        repo3 = new AggregateRepository(aes, NestedAggregate1.class, eventBus, NestedAggregate1.newInstanceFactory(), initialisationFactory);
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
 

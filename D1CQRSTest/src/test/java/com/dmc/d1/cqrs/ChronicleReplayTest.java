@@ -3,6 +3,7 @@ package com.dmc.d1.cqrs;
 import com.dmc.d1.algo.event.Configuration;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
+import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
@@ -16,12 +17,14 @@ import com.dmc.d1.cqrs.test.commandhandler.MyCommandHandler1;
 import com.dmc.d1.cqrs.test.commandhandler.MyCommandHandler2;
 import com.dmc.d1.cqrs.test.domain.MyId;
 import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
+import com.dmc.d1.test.event.TestAggregateInitialisedEventBuilder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.StopWatch;
 
 import java.util.*;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 
@@ -35,8 +38,9 @@ public class ChronicleReplayTest {
     CommandBus commandBus;
 
     AggregateEventReplayer replayer;
-    InitialisationEventFactory initialisationEventFactory = Configuration.initialisationEventFactoryChronicle();
 
+    Function<String, AggregateInitialisedEvent> initialisationFactory =
+            (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
     AggregateEventStore chronicleAES;
     AggregateRepository<Aggregate1> repo1;
@@ -50,8 +54,8 @@ public class ChronicleReplayTest {
 
         SimpleEventBus eventBus = new SimpleEventBus();
 
-        repo1 = new AggregateRepository(chronicleAES, Aggregate1.class, eventBus,   new Aggregate1.Factory(), initialisationEventFactory);
-        repo2 = new AggregateRepository(chronicleAES, Aggregate2.class, eventBus,  new Aggregate2.Factory(), initialisationEventFactory);
+        repo1 = new AggregateRepository(chronicleAES, Aggregate1.class, eventBus, Aggregate1.newInstanceFactory(), initialisationFactory);
+        repo2 = new AggregateRepository(chronicleAES, Aggregate2.class, eventBus, Aggregate2.newInstanceFactory(), initialisationFactory);
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
 
@@ -62,7 +66,7 @@ public class ChronicleReplayTest {
 
         List<AggregateRepository> repos = Arrays.asList(repo1, repo2);
 
-        replayer = new AggregateEventReplayer(chronicleAES,repos);
+        replayer = new AggregateEventReplayer(chronicleAES, repos);
 
     }
 
@@ -79,11 +83,11 @@ public class ChronicleReplayTest {
         rnd = createAggregates(commandBus, rnd, ids, aggregates, noOfCreates);
         rnd = updateAggregates(commandBus, rnd, ids, noOfUpdates);
 
-        Map<String,Aggregate1> aggregate1Repo = (Map<String,Aggregate1>)ReflectionTestUtils.getField(repo1, "cache");
-        Map<String,Aggregate2> aggregate2Repo = (Map<String,Aggregate2>)ReflectionTestUtils.getField(repo2, "cache");
+        Map<String, Aggregate1> aggregate1Repo = (Map<String, Aggregate1>) ReflectionTestUtils.getField(repo1, "cache");
+        Map<String, Aggregate2> aggregate2Repo = (Map<String, Aggregate2>) ReflectionTestUtils.getField(repo2, "cache");
 
-        Map<String,Aggregate1> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
-        Map<String,Aggregate2> aggregate2RepoCopy = new HashMap<>(aggregate2Repo);
+        Map<String, Aggregate1> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
+        Map<String, Aggregate2> aggregate2RepoCopy = new HashMap<>(aggregate2Repo);
 
         aggregate1Repo.clear();
         aggregate2Repo.clear();
@@ -94,10 +98,10 @@ public class ChronicleReplayTest {
         watch.stop();
         System.out.println("It took " + watch.getTotalTimeSeconds() + " to replay");
 
-        assertEquals(aggregate1RepoCopy.size(),aggregate1Repo.size());
-        assertEquals(aggregate2RepoCopy.size(),aggregate2Repo.size());
+        assertEquals(aggregate1RepoCopy.size(), aggregate1Repo.size());
+        assertEquals(aggregate2RepoCopy.size(), aggregate2Repo.size());
 
-        for(String key : aggregate1Repo.keySet()){
+        for (String key : aggregate1Repo.keySet()) {
             Aggregate1 agg = aggregate1Repo.get(key);
             Aggregate1 aggExpected = aggregate1RepoCopy.get(key);
 
@@ -107,7 +111,7 @@ public class ChronicleReplayTest {
             assertEquals(aggExpected.getId(), agg.getId());
         }
 
-        for(String key : aggregate2Repo.keySet()){
+        for (String key : aggregate2Repo.keySet()) {
             Aggregate2 agg = aggregate2Repo.get(key);
             Aggregate2 aggExpected = aggregate2RepoCopy.get(key);
 

@@ -4,7 +4,10 @@ import com.dmc.d1.cqrs.event.AggregateEvent;
 import com.dmc.d1.cqrs.event.AggregateEventAbstract;
 import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.JournalableAggregateEvent;
-import com.dmc.d1.cqrs.util.*;
+import com.dmc.d1.cqrs.util.Poolable;
+import com.dmc.d1.cqrs.util.Resettable;
+import com.dmc.d1.cqrs.util.StateEquals;
+import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import com.squareup.javapoet.*;
 import net.openhft.chronicle.core.io.IORuntimeException;
 import net.openhft.chronicle.wire.Marshallable;
@@ -21,6 +24,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -526,22 +530,17 @@ class EventAndCommandGenerator {
         FieldSpec CLASS_NAME = FieldSpec.builder(String.class, "CLASS_NAME", Modifier.FINAL, Modifier.STATIC)
                 .initializer("$S", eventInterfaceName).build();
 
-        ClassName factory = ClassName.get(NewInstanceFactory.class);
+        ClassName supplier = ClassName.get(Supplier.class);
 
-        ParameterizedTypeName factoryInterface = ParameterizedTypeName.get(factory, journalableClass);
+        ParameterizedTypeName supplierInterface = ParameterizedTypeName.get(supplier, journalableClass);
 
-        TypeSpec newInstanceFactory = TypeSpec.classBuilder("Factory")
-                .addSuperinterface(factoryInterface)
-                .addModifiers(Modifier.STATIC, Modifier.PRIVATE)
-                .addMethod(MethodSpec.methodBuilder("getClassName").addModifiers(Modifier.PUBLIC).returns(String.class).addStatement("return CLASS_NAME").build())
-                .addMethod(MethodSpec.methodBuilder("newInstance").addModifiers(Modifier.PUBLIC).returns(journalableClass).addStatement("return new $T()", journalableClass).build())
-                .build();
 
-        FieldSpec FACTORY = FieldSpec.builder(factoryInterface, "FACTORY", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
-                .initializer("new Factory()").build();
+        FieldSpec SUPPLIER = FieldSpec.builder(supplierInterface, "SUPPLIER", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
+                .initializer("$T::new", journalableClass).build();
 
-        MethodSpec newInstanceFactoryMethod = MethodSpec.methodBuilder("newInstanceFactory").returns(factoryInterface).addModifiers(Modifier.STATIC)
-                .addStatement("return FACTORY").build();
+        MethodSpec newInstanceFactoryMethod = MethodSpec.methodBuilder("newInstanceFactory")
+                .returns(supplierInterface).addModifiers(Modifier.STATIC)
+                .addStatement("return SUPPLIER").build();
 
 
         MethodSpec.Builder readMarshallableMethod = MethodSpec.methodBuilder("readMarshallable")
@@ -559,8 +558,7 @@ class EventAndCommandGenerator {
                 .addSuperinterface(interfaceClass)
                 .addSuperinterface(Journalable.class)
                 .addField(CLASS_NAME)
-                .addType(newInstanceFactory)
-                .addField(FACTORY)
+                .addField(SUPPLIER)
                 .addMethod(newInstanceFactoryMethod);
 
         eventBuilder.addField(FieldSpec.builder(TypeName.BOOLEAN, "pooled", Modifier.PRIVATE).build());
@@ -585,6 +583,7 @@ class EventAndCommandGenerator {
 
         MethodSpec constructor = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PRIVATE)
+                .addStatement(Type.EVENT ==type ? "setClassName(CLASS_NAME)" : "")
                 .build();
 
 
@@ -719,6 +718,17 @@ class EventAndCommandGenerator {
             );
         }
 
+        if (Type.DOMAIN == type) {
+            eventBuilder.addMethod(
+                    MethodSpec.methodBuilder("getClassName")
+                            .addModifiers(Modifier.PUBLIC)
+                            .addAnnotation(Override.class)
+                            .addStatement("return CLASS_NAME")
+                            .returns(String.class)
+                            .build()
+            );
+        }
+
 
         eventBuilder.addMethod(readMarshallableMethod.build());
         eventBuilder.addMethod(writeMarshallableMethod.build());
@@ -797,7 +807,7 @@ class EventAndCommandGenerator {
             } else {
                 if ("object".equals(fieldData.chronicleType)) {
                     hasSameStateBuilder.addStatement("if ($L != null ? !$L.stateEquals(o.get$L()) : o.get$L() != null) return false", key, key, capitalize(key), capitalize(key));
-                }else if ("sequence".equals(fieldData.chronicleType)) {
+                } else if ("sequence".equals(fieldData.chronicleType)) {
 //                    if (ric != null ? !ric.equals(o.getRic()) : o.getRic() != null) return false;
 //                    if (tradeDate != null ? !tradeDate.equals(o.getTradeDate()) : o.getTradeDate()!= null) return false;
 //                    if (divisor!=o.getDivisor()) return false;
@@ -806,10 +816,10 @@ class EventAndCommandGenerator {
 //                    if (basketConstituents2 != null ? !StateEquals.mapStateEquals(basketConstituents2,o.getBasketConstituents2()) : o.getBasketConstituents2()!=null) return false;
 
 
-                    if("java.util.Map".equals(fieldData.className)){
-                        hasSameStateBuilder.addStatement("if ($L != null ? !$T.mapStateEquals($L,o.get$L()) : o.get$L() != null) return false", key, StateEquals.class,key, capitalize(key), capitalize(key));
-                    }else{
-                        hasSameStateBuilder.addStatement("if ($L != null ? !$T.listStateEquals($L,o.get$L()) : o.get$L() != null) return false", key, StateEquals.class,key, capitalize(key), capitalize(key));
+                    if ("java.util.Map".equals(fieldData.className)) {
+                        hasSameStateBuilder.addStatement("if ($L != null ? !$T.mapStateEquals($L,o.get$L()) : o.get$L() != null) return false", key, StateEquals.class, key, capitalize(key), capitalize(key));
+                    } else {
+                        hasSameStateBuilder.addStatement("if ($L != null ? !$T.listStateEquals($L,o.get$L()) : o.get$L() != null) return false", key, StateEquals.class, key, capitalize(key), capitalize(key));
                     }
 
                 } else {
@@ -911,7 +921,7 @@ class EventAndCommandGenerator {
                 .returns(vo.initialisationEvent ? ClassName.get(AggregateInitialisedEvent.class) : interfaceClass);
 
 
-        buildJournalableMethod.addStatement("$T journalable =  $T.newInstanceFactory().newInstance()", journalableClass, journalableClass);
+        buildJournalableMethod.addStatement("$T journalable =  $T.newInstanceFactory().get()", journalableClass, journalableClass);
         buildJournalableMethod.addStatement("journalable.setPooled(false)");
         buildPooledJournalableMethod.addStatement("$T journalable = $T.allocateObject($T.CLASS_NAME)", journalableClass, ThreadLocalObjectPool.class, journalableClass);
         buildPooledJournalableMethod.addStatement("journalable.setPooled(true)");

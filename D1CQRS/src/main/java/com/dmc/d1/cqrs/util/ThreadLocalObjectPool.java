@@ -5,6 +5,7 @@ import org.reflections.Reflections;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Created By davidclelland on 09/06/2016.
@@ -27,10 +28,11 @@ public final class ThreadLocalObjectPool {
             //for every pooled concrete object set up a slot
             for (Class<? extends Poolable> pooled : pooledSet) {
 
+
                 if (!(Modifier.isAbstract(pooled.getModifiers()) || Modifier.isInterface(pooled.getModifiers()))) {
                     Method m = pooled.getDeclaredMethod("newInstanceFactory", null);
                     m.setAccessible(true);
-                    NewInstanceFactory<T> newInstanceFactory = (NewInstanceFactory<T>) m.invoke(null);
+                    Supplier<T> newInstanceFactory = (Supplier<T>) m.invoke(null);
                     createSlot(newInstanceFactory);
                 }
             }
@@ -67,7 +69,7 @@ public final class ThreadLocalObjectPool {
     }
 
 
-    private static <T extends Poolable> void createSlot(NewInstanceFactory<T> newInstanceFactory) {
+    private static <T extends Poolable> void createSlot(Supplier<T> newInstanceFactory) {
         if (THREAD_LOCAL.get() == null)
             throw new IllegalStateException("Object pool has not been initialized");
 

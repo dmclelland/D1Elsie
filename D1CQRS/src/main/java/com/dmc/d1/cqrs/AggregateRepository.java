@@ -3,10 +3,11 @@ package com.dmc.d1.cqrs;
 import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.EventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
-import com.dmc.d1.cqrs.util.NewInstanceFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -22,28 +23,28 @@ public class AggregateRepository<A extends Aggregate> {
     private final Class<A> aggregateClass;
     private final String aggregateClassName;
 
-    private final NewInstanceFactory<A> newInstanceFactory;
-    private final InitialisationEventFactory<AggregateInitialisedEvent> initialisationEventFactory;
+    private final Supplier<A> aggregateInstanceFactory;
+    private final Function<String, AggregateInitialisedEvent> initialisationEventFactory;
 
     public AggregateRepository(AggregateEventStore aggregateEventStore,
                                Class<A> aggregateClass,
                                EventBus eventBus,
-                               NewInstanceFactory<A> aggregateInstanceFactory,
-                               InitialisationEventFactory<AggregateInitialisedEvent> initialisationEventFactory
-                               ) {
+                               Supplier<A> aggregateInstanceFactory,
+                               Function<String, AggregateInitialisedEvent> initialisationEventFactory
+    ) {
         this.aggregateEventStore = checkNotNull(aggregateEventStore);
         this.aggregateClass = checkNotNull(aggregateClass);
         this.aggregateClassName = aggregateClass.getName();
         this.annotatedAggregateEventHandlerInvoker = checkNotNull(getEventHandler());
         this.eventBus = checkNotNull(eventBus);
-        this.newInstanceFactory = checkNotNull(aggregateInstanceFactory);
+        this.aggregateInstanceFactory = checkNotNull(aggregateInstanceFactory);
         this.initialisationEventFactory = checkNotNull(initialisationEventFactory);
     }
 
     final A create(String id) {
         //initialized event used for replays - the event is a marker to indicate
         //that a new aggregate of the specified type needs to be created
-        AggregateInitialisedEvent initialisationEvent = initialisationEventFactory.newInstance(id);
+        AggregateInitialisedEvent initialisationEvent = initialisationEventFactory.apply(id);
         initialisationEvent.setAggregateClassName(aggregateClassName);
         A aggregate = handleAggregateInitialisedEvent(initialisationEvent);
         aggregate.apply(initialisationEvent);
@@ -51,11 +52,11 @@ public class AggregateRepository<A extends Aggregate> {
     }
 
     final A handleAggregateInitialisedEvent(AggregateInitialisedEvent event) {
-        A aggregate = newInstanceFactory.newInstance();
+        A aggregate = aggregateInstanceFactory.get();
         initialise(aggregate, event);
 
         //copy used for rollback
-        A old = newInstanceFactory.newInstance();
+        A old = aggregateInstanceFactory.get();
         initialise(old, event);
         aggregate.setOld(old);
 
@@ -63,7 +64,7 @@ public class AggregateRepository<A extends Aggregate> {
         return aggregate;
     }
 
-    private void initialise(A aggregate, AggregateInitialisedEvent event){
+    private void initialise(A aggregate, AggregateInitialisedEvent event) {
         aggregate.setId(event.getAggregateId());
         aggregate.setAggregateClassName(event.getAggregateClassName());
 

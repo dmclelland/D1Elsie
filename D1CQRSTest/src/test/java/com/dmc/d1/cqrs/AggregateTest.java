@@ -1,7 +1,7 @@
 package com.dmc.d1.cqrs;
 
 
-import com.dmc.d1.algo.event.Configuration;
+import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;
@@ -9,8 +9,11 @@ import com.dmc.d1.cqrs.test.aggregate.Aggregate1;
 import com.dmc.d1.cqrs.test.aggregate.Aggregate2;
 import com.dmc.d1.cqrs.test.domain.MyId;
 import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
+import com.dmc.d1.test.event.TestAggregateInitialisedEventBuilder;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 
@@ -22,18 +25,23 @@ public class AggregateTest {
     SimpleEventBus bus = new SimpleEventBus();
 
     AggregateEventStore eventStore = new InMemoryAggregateEventStore();
-    InitialisationEventFactory initialisationEventFactory = Configuration.initialisationEventFactoryBasic();
+    //InitialisationEventFactory initialisationEventFactory = Configuration.initialisationEventFactoryBasic();
 
+    Function<String, AggregateInitialisedEvent> initialisationFactory =
+            (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
-    AggregateRepository<Aggregate1> aggregate1Repo = new AggregateRepository(eventStore, Aggregate1.class, bus, new Aggregate1.Factory(), initialisationEventFactory);
-    AggregateRepository<Aggregate2> aggregate2Repo = new AggregateRepository(eventStore, Aggregate2.class, bus, new Aggregate2.Factory(), initialisationEventFactory);
+    AggregateRepository<Aggregate1> aggregate1Repo =
+            new AggregateRepository(eventStore, Aggregate1.class, bus, Aggregate1.newInstanceFactory(), initialisationFactory);
+    AggregateRepository<Aggregate2> aggregate2Repo =
+            new AggregateRepository(eventStore, Aggregate2.class, bus, Aggregate2.newInstanceFactory(), initialisationFactory);
 
     MyId id1 = MyId.from("testId1");
     MyId id2 = MyId.from("testId1");
 
     @Before
-    public void setup() throws Exception{
-        ThreadLocalObjectPool.initialise();;
+    public void setup() throws Exception {
+        ThreadLocalObjectPool.initialise();
+        ;
     }
 
     @Test

@@ -1,8 +1,8 @@
 package com.dmc.d1.algo.aggregate;
 
 import com.dmc.d1.cqrs.Aggregate;
-import com.dmc.d1.cqrs.util.NewInstanceFactory;
-import com.dmc.d1.domain.WaveId;
+
+import java.util.function.Supplier;
 
 /**
  * Created by davidclelland on 18/05/2016.
@@ -11,7 +11,7 @@ public class WaveAggregate extends Aggregate {
 
     private static String CLASS_NAME = WaveAggregate.class.getName();
 
-    WaveAggregate(){
+    WaveAggregate() {
     }
 
 
@@ -21,18 +21,10 @@ public class WaveAggregate extends Aggregate {
     }
 
 
+    private static Supplier<WaveAggregate> SUPPLIER = WaveAggregate::new;
 
-    public static class Factory implements NewInstanceFactory<WaveAggregate> {
-
-        @Override
-        public String getClassName() {
-            return CLASS_NAME;
-        }
-
-        @Override
-        public WaveAggregate newInstance() {
-            return new WaveAggregate();
-        }
+    public static Supplier<WaveAggregate> newInstanceFactory() {
+        return SUPPLIER;
     }
 
 }

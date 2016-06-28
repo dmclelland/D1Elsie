@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -22,8 +23,9 @@ class ObjectPool<T extends Poolable> {
         });
     }
 
-    public void createSlot(NewInstanceFactory<T> newInstanceFactory) {
-        String className = newInstanceFactory.getClassName();
+    public void createSlot(Supplier<T> newInstanceFactory) {
+
+        String className = newInstanceFactory.get().getClassName();
         Slot<T> t = slots.get(className);
 
         if (t == null) {
@@ -54,10 +56,10 @@ class ObjectPool<T extends Poolable> {
         final String className;
         final int initialSlotSize;
         final List<T> pool;
-        final NewInstanceFactory<T> newInstanceFactory;
+        final Supplier<T> newInstanceFactory;
         int counter = 0;
 
-        public Slot(String className, int initialSlotSize, NewInstanceFactory<T> newInstanceFactory) {
+        public Slot(String className, int initialSlotSize, Supplier<T> newInstanceFactory) {
             this.initialSlotSize = initialSlotSize;
             this.className = className;
             this.pool = new ArrayList<>(initialSlotSize);
@@ -74,7 +76,7 @@ class ObjectPool<T extends Poolable> {
 
         private void increasePoolSize() {
             for (int i = 0; i < initialSlotSize; i++) {
-                pool.add(newInstanceFactory.newInstance());
+                pool.add(newInstanceFactory.get());
             }
         }
 

@@ -2,8 +2,9 @@ package com.dmc.d1.cqrs.test.aggregate;
 
 import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.annotations.EventHandler;
-import com.dmc.d1.cqrs.util.NewInstanceFactory;
 import com.dmc.d1.test.event.*;
+
+import java.util.function.Supplier;
 
 /**
  * Created by davidclelland on 17/05/2016.
@@ -65,17 +66,10 @@ public class Aggregate2 extends Aggregate {
     }
 
 
-    public static class Factory implements NewInstanceFactory<Aggregate2> {
+    private static Supplier<Aggregate2> SUPPLIER = Aggregate2::new;
 
-        @Override
-        public String getClassName() {
-            return CLASS_NAME;
-        }
-
-        @Override
-        public Aggregate2 newInstance() {
-            return new Aggregate2();
-        }
+    public static Supplier<Aggregate2> newInstanceFactory() {
+        return SUPPLIER;
     }
 
 }

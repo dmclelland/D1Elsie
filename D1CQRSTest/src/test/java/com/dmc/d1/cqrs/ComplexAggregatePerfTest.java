@@ -3,6 +3,7 @@ package com.dmc.d1.cqrs;
 import com.dmc.d1.algo.event.Configuration;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
+import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
@@ -12,10 +13,7 @@ import com.dmc.d1.cqrs.test.commandhandler.ComplexCommandHandler;
 import com.dmc.d1.cqrs.test.domain.MyId;
 import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import com.dmc.d1.test.domain.*;
-import net.openhft.chronicle.bytes.Bytes;
-import net.openhft.chronicle.wire.Marshallable;
-import net.openhft.chronicle.wire.TextWire;
-import net.openhft.chronicle.wire.Wire;
+import com.dmc.d1.test.event.TestAggregateInitialisedEventBuilder;
 import org.HdrHistogram.Histogram;
 import org.junit.After;
 import org.junit.Before;
@@ -27,9 +25,7 @@ import org.springframework.util.StopWatch;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertEquals;
+import java.util.function.Function;
 
 /**
  * Created By davidclelland on 02/06/2016.
@@ -41,8 +37,8 @@ public class ComplexAggregatePerfTest {
     CommandBus commandBus;
 
     AggregateEventReplayer replayer;
-    InitialisationEventFactory initialisationEventFactory = Configuration.initialisationEventFactoryChronicle();
-
+    Function<String, AggregateInitialisedEvent> initialisationFactory =
+            (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
     private static final Histogram CREATE_HISTOGRAM =
             new Histogram(TimeUnit.SECONDS.toNanos(30), 2);
@@ -73,7 +69,7 @@ public class ComplexAggregatePerfTest {
 
         SimpleEventBus eventBus = new SimpleEventBus();
 
-        repo1 = new AggregateRepository(chronicleAES, ComplexAggregate.class, eventBus, new ComplexAggregate.Factory(), initialisationEventFactory);
+        repo1 = new AggregateRepository(chronicleAES, ComplexAggregate.class, eventBus, ComplexAggregate.newInstanceFactory(), initialisationFactory);
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
 
@@ -87,7 +83,6 @@ public class ComplexAggregatePerfTest {
         replayer = new AggregateEventReplayer(chronicleAES, repos);
 
     }
-
 
 
     @Test
@@ -117,7 +112,7 @@ public class ComplexAggregatePerfTest {
     }
 
 
-    private int createAggregates(CommandBus commandBus, int rnd,  int iterations, boolean warmup) {
+    private int createAggregates(CommandBus commandBus, int rnd, int iterations, boolean warmup) {
 
         for (int i = 0; i < iterations; i++) {
             busyWaitMicros(50);

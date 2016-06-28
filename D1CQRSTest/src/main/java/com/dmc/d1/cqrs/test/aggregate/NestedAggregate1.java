@@ -2,11 +2,12 @@ package com.dmc.d1.cqrs.test.aggregate;
 
 import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.annotations.EventHandler;
-import com.dmc.d1.cqrs.util.NewInstanceFactory;
 import com.dmc.d1.test.event.NestedUpdatedEvent1;
 import com.dmc.d1.test.event.NestedUpdatedEvent1Builder;
 import com.dmc.d1.test.event.TriggerExceptionNestedEvent;
 import com.dmc.d1.test.event.TriggerExceptionNestedEventBuilder;
+
+import java.util.function.Supplier;
 
 /**
  * Created by davidclelland on 17/05/2016.
@@ -19,7 +20,8 @@ public class NestedAggregate1 extends Aggregate {
     private String nestedProperty;
 
 
-    NestedAggregate1() {}
+    NestedAggregate1() {
+    }
 
 
     @Override
@@ -54,17 +56,10 @@ public class NestedAggregate1 extends Aggregate {
         return nestedProperty;
     }
 
-    public static class Factory implements NewInstanceFactory<NestedAggregate1> {
+    private static Supplier<NestedAggregate1> SUPPLIER = NestedAggregate1::new;
 
-        @Override
-        public String getClassName() {
-            return CLASS_NAME;
-        }
-
-        @Override
-        public NestedAggregate1 newInstance() {
-            return new NestedAggregate1();
-        }
+    public static Supplier<NestedAggregate1> newInstanceFactory() {
+        return SUPPLIER;
     }
 }
 

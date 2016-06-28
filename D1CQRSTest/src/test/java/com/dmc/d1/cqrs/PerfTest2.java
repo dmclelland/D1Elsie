@@ -3,6 +3,7 @@ package com.dmc.d1.cqrs;
 import com.dmc.d1.algo.event.Configuration;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
+import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
@@ -12,6 +13,7 @@ import com.dmc.d1.cqrs.test.command.UpdateAggregate1Command;
 import com.dmc.d1.cqrs.test.commandhandler.MyCommandHandler1;
 import com.dmc.d1.cqrs.test.commandhandler.ReflectiveAnnotatedCommandHandlerInvoker;
 import com.dmc.d1.cqrs.test.domain.MyId;
+import com.dmc.d1.test.event.TestAggregateInitialisedEventBuilder;
 import org.HdrHistogram.Histogram;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -21,6 +23,7 @@ import org.springframework.util.StopWatch;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 
@@ -60,14 +63,15 @@ public class PerfTest2 {
 //            e.printStackTrace();
 //        }
     }
-    InitialisationEventFactory initialisationEventFactory = Configuration.initialisationEventFactoryChronicle();
 
+    Function<String, AggregateInitialisedEvent> initialisationFactory =
+            (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
     private void setup() throws Exception {
         aes = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
         SimpleEventBus eventBus = new SimpleEventBus();
 
-        repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, new Aggregate1.Factory(), initialisationEventFactory);
+        repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, Aggregate1.newInstanceFactory(), initialisationFactory);
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
         lst.add(new MyCommandHandler1(repo1));

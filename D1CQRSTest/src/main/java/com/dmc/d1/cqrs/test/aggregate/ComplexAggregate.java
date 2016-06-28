@@ -2,13 +2,12 @@ package com.dmc.d1.cqrs.test.aggregate;
 
 import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.annotations.EventHandler;
-import com.dmc.d1.cqrs.util.NewInstanceFactory;
-import com.dmc.d1.test.domain.*;
+import com.dmc.d1.test.domain.Basket;
+import com.dmc.d1.test.domain.BasketBuilder;
 import com.dmc.d1.test.event.BasketCreatedEvent;
 import com.dmc.d1.test.event.BasketCreatedEventBuilder;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Created by davidclelland on 17/05/2016.
@@ -32,8 +31,6 @@ public class ComplexAggregate extends Aggregate {
     }
 
     public void createBasket(Basket basket) {
-        //TODO the basket and its nested objects should not be pooled
-
         apply(BasketCreatedEventBuilder.startBuilding(getId()).basket(basket).buildPooledJournalable());
     }
 
@@ -46,16 +43,9 @@ public class ComplexAggregate extends Aggregate {
         return basket;
     }
 
-    public static class Factory implements NewInstanceFactory<ComplexAggregate> {
+    private static Supplier<ComplexAggregate> SUPPLIER = ComplexAggregate::new;
 
-        @Override
-        public String getClassName() {
-            return CLASS_NAME;
-        }
-
-        @Override
-        public ComplexAggregate newInstance() {
-            return new ComplexAggregate();
-        }
+    public static Supplier<ComplexAggregate> newInstanceFactory() {
+        return SUPPLIER;
     }
 }

@@ -3,6 +3,7 @@ package com.dmc.d1.cqrs;
 import com.dmc.d1.algo.event.Configuration;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
+import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
@@ -17,6 +18,7 @@ import com.dmc.d1.cqrs.test.commandhandler.MyCommandHandler2;
 import com.dmc.d1.cqrs.test.commandhandler.ReflectiveAnnotatedCommandHandlerInvoker;
 import com.dmc.d1.cqrs.test.domain.MyId;
 import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
+import com.dmc.d1.test.event.TestAggregateInitialisedEventBuilder;
 import org.HdrHistogram.Histogram;
 import org.junit.After;
 import org.junit.Before;
@@ -28,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 
@@ -57,7 +60,7 @@ public class PerfTest {
             new Histogram(TimeUnit.SECONDS.toNanos(30), 2);
 
     @Before
-    public void before() throws Exception{
+    public void before() throws Exception {
         ThreadLocalObjectPool.initialise();
 //        try {
 //            Thread.sleep(15000);
@@ -71,15 +74,17 @@ public class PerfTest {
         CREATE_HISTOGRAM.reset();
         UPDATE_HISTOGRAM.reset();
     }
-    InitialisationEventFactory initialisationEventFactory = Configuration.initialisationEventFactoryChronicle();
+
+    Function<String, AggregateInitialisedEvent> initialisationFactory =
+            (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
     private void setup() throws Exception {
         chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         SimpleEventBus eventBus = new SimpleEventBus();
 
-        repo1 = new AggregateRepository(chronicleAES, Aggregate1.class, eventBus, new Aggregate1.Factory(), initialisationEventFactory);
-        repo2 = new AggregateRepository(chronicleAES, Aggregate2.class, eventBus, new Aggregate2.Factory(), initialisationEventFactory);
+        repo1 = new AggregateRepository(chronicleAES, Aggregate1.class, eventBus, Aggregate1.newInstanceFactory(), initialisationFactory);
+        repo2 = new AggregateRepository(chronicleAES, Aggregate2.class, eventBus, Aggregate2.newInstanceFactory(), initialisationFactory);
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
 
@@ -139,7 +144,7 @@ public class PerfTest {
         UPDATE_HISTOGRAM.getHistogramData().outputPercentileDistribution(System.out, 10d);
 
 
-       // System.out.println("EVENTS: " + chronicleAES.getAll().size());
+        // System.out.println("EVENTS: " + chronicleAES.getAll().size());
 
     }
 
