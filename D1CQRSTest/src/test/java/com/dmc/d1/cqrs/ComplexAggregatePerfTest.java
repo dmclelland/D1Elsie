@@ -36,7 +36,7 @@ import static org.junit.Assert.assertEquals;
  */
 
 @Ignore
-public class ComplexAggregateTest {
+public class ComplexAggregatePerfTest {
 
     CommandBus commandBus;
 
@@ -89,37 +89,15 @@ public class ComplexAggregateTest {
     }
 
 
-    @Test
-    public void testBytesMarshallable() {
-
-        //ClassAliasPool.CLASS_ALIASES.addAlias(SecurityChronicle.class);
-        //ClassAliasPool.CLASS_ALIASES.addAlias(BasketConstituentChronicle.class);
-        Wire wire = new TextWire(Bytes.elasticByteBuffer());
-        Basket basket = createBasket(111);
-        ((Marshallable) basket).writeMarshallable(wire);
-
-        System.out.println(wire);
-
-
-        Basket basket2 = BasketBuilder.startBuilding()
-                .security(SecurityBuilder.startBuilding().buildJournalable()).buildJournalable();
-        ((Marshallable) basket2).readMarshallable(wire);
-
-        assertEquals(basket.getDivisor(), basket2.getDivisor());
-        assertEquals(basket.getSecurity().getName(), basket2.getSecurity().getName());
-
-
-    }
-
 
     @Test
-    public void testCreateAndReplayComplexEvents() throws Exception {
+    public void testCreateAndReplayComplexEventsNoAssertions() throws Exception {
 
-//        int noOfCreatesWarmup = 100_000;
-//        int noOfCreates = 100_000;
+        int noOfCreatesWarmup = 100_000;
+        int noOfCreates = 100_000;
 
-        int noOfCreatesWarmup = 100;
-        int noOfCreates = 100;
+//         int noOfCreatesWarmup = 100;
+//        int noOfCreates = 100;
 
         setup();
         int rnd = ((this.hashCode() ^ (int) System.nanoTime()));
@@ -128,62 +106,23 @@ public class ComplexAggregateTest {
         rnd = createAggregates(commandBus, rnd, noOfCreates, false);
 
         Map<String, ComplexAggregate> aggregate1Repo = (Map<String, ComplexAggregate>) ReflectionTestUtils.getField(repo1, "cache");
-        Map<String, ComplexAggregate> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
         aggregate1Repo.clear();
         StopWatch watch = new StopWatch();
         watch.start();
         replayer.replay();
         watch.stop();
         System.out.println("It took " + watch.getTotalTimeSeconds() + " to replay");
-
-        assertEquals(aggregate1RepoCopy.size(), aggregate1Repo.size());
-
-
-        for (String key : aggregate1Repo.keySet()) {
-            ComplexAggregate agg = aggregate1Repo.get(key);
-            ComplexAggregate aggExpected = aggregate1RepoCopy.get(key);
-
-            assertEquals(aggExpected.getId(), agg.getId());
-
-            assertTrue(aggExpected.getBasket().getDivisor()>0);
-            assertEquals(aggExpected.getBasket().getDivisor(), agg.getBasket().getDivisor());
-
-            assertTrue(aggExpected.getBasket().getRic().length()>0);
-            assertEquals(aggExpected.getBasket().getRic(), agg.getBasket().getRic());
-
-            assertTrue(aggExpected.getBasket().getSecurity().getName().length()>0);
-            assertEquals(aggExpected.getBasket().getSecurity().getName(), agg.getBasket().getSecurity().getName());
-            assertEquals(aggExpected.getBasket().getSecurity().getAdv20Day(), agg.getBasket().getSecurity().getAdv20Day());
-
-            assertTrue(agg.getBasket().getBasketConstituents().size() > 0);
-
-            assertEquals(aggExpected.getBasket().getBasketConstituents().size(), agg.getBasket().getBasketConstituents().size());
-
-            for (int i = 0; i < aggExpected.getBasket().getBasketConstituents().size(); i++) {
-
-                assertTrue(aggExpected.getBasket().getBasketConstituents().get(i).getRic().length()>0);
-                assertEquals(aggExpected.getBasket().getBasketConstituents().get(i).getRic(),
-                        agg.getBasket().getBasketConstituents().get(i).getRic());
-
-                assertTrue(aggExpected.getBasket().getBasketConstituents().get(i).getAdjustedShares()>0);
-                assertEquals(aggExpected.getBasket().getBasketConstituents().get(i).getAdjustedShares(),
-                        agg.getBasket().getBasketConstituents().get(i).getAdjustedShares());
-
-            }
-        }
-
         CREATE_HISTOGRAM.getHistogramData().outputPercentileDistribution(System.out, 10d);
 
     }
 
 
-    private int createAggregates(CommandBus commandBus, int rnd, int iterations, boolean warmup) {
+    private int createAggregates(CommandBus commandBus, int rnd,  int iterations, boolean warmup) {
 
         for (int i = 0; i < iterations; i++) {
             busyWaitMicros(50);
             rnd = xorShift(rnd);
             MyId id = MyId.from("" + rnd);
-
 
             long t0 = System.nanoTime();
             Basket basket = createBasket(rnd);
@@ -266,7 +205,7 @@ public class ComplexAggregateTest {
 
         int rnd = this.rnd.nextInt(99) + 1;
         List<BasketConstituent> lst = new ArrayList<>();
-        for (int i = 1; i <= rnd; i++) {
+        for (int i = 0; i < rnd; i++) {
             String constituentRic = constituents[i];
             lst.add(BasketConstituentBuilder.startBuilding().adjustedShares(i).ric(constituentRic).buildJournalable());
         }
