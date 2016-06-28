@@ -2,6 +2,7 @@ package com.dmc.d1.cqrs;
 
 import com.dmc.d1.algo.event.Configuration;
 import com.dmc.d1.cqrs.command.CommandBus;
+import com.dmc.d1.cqrs.command.DisruptorCommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
 import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
@@ -28,6 +29,7 @@ import org.springframework.util.StopWatch;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -56,7 +58,6 @@ public class ComplexAggregateTest {
 
     @Before
     public void before() throws Exception {
-        ThreadLocalObjectPool.initialise();
 //        try {
 //            Thread.sleep(15000);
 //        } catch (InterruptedException e) {
@@ -71,11 +72,13 @@ public class ComplexAggregateTest {
 
 
     private void setup() throws Exception {
-
         ThreadLocalObjectPool.initialise();
+
         chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         SimpleEventBus eventBus = new SimpleEventBus();
+
+
 
         repo1 = new AggregateRepository(chronicleAES, ComplexAggregate.class, eventBus,
                 ComplexAggregate.newInstanceFactory(), initialisationFactory);
@@ -85,7 +88,7 @@ public class ComplexAggregateTest {
         lst.add(new ComplexCommandHandler(repo1));
 
 
-        commandBus = new SimpleCommandBus(lst);
+        commandBus = new DisruptorCommandBus(new SimpleCommandBus(lst));
 
         List<AggregateRepository> repos = Arrays.asList(repo1);
 
@@ -126,13 +129,22 @@ public class ComplexAggregateTest {
         int noOfCreatesWarmup = 100;
         int noOfCreates = 100;
 
+
         setup();
         int rnd = ((this.hashCode() ^ (int) System.nanoTime()));
 
         rnd = createAggregates(commandBus, rnd, noOfCreatesWarmup, true);
         rnd = createAggregates(commandBus, rnd, noOfCreates, false);
 
+
+
         Map<String, ComplexAggregate> aggregate1Repo = (Map<String, ComplexAggregate>) ReflectionTestUtils.getField(repo1, "cache");
+
+        while(aggregate1Repo.size()!=200){
+           Thread.sleep(1000);
+        }
+
+
         Map<String, ComplexAggregate> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
         aggregate1Repo.clear();
         StopWatch watch = new StopWatch();

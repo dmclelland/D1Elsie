@@ -61,7 +61,7 @@ public class PerfTest {
 
     @Before
     public void before() throws Exception {
-        ThreadLocalObjectPool.initialise();
+
 //        try {
 //            Thread.sleep(15000);
 //        } catch (InterruptedException e) {

@@ -56,8 +56,6 @@ public class CommandDirectInvokerTest {
 
     @Before
     public void setup() throws Exception {
-        ThreadLocalObjectPool.initialise();
-        ;
         aes = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         SimpleEventBus eventBus = new SimpleEventBus();

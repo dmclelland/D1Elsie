@@ -41,6 +41,7 @@ public class SimpleCommandBus<T extends AbstractCommandHandler<? extends Aggrega
         }
     }
 
+
     //TODO locking policy needs to be established
     @Override
     public void dispatch(Command command) {

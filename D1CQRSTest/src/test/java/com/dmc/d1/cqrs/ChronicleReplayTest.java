@@ -49,7 +49,6 @@ public class ChronicleReplayTest {
 
     private void setup() throws Exception {
 
-        ThreadLocalObjectPool.initialise();
         chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         SimpleEventBus eventBus = new SimpleEventBus();

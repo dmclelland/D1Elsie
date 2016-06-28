@@ -4,6 +4,8 @@ import org.reflections.Reflections;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -15,53 +17,70 @@ public final class ThreadLocalObjectPool {
     private ThreadLocalObjectPool() {
     }
 
-    private static ThreadLocal<ObjectPool> THREAD_LOCAL = new ThreadLocal<>();
+    private static List<Supplier<? extends Poolable>> POOLABLE_FACTORIES = new ArrayList<>();
 
-    public static <T extends Poolable> void initialise() throws Exception {
-        if (THREAD_LOCAL.get() == null) {
-            ObjectPool<T> pool = new ObjectPool(20);
-            THREAD_LOCAL.set(pool);
 
+    static {
+        try {
             Reflections ref = new Reflections("com.dmc.d1");
             Set<Class<? extends Poolable>> pooledSet = ref.getSubTypesOf(Poolable.class);
-
-            //for every pooled concrete object set up a slot
             for (Class<? extends Poolable> pooled : pooledSet) {
-
-
                 if (!(Modifier.isAbstract(pooled.getModifiers()) || Modifier.isInterface(pooled.getModifiers()))) {
                     Method m = pooled.getDeclaredMethod("newInstanceFactory", null);
                     m.setAccessible(true);
-                    Supplier<T> newInstanceFactory = (Supplier<T>) m.invoke(null);
-                    createSlot(newInstanceFactory);
+                    Supplier<? extends Poolable> newInstanceFactory = (Supplier<? extends Poolable>) m.invoke(null);
+                    POOLABLE_FACTORIES.add(newInstanceFactory);
                 }
             }
+        }catch(Exception e){
+            throw new RuntimeException("Unable to ", e);
         }
     }
 
-    public static boolean isInitialised() {
-        return THREAD_LOCAL.get() != null;
+    public  static void initialise(){
     }
 
+
+//    class WildcardFixed {
+//        void foo(List<?> i) {
+//            fooHelper(i);
+//        }
+//        // Helper method created so that the wildcard can be captured
+//        // through type inference.
+//        private <T> void fooHelper(List<T> l) {
+//            l.set(0, l.get(0));
+//        }
+//    }
+
+    // Thread local variable containing each thread's ID
+    private static final ThreadLocal<ObjectPool> THREAD_LOCAL =
+            new ThreadLocal<ObjectPool>() {
+                @Override
+                protected ObjectPool initialValue() {
+                    ObjectPool pool = new ObjectPool(20);
+
+                    for ( Supplier<? extends Poolable> supplier : POOLABLE_FACTORIES){
+                        pool.createSlot(supplier);
+                    }
+
+                    return pool;
+                }
+            };
+
+
+
     public static void clear() {
-        if (THREAD_LOCAL.get() == null)
-            throw new IllegalStateException("Object pool has not been initialized");
 
         THREAD_LOCAL.get().reset();
     }
 
     public static <T extends Poolable> T allocateObject(String className){
-        if (THREAD_LOCAL.get() == null)
-            throw new IllegalStateException("Object pool has not been initialized");
-
         ObjectPool<T> pool = THREAD_LOCAL.get();
 
         return pool.allocateObject(className);
     }
 
     public static <T extends Poolable> int slotSize(String className){
-        if (THREAD_LOCAL.get() == null)
-            throw new IllegalStateException("Object pool has not been initialized");
 
         ObjectPool<T> pool = THREAD_LOCAL.get();
         return pool.slotSize(className);
@@ -70,9 +89,6 @@ public final class ThreadLocalObjectPool {
 
 
     private static <T extends Poolable> void createSlot(Supplier<T> newInstanceFactory) {
-        if (THREAD_LOCAL.get() == null)
-            throw new IllegalStateException("Object pool has not been initialized");
-
         ObjectPool<T> pool = THREAD_LOCAL.get();
         pool.createSlot(newInstanceFactory);
     }

@@ -12,6 +12,9 @@ public interface Command {
 
     String getClassName();
 
+
+    
+
     CommandType getCommandType();
 
     enum CommandType {
@@ -35,4 +38,7 @@ public interface Command {
             return map.get(val);
         }
     }
+
+
+
 }

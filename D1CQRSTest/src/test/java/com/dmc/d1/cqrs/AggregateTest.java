@@ -38,11 +38,7 @@ public class AggregateTest {
     MyId id1 = MyId.from("testId1");
     MyId id2 = MyId.from("testId1");
 
-    @Before
-    public void setup() throws Exception {
-        ThreadLocalObjectPool.initialise();
-        ;
-    }
+
 
     @Test
     public void testAggregate() {

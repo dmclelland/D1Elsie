@@ -24,14 +24,21 @@ class UnitOfWork {
         int counter = 0;
         boolean rollback = false;
 
-        void clear(){
+        void clear() {
             list.clear();
-            counter=0;
-            rollback=false;
+            counter = 0;
+            rollback = false;
         }
     }
 
-    private static ThreadLocal<Aggregates> threadLocal = new ThreadLocal<>();
+    private static ThreadLocal<Aggregates> threadLocal = new ThreadLocal<Aggregates>() {
+        @Override
+        protected Aggregates initialValue() {
+            return new Aggregates();
+        }
+
+
+    };
 
     private UnitOfWork() {
     }
@@ -48,8 +55,7 @@ class UnitOfWork {
     private static void clear() {
         threadLocal.get().clear();
 
-        if(ThreadLocalObjectPool.isInitialised())
-            ThreadLocalObjectPool.clear();
+        ThreadLocalObjectPool.clear();
     }
 
     //if root then commit -> unless a nested aggregate flagged that the aggregates should be rolled back
@@ -61,7 +67,7 @@ class UnitOfWork {
                     if (threadLocal.get().rollback) {
                         doRollback();
                     } else {
-                        for(int i = threadLocal.get().list.size()-1;i>=0;i--){
+                        for (int i = threadLocal.get().list.size() - 1; i >= 0; i--) {
                             Aggregate aggregate = threadLocal.get().list.get(i);
                             aggregate.commit();
                         }
@@ -70,7 +76,7 @@ class UnitOfWork {
                     LOG.error("Unexpected error committing aggregates - attempt roll back", e);
                     try {
                         doRollback();
-                    }catch(Exception e1){
+                    } catch (Exception e1) {
                         LOG.error("Unable to roll back", e1);
                     }
                 } finally {
@@ -98,7 +104,7 @@ class UnitOfWork {
 
     private static void doRollback() {
         try {
-            for(int i = threadLocal.get().list.size()-1;i>=0;i--){
+            for (int i = threadLocal.get().list.size() - 1; i >= 0; i--) {
                 Aggregate aggregate = threadLocal.get().list.get(i);
                 aggregate.rollback();
             }

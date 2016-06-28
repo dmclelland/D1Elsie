@@ -48,7 +48,6 @@ public class ComplexAggregatePerfTest {
 
     @Before
     public void before() throws Exception {
-        ThreadLocalObjectPool.initialise();
 //        try {
 //            Thread.sleep(15000);
 //        } catch (InterruptedException e) {
@@ -64,7 +63,6 @@ public class ComplexAggregatePerfTest {
 
     private void setup() throws Exception {
 
-        ThreadLocalObjectPool.initialise();
         chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         SimpleEventBus eventBus = new SimpleEventBus();

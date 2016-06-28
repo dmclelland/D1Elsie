@@ -884,9 +884,27 @@ class EventAndCommandGenerator {
 
         ParameterizedTypeName threadLocalBuilder = ParameterizedTypeName.get(threadLocalName, builderName);
 
+        TypeSpec anonymousThreadLocal = TypeSpec.anonymousClassBuilder("")
+                .addSuperinterface(threadLocalBuilder)
+                .addMethod(MethodSpec.methodBuilder("initialValue")
+                        .addAnnotation(Override.class)
+                        .addModifiers(Modifier.PROTECTED)
+                        .returns(builderName)
+                        .addStatement("return new $T()", builderName)
+                        .build())
+                .build();
+
         FieldSpec THREAD_LOCAL = FieldSpec.builder(threadLocalBuilder, "THREAD_LOCAL", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
-                .initializer("new ThreadLocal<>()").build();
+                .initializer("$L", anonymousThreadLocal)
+                .build();
         builderBuilder.addField(THREAD_LOCAL);
+
+
+//        private static final ThreadLocal<BasketBuilder> THREAD_LOCAL = new ThreadLocal<BasketBuilder>(){
+//            @Override protected BasketBuilder initialValue() {
+//                return new BasketBuilder();
+//            }
+//        };
 
         builderBuilder.addMethod(MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PRIVATE).build());
