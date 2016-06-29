@@ -40,29 +40,12 @@ public final class ThreadLocalObjectPool {
     public  static void initialise(){
     }
 
-
-//    class WildcardFixed {
-//        void foo(List<?> i) {
-//            fooHelper(i);
-//        }
-//        // Helper method created so that the wildcard can be captured
-//        // through type inference.
-//        private <T> void fooHelper(List<T> l) {
-//            l.set(0, l.get(0));
-//        }
-//    }
-
-    // Thread local variable containing each thread's ID
     private static final ThreadLocal<ObjectPool> THREAD_LOCAL =
             new ThreadLocal<ObjectPool>() {
                 @Override
                 protected ObjectPool initialValue() {
                     ObjectPool pool = new ObjectPool(20);
-
-                    for ( Supplier<? extends Poolable> supplier : POOLABLE_FACTORIES){
-                        pool.createSlot(supplier);
-                    }
-
+                    POOLABLE_FACTORIES.forEach(f -> pool.createSlot(f));
                     return pool;
                 }
             };
@@ -70,7 +53,6 @@ public final class ThreadLocalObjectPool {
 
 
     public static void clear() {
-
         THREAD_LOCAL.get().reset();
     }
 
@@ -86,13 +68,4 @@ public final class ThreadLocalObjectPool {
         return pool.slotSize(className);
 
     }
-
-
-    private static <T extends Poolable> void createSlot(Supplier<T> newInstanceFactory) {
-        ObjectPool<T> pool = THREAD_LOCAL.get();
-        pool.createSlot(newInstanceFactory);
-    }
-
-
-
 }
