@@ -8,8 +8,12 @@ import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
+import com.lmax.disruptor.dsl.EventHandlerGroup;
 import com.lmax.disruptor.dsl.ProducerType;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -25,23 +29,30 @@ public class DisruptorCommandBus<T extends AbstractCommandHandler<? extends Aggr
 
 
     public DisruptorCommandBus(SimpleCommandBus<T> simpleCommandBus) {
+        this(simpleCommandBus, Collections.emptyList());
+    }
 
-        // Executor that will be used to construct new threads for consumers
-        Executor executor = Executors.newSingleThreadExecutor();
+
+
+    public DisruptorCommandBus(SimpleCommandBus<T> simpleCommandBus, List<EventHandler<CommandHolder>> additionalHandlers) {
 
 
         // Specify the size of the ring buffer, must be power of 2.
         int bufferSize = 2 << 15;
 
         // Construct the Disruptor
-        this.disruptor = new Disruptor(new CommandFactory(), bufferSize, executor,
+        this.disruptor = new Disruptor(new CommandFactory(), bufferSize, DaemonThreadFactory.INSTANCE,
                 ProducerType.MULTI, new BusySpinWaitStrategy());
 
+
         // Connect the handler
-        disruptor.handleEventsWith(new DisruptorCommandHandler(simpleCommandBus));
+        EventHandlerGroup<CommandHolder> group =  disruptor.handleEventsWith(new DisruptorCommandHandler(simpleCommandBus));
+
+        additionalHandlers.forEach(h -> group.then(h));
 
         // Start the Disruptor, starts all threads running
         disruptor.start();
+
     }
 
     private static class DisruptorCommandHandler<T extends AbstractCommandHandler<? extends Aggregate>> implements EventHandler<CommandHolder> {
@@ -50,7 +61,6 @@ public class DisruptorCommandBus<T extends AbstractCommandHandler<? extends Aggr
 
         private DisruptorCommandHandler(SimpleCommandBus<T> simpleCommandBus) {
             this.simpleCommandBus = checkNotNull(simpleCommandBus);
-
         }
 
         @Override
@@ -59,16 +69,20 @@ public class DisruptorCommandBus<T extends AbstractCommandHandler<? extends Aggr
         }
     }
 
-    private static class CommandHolder {
+    public static class CommandHolder {
         private Command command;
 
         void set(Command command) {
             this.command = command;
         }
 
+        public Command getCommand(){
+            return command;
+        }
+
     }
 
-    private class CommandFactory implements EventFactory<CommandHolder> {
+    private static class CommandFactory implements EventFactory<CommandHolder> {
 
         @Override
         public CommandHolder newInstance() {
@@ -80,7 +94,6 @@ public class DisruptorCommandBus<T extends AbstractCommandHandler<? extends Aggr
     @Override
     public void dispatch(Command command) {
         RingBuffer<CommandHolder> ringBuffer = disruptor.getRingBuffer();
-
 
         long sequence = ringBuffer.next();  // Grab the next sequence
         try {

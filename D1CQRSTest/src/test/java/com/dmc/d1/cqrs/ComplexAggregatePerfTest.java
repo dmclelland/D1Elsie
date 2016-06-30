@@ -11,7 +11,6 @@ import com.dmc.d1.cqrs.test.aggregate.ComplexAggregate;
 import com.dmc.d1.cqrs.test.command.CreateComplexAggregateCommand;
 import com.dmc.d1.cqrs.test.commandhandler.ComplexCommandHandler;
 import com.dmc.d1.cqrs.test.domain.MyId;
-import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import com.dmc.d1.test.domain.*;
 import com.dmc.d1.test.event.TestAggregateInitialisedEventBuilder;
 import org.HdrHistogram.Histogram;
@@ -22,7 +21,6 @@ import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.StopWatch;
 
-import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -118,7 +116,7 @@ public class ComplexAggregatePerfTest {
             MyId id = MyId.from("" + rnd);
 
             long t0 = System.nanoTime();
-            Basket basket = createBasket(rnd);
+            Basket basket = TestBasketBuilder.createBasket(rnd);
             commandBus.dispatch(new CreateComplexAggregateCommand(id, basket));
 
             if (!warmup)
@@ -131,83 +129,8 @@ public class ComplexAggregatePerfTest {
     }
 
 
-    private Basket createBasket(int rnd) {
-
-        String ric = securities[Math.abs(rnd) % 4];
-
-        return BasketBuilder.startBuilding()
-                .tradeDate(LocalDate.now())
-                .divisor(divisor(rnd))
-                .ric(ric)
-                .security(security(rnd))
-                .basketConstituents(constituents(ric))
-                .buildJournalable();
-    }
 
 
-    static int[] divisors = new int[4];
-
-    static {
-        divisors[0] = 50000;
-        divisors[1] = 1000;
-        divisors[2] = 5000;
-        divisors[3] = 10000;
-
-    }
-
-
-    static String[] securities = new String[4];
-
-    static {
-        securities[0] = "X8PS.DE";
-        securities[1] = "X5PS.DE";
-        securities[2] = "X6PS.DE";
-        securities[3] = "X7PS.DE";
-    }
-
-    String ric(int rnd) {
-        return securities[Math.abs(rnd) % 4];
-    }
-
-    int divisor(int rnd) {
-
-        return divisors[Math.abs(rnd) % 4];
-    }
-
-
-    Security security(int rnd) {
-
-        return SecurityBuilder.startBuilding().name(ric(rnd)).adv20Day(12000).buildJournalable();
-    }
-
-    Random rnd = new Random();
-
-    Map<String, List<BasketConstituent>> constituentsMap = new HashMap<>();
-
-    private static String[] constituents = new String[100];
-
-    {
-        for (int i = 0; i < constituents.length; i++) {
-            constituents[i] = "ric" + i;
-        }
-    }
-
-    private List<BasketConstituent> constituents(String ric) {
-        if (constituentsMap.containsKey(ric))
-            return constituentsMap.get(ric);
-
-        int rnd = this.rnd.nextInt(99) + 1;
-        List<BasketConstituent> lst = new ArrayList<>();
-        for (int i = 0; i < rnd; i++) {
-            String constituentRic = constituents[i];
-            lst.add(BasketConstituentBuilder.startBuilding().adjustedShares(i).ric(constituentRic).buildJournalable());
-        }
-
-        constituentsMap.put(ric, lst);
-
-        return lst;
-
-    }
 
     private int xorShift(int x) {
         x ^= x << 6;

@@ -1,6 +1,8 @@
 package com.dmc.d1.cqrs;
 
 import com.dmc.d1.algo.event.Configuration;
+import com.dmc.d1.algo.event.EmptyEvent;
+import com.dmc.d1.cqrs.command.Command;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.DisruptorCommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
@@ -13,12 +15,9 @@ import com.dmc.d1.cqrs.test.command.CreateComplexAggregateCommand;
 import com.dmc.d1.cqrs.test.commandhandler.ComplexCommandHandler;
 import com.dmc.d1.cqrs.test.domain.MyId;
 import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
-import com.dmc.d1.test.domain.*;
+import com.dmc.d1.test.domain.Basket;
 import com.dmc.d1.test.event.TestAggregateInitialisedEventBuilder;
-import net.openhft.chronicle.bytes.Bytes;
-import net.openhft.chronicle.wire.Marshallable;
-import net.openhft.chronicle.wire.TextWire;
-import net.openhft.chronicle.wire.Wire;
+import com.lmax.disruptor.*;
 import org.HdrHistogram.Histogram;
 import org.junit.After;
 import org.junit.Before;
@@ -27,14 +26,15 @@ import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.StopWatch;
 
-import java.time.LocalDate;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.Function;
 
+import static com.lmax.disruptor.RingBuffer.createSingleProducer;
+import static junit.framework.Assert.assertNotSame;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
+
 
 /**
  * Created By davidclelland on 02/06/2016.
@@ -50,34 +50,42 @@ public class ComplexAggregateTest {
     Function<String, AggregateInitialisedEvent> initialisationFactory =
             (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
-    private static final Histogram CREATE_HISTOGRAM =
+    private static final Histogram HISTOGRAM =
             new Histogram(TimeUnit.SECONDS.toNanos(30), 2);
 
     AggregateEventStore chronicleAES;
     AggregateRepository<ComplexAggregate> repo1;
 
-    @Before
-    public void before() throws Exception {
-//        try {
-//            Thread.sleep(15000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-    }
-
     @After
     public void reset() {
-        CREATE_HISTOGRAM.reset();
+        HISTOGRAM.reset();
     }
 
+    static ExecutorService EXECUTOR = Executors.newCachedThreadPool();
+    private static final int SENDER_THREAD_POOL_SIZE = 4;
+    private static final int BUFFER_SIZE = 1024;
+    private static final long ITERATIONS = 100_000;
+    private static final long PAUSE_NANOS = 1000L;
 
-    private void setup() throws Exception {
+    private final RingBuffer<EmptyEvent> exchangeBuffer =
+            createSingleProducer(EmptyEvent.EVENT_FACTORY, BUFFER_SIZE, new BlockingWaitStrategy());
+
+
+    private Pinger pinger;
+    private BatchEventProcessor<EmptyEvent> pingProcessor;
+
+    private Ponger ponger;
+
+    @Before
+    public void setup() throws Exception {
+
+        // Construct the Disruptor
+
         ThreadLocalObjectPool.initialise();
 
         chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         SimpleEventBus eventBus = new SimpleEventBus();
-
 
 
         repo1 = new AggregateRepository(chronicleAES, ComplexAggregate.class, eventBus,
@@ -87,64 +95,43 @@ public class ComplexAggregateTest {
 
         lst.add(new ComplexCommandHandler(repo1));
 
-
-        commandBus = new DisruptorCommandBus(new SimpleCommandBus(lst));
+        this.ponger = new Ponger(exchangeBuffer);
+        commandBus = new DisruptorCommandBus(new SimpleCommandBus(lst),
+                Arrays.asList(ponger));
 
         List<AggregateRepository> repos = Arrays.asList(repo1);
 
         replayer = new AggregateEventReplayer(chronicleAES, repos);
 
-    }
+        this.pinger = new Pinger(commandBus, ITERATIONS, PAUSE_NANOS, true);
 
-
-    @Test
-    public void testBytesMarshallable() {
-
-        //ClassAliasPool.CLASS_ALIASES.addAlias(SecurityChronicle.class);
-        //ClassAliasPool.CLASS_ALIASES.addAlias(BasketConstituentChronicle.class);
-        Wire wire = new TextWire(Bytes.elasticByteBuffer());
-        Basket basket = createBasket(111);
-        ((Marshallable) basket).writeMarshallable(wire);
-
-        System.out.println(wire);
-
-
-        Basket basket2 = BasketBuilder.startBuilding()
-                .security(SecurityBuilder.startBuilding().buildJournalable()).buildJournalable();
-        ((Marshallable) basket2).readMarshallable(wire);
-
-        assertEquals(basket.getDivisor(), basket2.getDivisor());
-        assertEquals(basket.getSecurity().getName(), basket2.getSecurity().getName());
-
-
+        this.pingProcessor =
+                new BatchEventProcessor<>(exchangeBuffer, exchangeBuffer.newBarrier(), pinger);
     }
 
 
     @Test
     public void testCreateAndReplayComplexEvents() throws Exception {
 
-//        int noOfCreatesWarmup = 100_000;
-//        int noOfCreates = 100_000;
+        final CountDownLatch latch = new CountDownLatch(1);
+        final CyclicBarrier barrier = new CyclicBarrier(2);
+        pinger.reset(barrier, latch, HISTOGRAM);
 
-        int noOfCreatesWarmup = 100;
-        int noOfCreates = 100;
+        EXECUTOR.submit(pingProcessor);
 
+        barrier.await();
+        latch.await();
 
-        setup();
-        int rnd = ((this.hashCode() ^ (int) System.nanoTime()));
+        pingProcessor.halt();
 
-        rnd = createAggregates(commandBus, rnd, noOfCreatesWarmup, true);
-        rnd = createAggregates(commandBus, rnd, noOfCreates, false);
+        replayAndCompare();
 
+        HISTOGRAM.getHistogramData().outputPercentileDistribution(System.out, 10d);
 
+    }
 
+    private void replayAndCompare() {
         Map<String, ComplexAggregate> aggregate1Repo = (Map<String, ComplexAggregate>) ReflectionTestUtils.getField(repo1, "cache");
-
-        while(aggregate1Repo.size()!=200){
-           Thread.sleep(1000);
-        }
-
-
         Map<String, ComplexAggregate> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
         aggregate1Repo.clear();
         StopWatch watch = new StopWatch();
@@ -155,11 +142,15 @@ public class ComplexAggregateTest {
 
         assertEquals(aggregate1RepoCopy.size(), aggregate1Repo.size());
 
+        checkAssertions(aggregate1Repo, aggregate1RepoCopy);
+    }
 
+
+    private void checkAssertions(Map<String, ComplexAggregate> aggregate1Repo, Map<String, ComplexAggregate> aggregate1RepoCopy) {
         for (String key : aggregate1Repo.keySet()) {
             ComplexAggregate agg = aggregate1Repo.get(key);
             ComplexAggregate aggExpected = aggregate1RepoCopy.get(key);
-
+            assertNotSame(aggExpected, agg);
             assertEquals(aggExpected.getId(), agg.getId());
 
             assertTrue(aggExpected.getBasket().getDivisor() > 0);
@@ -188,127 +179,116 @@ public class ComplexAggregateTest {
 
             }
         }
-
-        CREATE_HISTOGRAM.getHistogramData().outputPercentileDistribution(System.out, 10d);
-
     }
 
+    private static class Pinger implements EventHandler<EmptyEvent>, LifecycleAware {
+        private final long maxEvents;
+        private final long pauseTimeNs;
 
-    private int createAggregates(CommandBus commandBus, int rnd, int iterations, boolean warmup) {
+        private CyclicBarrier barrier;
+        private CountDownLatch latch;
+        private Histogram histogram;
+        private volatile long t0;
 
-        for (int i = 0; i < iterations; i++) {
-            busyWaitMicros(50);
+        int rnd = ((this.hashCode() ^ (int) System.nanoTime()));
+        private final CommandBus commandBus;
+
+        private final boolean multiThreaded;
+        private final ExecutorService   senderExecutor = Executors.newFixedThreadPool(SENDER_THREAD_POOL_SIZE);;
+
+
+        public Pinger(final CommandBus commandBus, final long maxEvents, final long pauseTimeNs, boolean multiThreaded) {
+            //this.buffer = buffer;
+            this.maxEvents = maxEvents;
+            this.pauseTimeNs = pauseTimeNs;
+            this.commandBus = commandBus;
+            this.multiThreaded = multiThreaded;
+
+        }
+
+        @Override
+        public void onEvent(final EmptyEvent event, final long sequence, final boolean endOfBatch) throws Exception {
+            final long t1 = System.nanoTime();
+
+            if (sequence > maxEvents)
+                histogram.recordValueWithExpectedInterval((t1 - t0) / 1000, pauseTimeNs);
+
+            if (sequence < maxEvents * 2) {
+                while (pauseTimeNs > (System.nanoTime() - t1)) {
+                    Thread.yield();
+                }
+                send();
+            } else {
+                latch.countDown();
+            }
+        }
+
+        void send() {
+
             rnd = xorShift(rnd);
             MyId id = MyId.from("" + rnd);
+            Basket basket = TestBasketBuilder.createBasket(rnd);
+
+            Command command = new CreateComplexAggregateCommand(id, basket);
 
 
-            long t0 = System.nanoTime();
-            Basket basket = createBasket(rnd);
-            commandBus.dispatch(new CreateComplexAggregateCommand(id, basket));
+            if(multiThreaded){
+                senderExecutor.submit(()->{
+                    t0 = System.nanoTime();
+                    commandBus.dispatch(command);});
+            }else {
 
-            if (!warmup)
-                CREATE_HISTOGRAM.recordValue((System.nanoTime() - t0) / 1000);
-
-
+                commandBus.dispatch(command);
+            }
         }
 
-        return rnd;
-    }
 
 
-    private Basket createBasket(int rnd) {
 
-        String ric = securities[Math.abs(rnd) % 4];
+        @Override
+        public void onStart() {
+            try {
+                barrier.await();
+                Thread.sleep(1000);
+                send();
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
 
-        return BasketBuilder.startBuilding()
-                .tradeDate(LocalDate.now())
-                .divisor(divisor(rnd))
-                .ric(ric)
-                .security(security(rnd))
-                .basketConstituents(constituents(ric))
-                .buildJournalable();
-    }
+        @Override
+        public void onShutdown() {
+        }
 
-
-    static int[] divisors = new int[4];
-
-    static {
-        divisors[0] = 50000;
-        divisors[1] = 1000;
-        divisors[2] = 5000;
-        divisors[3] = 10000;
-
-    }
-
-
-    static String[] securities = new String[4];
-
-    static {
-        securities[0] = "X8PS.DE";
-        securities[1] = "X5PS.DE";
-        securities[2] = "X6PS.DE";
-        securities[3] = "X7PS.DE";
-    }
-
-    String ric(int rnd) {
-        return securities[Math.abs(rnd) % 4];
-    }
-
-    int divisor(int rnd) {
-
-        return divisors[Math.abs(rnd) % 4];
-    }
-
-
-    Security security(int rnd) {
-
-        return SecurityBuilder.startBuilding().name(ric(rnd)).adv20Day(12000).buildJournalable();
-    }
-
-    Random rnd = new Random();
-
-    Map<String, List<BasketConstituent>> constituentsMap = new HashMap<>();
-
-    private static String[] constituents = new String[100];
-
-    {
-        for (int i = 0; i < constituents.length; i++) {
-            constituents[i] = "ric" + i;
+        public void reset(final CyclicBarrier barrier, final CountDownLatch latch, final Histogram histogram) {
+            this.histogram = histogram;
+            this.barrier = barrier;
+            this.latch = latch;
         }
     }
 
-    private List<BasketConstituent> constituents(String ric) {
-        if (constituentsMap.containsKey(ric))
-            return constituentsMap.get(ric);
+    //when disruptor command has completed handling he command this handler subsequently notifies the
+    //pinger that it is done.
+    private static class Ponger implements EventHandler<DisruptorCommandBus.CommandHolder> {
+        private final RingBuffer<EmptyEvent> exchangeBuffer;
 
-        int rnd = this.rnd.nextInt(99) + 1;
-        List<BasketConstituent> lst = new ArrayList<>();
-        for (int i = 1; i <= rnd; i++) {
-            String constituentRic = constituents[i];
-            lst.add(BasketConstituentBuilder.startBuilding().adjustedShares(i).ric(constituentRic).buildJournalable());
+
+        public Ponger(final RingBuffer<EmptyEvent> exchangeBuffer) {
+            this.exchangeBuffer = exchangeBuffer;
         }
 
-        constituentsMap.put(ric, lst);
+        @Override
+        public void onEvent(final DisruptorCommandBus.CommandHolder event,
+                            final long sequence, final boolean endOfBatch) throws Exception {
 
-        return lst;
-
+            exchangeBuffer.publish(exchangeBuffer.next());
+        }
     }
 
-    private int xorShift(int x) {
+    private static int xorShift(int x) {
         x ^= x << 6;
         x ^= x >>> 21;
         x ^= (x << 7);
         return x;
     }
-
-
-    private static void busyWaitMicros(long micros) {
-        long waitUntil = System.nanoTime() + micros * 1000L;
-
-        while (waitUntil > System.nanoTime()) {
-            ;
-        }
-
-    }
-
 }
