@@ -30,7 +30,6 @@
         <module>D1AlgoCQRS</module>
         <module>D1CQRSTest</module>
         <module>D1CQRSTestGenerated</module>
-        <module>D1CQRSTestDomain</module>
     </modules>
 
     <dependencies>
