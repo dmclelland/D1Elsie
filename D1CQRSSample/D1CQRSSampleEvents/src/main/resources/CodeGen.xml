@@ -1,0 +1,70 @@
+<classes>
+    <domain>
+        <class name="com.dmc.d1.test.domain.Security" cache-key="name">
+            <field name="name" type="java.lang.String"/>
+            <field name="adv20Day" type="java.lang.Integer" toPrimitive="true"/>
+        </class>
+
+        <class name="com.dmc.d1.test.domain.BasketConstituent" cache-key="ric">
+            <field name="ric" type="java.lang.String"/>
+            <field name="adjustedShares" type="java.lang.Integer" toPrimitive="true"/>
+        </class>
+
+        <class name="com.dmc.d1.test.domain.Basket" cache-key="ric">
+            <field name="ric" type="java.lang.String"/>
+            <field name="tradeDate" type="java.time.LocalDate"/>
+            <field name="divisor" type="java.lang.Integer" toPrimitive="true"/>
+            <field name="security" type="com.dmc.d1.test.domain.Security"/>
+
+            <field name="basketConstituents" type="java.util.List" concrete-type="java.util.ArrayList"
+                   parameterized-type="com.dmc.d1.test.domain.BasketConstituent"/>
+
+            <field name="basketConstituents2" type="java.util.Map" concrete-type="java.util.HashMap"
+                   parameterized-type="com.dmc.d1.test.domain.BasketConstituent" key="ric"/>
+
+            <!--<field name="basketConstituents3" type="java.util.Set" concrete="java.util.HashSet"
+                   parameterized-type="com.dmc.d1.test.domain.BasketConstituent"/> -->
+
+        </class>
+    </domain>
+    <event>
+        <class name="com.dmc.d1.test.event.TestAggregateInitialisedEvent" initialisationEvent="true">
+        </class>
+
+        <class name="com.dmc.d1.test.event.HandledByExternalHandlersEvent">
+            <field name="nestedId" type="java.lang.String"/>
+            <field name="str" type="java.lang.String"/>
+        </class>
+        <class name="com.dmc.d1.test.event.IntUpdatedEvent1">
+            <field name="i" type="java.lang.Integer" toPrimitive="true"/>
+        </class>
+        <class name="com.dmc.d1.test.event.IntUpdatedEvent2">
+            <field name="i" type="java.lang.Integer" toPrimitive="true"/>
+        </class>
+        <class name="com.dmc.d1.test.event.NestedUpdatedEvent1">
+            <field name="str" type="java.lang.String"/>
+        </class>
+        <class name="com.dmc.d1.test.event.StringUpdatedEvent1">
+            <field name="str" type="java.lang.String"/>
+        </class>
+        <class name="com.dmc.d1.test.event.StringUpdatedEvent2">
+            <field name="str" type="java.lang.String"/>
+        </class>
+        <class name="com.dmc.d1.test.event.TriggerExceptionEvent">
+        </class>
+        <class name="com.dmc.d1.test.event.TriggerExceptionNestedEvent">
+        </class>
+        <class name="com.dmc.d1.test.event.TriggerExceptionInNestedAggregateEvent">
+            <field name="nestedId" type="java.lang.String"/>
+            <field name="str" type="java.lang.String"/>
+        </class>
+
+        <class name="com.dmc.d1.test.event.BasketCreatedEvent">
+            <field name="basket" type="com.dmc.d1.test.domain.Basket"/>
+        </class>
+
+    </event>
+    <command>
+
+    </command>
+</classes>
