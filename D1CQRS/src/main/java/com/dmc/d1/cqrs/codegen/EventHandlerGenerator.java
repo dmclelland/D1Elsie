@@ -109,8 +109,6 @@ class EventHandlerGenerator {
 
         Set<Class<? extends AbstractEventHandler>> eventHandlers = reflections.getSubTypesOf(AbstractEventHandler.class);
 
-
-
         for (Class<? extends AbstractEventHandler> eventHandlerClass : eventHandlers) {
 
             MethodSpec.Builder invokeBuilder = MethodSpec.methodBuilder("invoke")

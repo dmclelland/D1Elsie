@@ -16,7 +16,6 @@ import com.dmc.d1.cqrs.test.command.UpdateAggregate2Command;
 import com.dmc.d1.cqrs.test.commandhandler.MyCommandHandler1;
 import com.dmc.d1.cqrs.test.commandhandler.MyCommandHandler2;
 import com.dmc.d1.cqrs.test.domain.MyId;
-import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import com.dmc.d1.test.event.TestAggregateInitialisedEventBuilder;
 import org.junit.Ignore;
 import org.junit.Test;

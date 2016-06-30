@@ -19,7 +19,6 @@ import com.dmc.d1.cqrs.test.domain.MyId;
 import com.dmc.d1.cqrs.test.domain.MyNestedId;
 import com.dmc.d1.cqrs.test.event.Aggregate1EventHandler;
 import com.dmc.d1.cqrs.test.event.Aggregate1EventHandler2;
-import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import com.dmc.d1.test.event.TestAggregateInitialisedEventBuilder;
 import org.junit.Before;
 import org.junit.Test;

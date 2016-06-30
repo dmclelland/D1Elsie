@@ -8,9 +8,7 @@ import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;
 import com.dmc.d1.cqrs.test.aggregate.Aggregate1;
 import com.dmc.d1.cqrs.test.aggregate.Aggregate2;
 import com.dmc.d1.cqrs.test.domain.MyId;
-import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import com.dmc.d1.test.event.TestAggregateInitialisedEventBuilder;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.function.Function;
