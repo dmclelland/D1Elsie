@@ -79,9 +79,8 @@ public class ComplexAggregateTest {
     @Before
     public void setup() throws Exception {
 
-        // Construct the Disruptor
-
-        ThreadLocalObjectPool.initialise();
+        //force initialisation of thread pool
+        ThreadLocalObjectPool.clear();
 
         chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 

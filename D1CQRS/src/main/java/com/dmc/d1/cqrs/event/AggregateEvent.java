@@ -9,5 +9,4 @@ public interface AggregateEvent {
     String getClassName();
     String getAggregateClassName();
     void setAggregateClassName(String aggregateClassName);
-;
 }

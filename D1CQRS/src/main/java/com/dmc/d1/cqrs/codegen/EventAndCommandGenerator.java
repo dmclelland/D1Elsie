@@ -63,7 +63,7 @@ class EventAndCommandGenerator {
 
             ClassName interfaceName = generateInterface(vo, Type.DOMAIN);
             generateImmutableClass(vo, interfaceName, Type.DOMAIN);
-            generateMutableClass(vo, interfaceName, Type.DOMAIN);
+            generateMutableClass(vo, interfaceName);
             generateJournalableClass(vo, interfaceName, Type.DOMAIN);
             generateBuilder(vo, interfaceName, Type.DOMAIN);
             vos.put(vo.getFullClassname(), vo);
@@ -315,9 +315,8 @@ class EventAndCommandGenerator {
     }
 
 
-    private void generateMutableClass(ClassVo vo, ClassName interfaceClass, Type type) throws Exception {
-        if (Type.EVENT == type || !vo.updatable)
-            return;
+    private void generateMutableClass(ClassVo vo, ClassName interfaceClass) throws Exception {
+
 
         String className = vo.className + "Mutable";
 
@@ -396,8 +395,8 @@ class EventAndCommandGenerator {
         eventBuilder.addMethod(constructorBuilder.build());
 
         //eventBuilder.addMethod(deepCloneBuilder(vo, immutableClass, type));
-        eventBuilder.addMethod(equalsBuilder(vo, mutableClass, type));
-        eventBuilder.addMethod(hashCodeBuilder(vo, type));
+        eventBuilder.addMethod(equalsBuilder(vo, mutableClass, Type.DOMAIN));
+        eventBuilder.addMethod(hashCodeBuilder(vo, Type.DOMAIN));
         eventBuilder.addMethod(stateEqualsBuilder(vo));
 
         JavaFile javaFile = JavaFile.builder(vo.packageName, eventBuilder.build())

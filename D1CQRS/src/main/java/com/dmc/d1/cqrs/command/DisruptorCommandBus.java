@@ -2,7 +2,6 @@ package com.dmc.d1.cqrs.command;
 
 import com.dmc.d1.cqrs.AbstractCommandHandler;
 import com.dmc.d1.cqrs.Aggregate;
-import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import com.lmax.disruptor.BusySpinWaitStrategy;
 import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.EventHandler;
@@ -11,11 +10,8 @@ import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.EventHandlerGroup;
 import com.lmax.disruptor.dsl.ProducerType;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -33,7 +29,6 @@ public class DisruptorCommandBus<T extends AbstractCommandHandler<? extends Aggr
     }
 
 
-
     public DisruptorCommandBus(SimpleCommandBus<T> simpleCommandBus, List<EventHandler<CommandHolder>> additionalHandlers) {
 
 
@@ -46,7 +41,7 @@ public class DisruptorCommandBus<T extends AbstractCommandHandler<? extends Aggr
 
 
         // Connect the handler
-        EventHandlerGroup<CommandHolder> group =  disruptor.handleEventsWith(new DisruptorCommandHandler(simpleCommandBus));
+        EventHandlerGroup<CommandHolder> group = disruptor.handleEventsWith(new DisruptorCommandHandler(simpleCommandBus));
 
         additionalHandlers.forEach(h -> group.then(h));
 
@@ -76,7 +71,7 @@ public class DisruptorCommandBus<T extends AbstractCommandHandler<? extends Aggr
             this.command = command;
         }
 
-        public Command getCommand(){
+        public Command getCommand() {
             return command;
         }
 

@@ -37,9 +37,6 @@ public final class ThreadLocalObjectPool {
         }
     }
 
-    public  static void initialise(){
-    }
-
     private static final ThreadLocal<ObjectPool> THREAD_LOCAL =
             new ThreadLocal<ObjectPool>() {
                 @Override
