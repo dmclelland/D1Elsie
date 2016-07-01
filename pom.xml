@@ -29,7 +29,7 @@
         <module>D1Oms</module>
         <module>D1AlgoCQRS</module>
         <module>D1CQRSSample/D1CQRSSampleConfiguration</module>
-        <module>D1CQRSSample/D1CQRSSampleAggregates</module>
+        <module>D1CQRSSample/D1CQRSSampleMain</module>
         <module>D1CQRSSample/D1CQRSSampleEvents</module>
         <module>D1CQRSSample/D1CQRSSampleHandlers</module>
         <module>D1CQRSSample/D1CQRSSampleTests</module>

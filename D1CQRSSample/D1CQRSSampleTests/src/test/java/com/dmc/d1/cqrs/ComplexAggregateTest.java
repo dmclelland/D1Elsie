@@ -102,7 +102,7 @@ public class ComplexAggregateTest {
 
         replayer = new AggregateEventReplayer(chronicleAES, repos);
 
-        this.pinger = new Pinger(commandBus, ITERATIONS, PAUSE_NANOS, true);
+        this.pinger = new Pinger(commandBus, ITERATIONS, PAUSE_NANOS, false);
 
         this.pingProcessor =
                 new BatchEventProcessor<>(exchangeBuffer, exchangeBuffer.newBarrier(), pinger);
@@ -236,7 +236,7 @@ public class ComplexAggregateTest {
                     t0 = System.nanoTime();
                     commandBus.dispatch(command);});
             }else {
-
+                t0 = System.nanoTime();
                 commandBus.dispatch(command);
             }
         }
