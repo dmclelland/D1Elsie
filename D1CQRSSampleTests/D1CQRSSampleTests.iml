@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module type="JAVA_MODULE" version="4">
+<module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
   <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8" inherit-compiler-output="false">
-    <output url="file://$MODULE_DIR$/../D1CQRSSample/D1CQRSSampleTests/target/classes" />
-    <output-test url="file://$MODULE_DIR$/../D1CQRSSample/D1CQRSSampleTests/target/test-classes" />
+    <output url="file://$MODULE_DIR$/target/classes" />
+    <output-test url="file://$MODULE_DIR$/target/test-classes" />
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Maven: com.dmc.d1:d1-cqrs-sample-main:1.0-SNAPSHOT" level="project" />
+    <orderEntry type="module" module-name="D1CQRSSampleMain" />
     <orderEntry type="module" module-name="D1CQRS" />
     <orderEntry type="module" module-name="D1Domain" />
     <orderEntry type="library" name="Maven: org.reflections:reflections:0.9.10" level="project" />
@@ -28,8 +28,8 @@
     <orderEntry type="library" name="Maven: com.intellij:annotations:12.0" level="project" />
     <orderEntry type="library" name="Maven: com.lmax:disruptor:3.3.4" level="project" />
     <orderEntry type="module" module-name="D1CQRSSampleHandlers" />
-    <orderEntry type="library" name="Maven: com.dmc.d1:d1-cqrs-sample-events:1.0-SNAPSHOT" level="project" />
-    <orderEntry type="library" name="Maven: com.dmc.d1:d1-cqrs-sample-configuration:1.0-SNAPSHOT" level="project" />
+    <orderEntry type="module" module-name="D1CQRSSampleEvents" />
+    <orderEntry type="module" module-name="D1CQRSSampleConfiguration" />
     <orderEntry type="library" name="Maven: org.hdrhistogram:HdrHistogram:1.0.9" level="project" />
     <orderEntry type="library" name="Maven: com.google.guava:guava:19.0" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.21" level="project" />

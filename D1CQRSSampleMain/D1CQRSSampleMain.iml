@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module type="JAVA_MODULE" version="4">
+<module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
   <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8" inherit-compiler-output="false">
-    <output url="file://$MODULE_DIR$/../D1CQRSSample/D1CQRSSampleMain/target/classes" />
-    <output-test url="file://$MODULE_DIR$/../D1CQRSSample/D1CQRSSampleMain/target/test-classes" />
+    <output url="file://$MODULE_DIR$/target/classes" />
+    <output-test url="file://$MODULE_DIR$/target/test-classes" />
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="D1CQRSSampleConfiguration" />
     <orderEntry type="module" module-name="D1CQRS" />
     <orderEntry type="module" module-name="D1Domain" />
     <orderEntry type="library" name="Maven: org.reflections:reflections:0.9.10" level="project" />
