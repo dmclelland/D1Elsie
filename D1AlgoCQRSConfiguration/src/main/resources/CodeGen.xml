@@ -1,0 +1,44 @@
+<classes>
+    <domain>
+        <class name="com.dmc.d1.algo.domain.Security" cache-key="name">
+            <field name="instrumentId" type="com.dmc.d1.domain.InstrumentId"/>
+            <field name="name" type="java.lang.String"/>
+            <field name="assetType" type="java.lang.String"/>
+        </class>
+
+        <class name="com.dmc.d1.algo.domain.Wave">
+            <field name="waveId" type="com.dmc.d1.domain.WaveId"/>
+            <field name="tradeDate" type="java.time.LocalDate"/>
+            <field name="quantity" type="java.lang.Integer" toPrimitive="true"/>
+            <field name="security" type="com.dmc.d1.algo.domain.Security"/>
+            <field name="userId" type="com.dmc.d1.domain.WaveId"/>
+            <field name="orderId" type="com.dmc.d1.domain.OrderId"/>
+            <field name="orderNotes" type="java.lang.String"/>
+        </class>
+
+    </domain>
+    <event>
+        <class name="com.dmc.d1.algo.event.AlgoAggregateInitialisedEvent" initialisationEvent="true">
+        </class>
+
+        <class name="com.dmc.d1.algo.event.WaveCreatedEvent">
+            <field name="wave" type="com.dmc.d1.algo.domain.Wave"/>
+        </class>
+    </event>
+    <command>
+
+    </command>
+
+    <!--<class name="com.dmc.d1.test.domain.Basket" cache-key="ric">-->
+    <!--<field name="ric" type="java.lang.String"/>-->
+    <!--<field name="tradeDate" type="java.time.LocalDate"/>-->
+    <!--<field name="divisor" type="java.lang.Integer" toPrimitive="true"/>-->
+    <!--<field name="security" type="com.dmc.d1.test.domain.Security"/>-->
+
+    <!--<field name="basketConstituents" type="java.util.List" concrete-type="java.util.ArrayList"-->
+    <!--parameterized-type="com.dmc.d1.test.domain.BasketConstituent"/>-->
+
+    <!--<field name="basketConstituents2" type="java.util.Map" concrete-type="java.util.HashMap"-->
+    <!--parameterized-type="com.dmc.d1.test.domain.BasketConstituent" key="ric"/>-->
+
+</classes>

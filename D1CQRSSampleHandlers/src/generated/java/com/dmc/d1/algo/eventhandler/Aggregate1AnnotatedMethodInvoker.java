@@ -10,16 +10,16 @@ import com.dmc.d1.test.event.TriggerExceptionInNestedAggregateEvent;
 
 public final class Aggregate1AnnotatedMethodInvoker implements AnnotatedAggregateEventHandlerInvoker<Aggregate1> {
   public void invoke(AggregateEvent event, Aggregate1 aggregate) {
-    if (event.getClassName().equals("com.dmc.d1.test.event.TriggerExceptionInNestedAggregateEvent")) {
-      aggregate.handleEvent3((TriggerExceptionInNestedAggregateEvent)event);
+    if (event.getClassName().equals("com.dmc.d1.test.event.IntUpdatedEvent2")) {
+      aggregate.handleEvent2((IntUpdatedEvent2)event);
       return;
     }
     if (event.getClassName().equals("com.dmc.d1.test.event.HandledByExternalHandlersEvent")) {
       aggregate.handleEvent3((HandledByExternalHandlersEvent)event);
       return;
     }
-    if (event.getClassName().equals("com.dmc.d1.test.event.IntUpdatedEvent2")) {
-      aggregate.handleEvent2((IntUpdatedEvent2)event);
+    if (event.getClassName().equals("com.dmc.d1.test.event.TriggerExceptionInNestedAggregateEvent")) {
+      aggregate.handleEvent3((TriggerExceptionInNestedAggregateEvent)event);
       return;
     }
     if (event.getClassName().equals("com.dmc.d1.test.event.IntUpdatedEvent1")) {

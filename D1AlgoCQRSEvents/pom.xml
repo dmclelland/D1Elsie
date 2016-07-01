@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>d1-cqrs-sample-events</artifactId>
+    <artifactId>d1-algo-cqrs-events</artifactId>
 
     <dependencies>
         <dependency>
@@ -19,7 +19,12 @@
         </dependency>
         <dependency>
             <groupId>com.dmc.d1</groupId>
-            <artifactId>d1-cqrs-sample-configuration</artifactId>
+            <artifactId>d1-domain</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.dmc.d1</groupId>
+            <artifactId>d1-algo-cqrs-configuration</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
@@ -58,7 +63,7 @@
                             <arguments>
                                 <argument>EVENT</argument>
                                 <argument>NOT_REQUIRED</argument>
-                                <argument>${project.parent.basedir}/D1CQRSSampleEvents/src/generated/java</argument>
+                                <argument>${project.parent.basedir}/D1AlgoCQRSEvents/src/generated/java</argument>
                                 <argument>NOT_REQUIRED</argument>
                             </arguments>
                         </configuration>

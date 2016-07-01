@@ -9,17 +9,12 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>d1-cqrs-sample-events</artifactId>
+    <artifactId>d1-algo-cqrs-handlers</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>com.dmc.d1</groupId>
-            <artifactId>d1-cqrs</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>com.dmc.d1</groupId>
-            <artifactId>d1-cqrs-sample-configuration</artifactId>
+            <artifactId>d1-algo-cqrs-main</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
@@ -48,7 +43,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>generateTestEvents</id>
+                        <id>generateTestCommands</id>
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>java</goal>
@@ -56,10 +51,26 @@
                         <configuration>
                             <mainClass>com.dmc.d1.cqrs.codegen.CodeGen</mainClass>
                             <arguments>
-                                <argument>EVENT</argument>
-                                <argument>NOT_REQUIRED</argument>
-                                <argument>${project.parent.basedir}/D1CQRSSampleEvents/src/generated/java</argument>
-                                <argument>NOT_REQUIRED</argument>
+                                <argument>COMMAND_HANDLER</argument>
+                                <argument>com.dmc.d1.algo</argument>
+                                <argument>${project.parent.basedir}/D1AlgoCQRSHandlers/src/generated/java</argument>
+                                <argument>com.dmc.d1.algo.commandhandler</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generateTestEventHandlers</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>com.dmc.d1.cqrs.codegen.CodeGen</mainClass>
+                            <arguments>
+                                <argument>EVENT_HANDLER</argument>
+                                <argument>com.dmc.d1.algo</argument>
+                                <argument>${project.parent.basedir}/D1AlgoCQRSHandlers/src/generated/java</argument>
+                                <argument>com.dmc.d1.algo.eventhandler</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -84,6 +95,9 @@
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
     </build>
+
+
 </project>

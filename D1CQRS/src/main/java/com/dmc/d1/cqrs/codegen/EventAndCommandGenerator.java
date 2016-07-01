@@ -582,7 +582,7 @@ class EventAndCommandGenerator {
 
         MethodSpec constructor = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PRIVATE)
-                .addStatement(Type.EVENT ==type ? "setClassName(CLASS_NAME)" : "")
+                .addStatement(Type.EVENT == type ? "setClassName(CLASS_NAME)" : "")
                 .build();
 
 
@@ -805,7 +805,14 @@ class EventAndCommandGenerator {
                 hasSameStateBuilder.addStatement("if (o.get$L()!=this.$L) return false", capitalize(key), key);
             } else {
                 if ("object".equals(fieldData.chronicleType)) {
-                    hasSameStateBuilder.addStatement("if ($L != null ? !$L.stateEquals(o.get$L()) : o.get$L() != null) return false", key, key, capitalize(key), capitalize(key));
+                    //if configured object then stateEquals
+                    if (vos.get(fieldData.className) == null) {
+                        hasSameStateBuilder.addStatement("if ($L != null ? !$L.equals(o.get$L()) : o.get$L() != null) return false", key, key, capitalize(key), capitalize(key));
+
+                    } else {
+
+                        hasSameStateBuilder.addStatement("if ($L != null ? !$L.stateEquals(o.get$L()) : o.get$L() != null) return false", key, key, capitalize(key), capitalize(key));
+                    }
                 } else if ("sequence".equals(fieldData.chronicleType)) {
 //                    if (ric != null ? !ric.equals(o.getRic()) : o.getRic() != null) return false;
 //                    if (tradeDate != null ? !tradeDate.equals(o.getTradeDate()) : o.getTradeDate()!= null) return false;

@@ -1,5 +1,1 @@
-1)  Ensure immutable generated objects are properly immutable -safe copies, copy of list/map etc
-2)  Add validation to ensure that prevent incompatable types being added to builders
-    ->  eg ImmutableBasket to BasketCreatedEventChronicle and vice versa
-
-
+1)  enable enumerations for generated events
