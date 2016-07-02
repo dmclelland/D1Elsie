@@ -3,6 +3,7 @@
         <class name="com.dmc.d1.test.domain.Security" cache-key="name">
             <field name="name" type="java.lang.String"/>
             <field name="adv20Day" type="java.lang.Integer" toPrimitive="true"/>
+            <field name="assetType" type="com.dmc.d1.domain.AssetType"/>
         </class>
 
         <class name="com.dmc.d1.test.domain.BasketConstituent" cache-key="ric">

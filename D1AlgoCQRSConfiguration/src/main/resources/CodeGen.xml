@@ -3,13 +3,14 @@
         <class name="com.dmc.d1.algo.domain.Security" cache-key="name">
             <field name="instrumentId" type="com.dmc.d1.domain.InstrumentId"/>
             <field name="name" type="java.lang.String"/>
-            <field name="assetType" type="java.lang.String"/>
+            <field name="assetType" type="com.dmc.d1.domain.AssetType"/>
         </class>
 
         <class name="com.dmc.d1.algo.domain.Wave">
             <field name="waveId" type="com.dmc.d1.domain.WaveId"/>
             <field name="tradeDate" type="java.time.LocalDate"/>
             <field name="quantity" type="java.lang.Integer" toPrimitive="true"/>
+            <field name="tradeDirection" type="com.dmc.d1.domain.TradeDirection"/>
             <field name="security" type="com.dmc.d1.algo.domain.Security"/>
             <field name="userId" type="com.dmc.d1.domain.WaveId"/>
             <field name="orderId" type="com.dmc.d1.domain.OrderId"/>

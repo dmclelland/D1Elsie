@@ -4,25 +4,35 @@ import com.dmc.d1.algo.aggregate.PairsAggregate;
 import com.dmc.d1.algo.aggregate.WaveAggregate;
 import com.dmc.d1.algo.commandhandler.PairsCommandHandler;
 import com.dmc.d1.algo.commandhandler.WaveCommandHandler;
+import com.dmc.d1.algo.event.AlgoAggregateInitialisedEventBuilder;
 import com.dmc.d1.cqrs.AbstractCommandHandler;
 import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
+import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
+import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
 import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Created by davidclelland on 18/05/2016.
  */
 @Configuration
 public class AlgoConfiguration {
+
+    public static final String getChroniclePath() {
+        return System.getProperty("java.io.tmpdir") + "/d1-events-" + System.currentTimeMillis();
+    }
+
 
     @Bean
     SimpleEventBus<com.dmc.d1.cqrs.event.AbstractEventHandler> eventBus() {
@@ -31,19 +41,31 @@ public class AlgoConfiguration {
 
     @Bean
     AggregateEventStore aggregateEventStore() {
-        return new InMemoryAggregateEventStore();
+        try {
+            return new ChronicleAggregateEventStore(getChroniclePath() );
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to configure chronicle event store",e);
+        }
     }
 
 
+    Function<String, AggregateInitialisedEvent> initialisationEventFactory =
+            (ID) -> AlgoAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
+
+
     @Bean
-    AggregateRepository<WaveAggregate> waveAggregateRepository() {
+    AggregateRepository<WaveAggregate> waveAggregateRepository()
+    {
         return new AggregateRepository<>(aggregateEventStore(), WaveAggregate.class, eventBus(), WaveAggregate.newInstanceFactory(),
-                s -> null);
+                initialisationEventFactory
+        );
     }
 
     @Bean
     AggregateRepository<PairsAggregate> pairAggregateRepository() {
-        return new AggregateRepository<>(aggregateEventStore(), PairsAggregate.class, eventBus(), PairsAggregate.newInstanceFactory(), s -> null);
+        return new AggregateRepository<>(aggregateEventStore(), PairsAggregate.class, eventBus(), PairsAggregate.newInstanceFactory(),
+                initialisationEventFactory
+        );
     }
 
     @Bean

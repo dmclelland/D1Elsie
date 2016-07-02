@@ -1,5 +1,6 @@
 package com.dmc.d1.cqrs;
 
+import com.dmc.d1.domain.AssetType;
 import com.dmc.d1.test.domain.*;
 
 import java.time.LocalDate;
@@ -44,7 +45,16 @@ class TestBasketBuilder {
         securities[3] = "X7PS.DE";
     }
 
+    static int noOfAssetTypes = AssetType.values().length;
+
+    static AssetType assetType(int rnd) {
+
+        return AssetType.values()[Math.abs(rnd) % noOfAssetTypes];
+    }
+
+
     static String ric(int rnd) {
+
         return securities[Math.abs(rnd) % 4];
     }
 
@@ -56,7 +66,11 @@ class TestBasketBuilder {
 
     static Security security(int rnd) {
 
-        return SecurityBuilder.startBuilding().name(ric(rnd)).adv20Day(12000).buildJournalable();
+        return SecurityBuilder.startBuilding()
+                .name(ric(rnd))
+                .adv20Day(12000)
+                .assetType(assetType(rnd))
+                .buildJournalable();
     }
 
     static Random RANDOM = new Random();

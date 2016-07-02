@@ -64,7 +64,7 @@ public class ComplexAggregateTest {
     static ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     private static final int SENDER_THREAD_POOL_SIZE = 4;
     private static final int BUFFER_SIZE = 1024;
-    private static final long ITERATIONS = 100_000;
+    private static final long ITERATIONS = 100;//_000;
     private static final long PAUSE_NANOS = 1000L;
 
     private final RingBuffer<EmptyEvent> exchangeBuffer =
@@ -161,6 +161,10 @@ public class ComplexAggregateTest {
             assertTrue(aggExpected.getBasket().getSecurity().getName().length() > 0);
             assertEquals(aggExpected.getBasket().getSecurity().getName(), agg.getBasket().getSecurity().getName());
             assertEquals(aggExpected.getBasket().getSecurity().getAdv20Day(), agg.getBasket().getSecurity().getAdv20Day());
+
+            assertTrue(aggExpected.getBasket().getSecurity().getAssetType()!=null);
+            assertEquals(aggExpected.getBasket().getSecurity().getAssetType(), agg.getBasket().getSecurity().getAssetType());
+
 
             assertTrue(agg.getBasket().getBasketConstituents().size() > 0);
 

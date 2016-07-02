@@ -8,6 +8,7 @@ import com.dmc.d1.cqrs.util.Poolable;
 import com.dmc.d1.cqrs.util.Resettable;
 import com.dmc.d1.cqrs.util.StateEquals;
 import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
+import com.dmc.d1.domain.TradeDirection;
 import com.squareup.javapoet.*;
 import net.openhft.chronicle.core.io.IORuntimeException;
 import net.openhft.chronicle.wire.Marshallable;
@@ -63,7 +64,10 @@ class EventAndCommandGenerator {
 
             ClassName interfaceName = generateInterface(vo, Type.DOMAIN);
             generateImmutableClass(vo, interfaceName, Type.DOMAIN);
-            generateMutableClass(vo, interfaceName);
+
+            if(vo.updatable)
+                generateMutableClass(vo, interfaceName);
+
             generateJournalableClass(vo, interfaceName, Type.DOMAIN);
             generateBuilder(vo, interfaceName, Type.DOMAIN);
             vos.put(vo.getFullClassname(), vo);
@@ -120,6 +124,9 @@ class EventAndCommandGenerator {
             String classNameStr = field.getAttributeValue("type");
 
             ClassName className = classFromFullName(classNameStr);
+
+
+
             ClassName parameterizedClazz = null;
 
             TypeName typeName;
@@ -264,7 +271,8 @@ class EventAndCommandGenerator {
             //if domain object then create a immutable copy method
             if ("object".equals(fieldData.chronicleType) || "sequence".equals(fieldData.chronicleType)) {
 
-                String name = fullNameFromClass("object".equals(fieldData.chronicleType) ? (ClassName) fieldData.type : fieldData.parameterizedClass);
+                String name = fullNameFromClass("object".equals(fieldData.chronicleType)
+                        ? (ClassName) fieldData.type : fieldData.parameterizedClass);
                 ClassVo domain = vos.get(name);
 
                 if (domain != null) {
@@ -639,11 +647,25 @@ class EventAndCommandGenerator {
                     } else {
                         writeMarshallableMethod.addCode(".sequence(this.$L);\n", key);
                     }
+                } else if ("enum".equals(fieldData.chronicleType)) {
+
+                    //wireIn.read(()-> "tradeDirection").asEnum(TradeDirection.class, this, (o, b) -> o.tradeDirection = b);
+                    //wireOut.write(()-> "tradeDirection").asEnum(TradeDirection.BUY);
+
+                    readMarshallableMethod.addStatement("wireIn.read(()-> $S).asEnum($T.class, this, (o, b) -> o.$L = b)", key, fieldData.type, key);
+
+                    writeMarshallableMethod.addStatement("wireOut.write(()-> $S).asEnum(this.$L)", key, key);
+
+
+
                 } else if ("object".equals(fieldData.chronicleType)) {
 
                     //                    Security e = ThreadLocalObjectPool.allocateObject(Security.class.getName());
 //                    wireIn.read(() -> "security").object(e, Security.class);
 //                    this.security = e;
+
+
+
                     readMarshallableMethod.addStatement("$T $L = $T.allocateObject($T.class.getName())", fieldData.type, key, ThreadLocalObjectPool.class, fieldData.type);
                     readMarshallableMethod.addStatement("wireIn.read(() -> $S).object($L, $T.class)", key, key, fieldData.type);
                     readMarshallableMethod.addStatement("this.$L=$L", key, key);
@@ -661,6 +683,7 @@ class EventAndCommandGenerator {
 
                 String name = fullNameFromClass("object".equals(fieldData.chronicleType) ? (ClassName) fieldData.type : fieldData.parameterizedClass);
                 ClassVo domain = vos.get(name);
+
 
                 if (domain != null) {
                     eventBuilder.addMethod(
@@ -771,6 +794,9 @@ class EventAndCommandGenerator {
             FieldDataVo fieldData = vo.instanceVariables.get(key);
             if (fieldData.type.isPrimitive()) {
                 equalsBuilder.addStatement("if ($L!=that.$L) return false", key, key);
+            }else if ("enum".equals(fieldData.chronicleType)){
+                equalsBuilder.addStatement("if ($L != null ? $L!=that.$L : that.$L != null) return false", key, key, key, key);
+
             } else {
                 equalsBuilder.addStatement("if ($L != null ? !$L.equals(that.$L) : that.$L != null) return false", key, key, key, key);
             }
@@ -803,14 +829,14 @@ class EventAndCommandGenerator {
 
             if (fieldData.type.isPrimitive()) {
                 hasSameStateBuilder.addStatement("if (o.get$L()!=this.$L) return false", capitalize(key), key);
+            }else if ("enum".equals(fieldData.chronicleType)){
+                hasSameStateBuilder.addStatement("if ($L != null ? $L!=o.get$L() : o.get$L() != null) return false", key, key, capitalize(key), capitalize(key));
             } else {
                 if ("object".equals(fieldData.chronicleType)) {
                     //if configured object then stateEquals
                     if (vos.get(fieldData.className) == null) {
                         hasSameStateBuilder.addStatement("if ($L != null ? !$L.equals(o.get$L()) : o.get$L() != null) return false", key, key, capitalize(key), capitalize(key));
-
                     } else {
-
                         hasSameStateBuilder.addStatement("if ($L != null ? !$L.stateEquals(o.get$L()) : o.get$L() != null) return false", key, key, capitalize(key), capitalize(key));
                     }
                 } else if ("sequence".equals(fieldData.chronicleType)) {
@@ -1163,6 +1189,8 @@ class EventAndCommandGenerator {
 
 
     private String chronicleType(TypeName typeName) {
+
+
         if (typeName.isPrimitive()) {
             if (TypeName.BOOLEAN == typeName)
                 return "bool";
@@ -1183,14 +1211,35 @@ class EventAndCommandGenerator {
                 className = typeName.toString();
             }
 
+
+
             if ("java.lang.String".equals(className))
                 return "text";
             else if ("java.time.LocalDate".equals(className))
                 return "date";
             else if ("java.util.List".equals(className) || "java.util.Map".equals(className))
                 return "sequence";
-            else
+            else {
+                //check for enum -> assuming not a configured domain object
+
+                ClassVo domain = vos.get(fullNameFromClass((ClassName) typeName));
+
+
+                boolean isEnum = false;
+
+                if(domain == null) {
+                    try {
+                        isEnum = Class.forName(className).isEnum();
+                    } catch (ClassNotFoundException e) {
+                        throw new RuntimeException(className + " not found", e);
+                    }
+                }
+
+                if(isEnum)
+                    return "enum";
+
                 return "object";
+            }
         }
 
 
