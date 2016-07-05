@@ -8,7 +8,7 @@ import com.dmc.d1.cqrs.util.Poolable;
 import com.dmc.d1.cqrs.util.Resettable;
 import com.dmc.d1.cqrs.util.StateEquals;
 import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
-import com.dmc.d1.domain.TradeDirection;
+import com.dmc.d1.domain.Id;
 import com.squareup.javapoet.*;
 import net.openhft.chronicle.core.io.IORuntimeException;
 import net.openhft.chronicle.wire.Marshallable;
@@ -65,7 +65,7 @@ class EventAndCommandGenerator {
             ClassName interfaceName = generateInterface(vo, Type.DOMAIN);
             generateImmutableClass(vo, interfaceName, Type.DOMAIN);
 
-            if(vo.updatable)
+            if (vo.updatable)
                 generateMutableClass(vo, interfaceName);
 
             generateJournalableClass(vo, interfaceName, Type.DOMAIN);
@@ -124,7 +124,6 @@ class EventAndCommandGenerator {
             String classNameStr = field.getAttributeValue("type");
 
             ClassName className = classFromFullName(classNameStr);
-
 
 
             ClassName parameterizedClazz = null;
@@ -657,21 +656,32 @@ class EventAndCommandGenerator {
                     writeMarshallableMethod.addStatement("wireOut.write(()-> $S).asEnum(this.$L)", key, key);
 
 
-
                 } else if ("object".equals(fieldData.chronicleType)) {
 
-                    //                    Security e = ThreadLocalObjectPool.allocateObject(Security.class.getName());
+                    //Security e = ThreadLocalObjectPool.allocateObject(Security.class.getName());
 //                    wireIn.read(() -> "security").object(e, Security.class);
 //                    this.security = e;
 
+                    //only allocate objects for defined xml types
+                    String name = fullNameFromClass((ClassName) fieldData.type);
 
+                    ClassVo domain = vos.get(name);
 
-                    readMarshallableMethod.addStatement("$T $L = $T.allocateObject($T.class.getName())", fieldData.type, key, ThreadLocalObjectPool.class, fieldData.type);
-                    readMarshallableMethod.addStatement("wireIn.read(() -> $S).object($L, $T.class)", key, key, fieldData.type);
-                    readMarshallableMethod.addStatement("this.$L=$L", key, key);
+                    if (domain != null) {
+                        readMarshallableMethod.addStatement("$T $L = $T.allocateObject($T.class.getName())", fieldData.type, key, ThreadLocalObjectPool.class, fieldData.type);
+                        readMarshallableMethod.addStatement("wireIn.read(() -> $S).object($L, $T.class)", key, key, fieldData.type);
+                        readMarshallableMethod.addStatement("this.$L=$L", key, key);
+                        writeMarshallableMethod.addStatement("wireOut.write(()-> $S).object($T.class, this.$L)", key, fieldData.type, key);
+
+                    } else {
+                        //if id then treat as string
+                        if(Id.class.isAssignableFrom(Class.forName(name))){
+                            readMarshallableMethod.addStatement("wireIn.read(()-> $S).text(this, (o, b) -> o.$L = $T.from(b))", key,  key, fieldData.type);
+                            writeMarshallableMethod.addStatement("wireOut.write(()-> $S).$L($L.asString())", key, fieldData.chronicleType, key);
+                        }
+                    }
 
                     //readMarshallableMethod.addStatement("wireIn.read(()-> $S).object($T.class,this, (o,b) -> o.$L = b)", key, fieldData.type, key);
-                    writeMarshallableMethod.addStatement("wireOut.write(()-> $S).object($T.class, this.$L)", key, fieldData.type, key);
                 } else {
                     readMarshallableMethod.addStatement("wireIn.read(()-> $S).$L(this, (o, b) -> o.$L = b)", key, fieldData.chronicleType, key);
                     writeMarshallableMethod.addStatement("wireOut.write(()-> $S).$L($L)", key, fieldData.chronicleType, key);
@@ -794,7 +804,7 @@ class EventAndCommandGenerator {
             FieldDataVo fieldData = vo.instanceVariables.get(key);
             if (fieldData.type.isPrimitive()) {
                 equalsBuilder.addStatement("if ($L!=that.$L) return false", key, key);
-            }else if ("enum".equals(fieldData.chronicleType)){
+            } else if ("enum".equals(fieldData.chronicleType)) {
                 equalsBuilder.addStatement("if ($L != null ? $L!=that.$L : that.$L != null) return false", key, key, key, key);
 
             } else {
@@ -829,7 +839,7 @@ class EventAndCommandGenerator {
 
             if (fieldData.type.isPrimitive()) {
                 hasSameStateBuilder.addStatement("if (o.get$L()!=this.$L) return false", capitalize(key), key);
-            }else if ("enum".equals(fieldData.chronicleType)){
+            } else if ("enum".equals(fieldData.chronicleType)) {
                 hasSameStateBuilder.addStatement("if ($L != null ? $L!=o.get$L() : o.get$L() != null) return false", key, key, capitalize(key), capitalize(key));
             } else {
                 if ("object".equals(fieldData.chronicleType)) {
@@ -1212,7 +1222,6 @@ class EventAndCommandGenerator {
             }
 
 
-
             if ("java.lang.String".equals(className))
                 return "text";
             else if ("java.time.LocalDate".equals(className))
@@ -1227,7 +1236,7 @@ class EventAndCommandGenerator {
 
                 boolean isEnum = false;
 
-                if(domain == null) {
+                if (domain == null) {
                     try {
                         isEnum = Class.forName(className).isEnum();
                     } catch (ClassNotFoundException e) {
@@ -1235,7 +1244,7 @@ class EventAndCommandGenerator {
                     }
                 }
 
-                if(isEnum)
+                if (isEnum)
                     return "enum";
 
                 return "object";

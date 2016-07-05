@@ -1,15 +1,13 @@
 package com.dmc.d1.domain;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Created by davidclelland on 16/05/2016.
  */
 public abstract class Id {
-
-    protected static abstract class IDFactory<ID extends Id> {
-        protected abstract ID create(String str);
-    }
 
     protected String id;
 
@@ -26,11 +24,11 @@ public abstract class Id {
     }
 
 
-    protected static <ID extends Id> ID from(String str, Map<String, ID> cache, IDFactory<ID> factory) {
+    protected static <ID extends Id> ID from(String str,  Map<String, ID> cache,  Function<String,ID> create) {
         ID id = cache.get(str);
 
-        if (id == null) {
-            id = factory.create(str);
+        if (cache.get(str) == null) {
+            id = create.apply(str);
             cache.put(str, id);
         }
         return id;

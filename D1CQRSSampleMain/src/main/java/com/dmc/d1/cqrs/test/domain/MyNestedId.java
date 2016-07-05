@@ -4,21 +4,15 @@ import com.dmc.d1.domain.Id;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Created by davidclelland on 17/05/2016.
  */
 public class MyNestedId extends Id {
-    static class MyNestedIdFactory extends IDFactory<MyNestedId> {
-
-        @Override
-        protected MyNestedId create(String str) {
-            return new MyNestedId(str);
-        }
-    }
 
     private static Map<String,MyNestedId> CACHE = new HashMap<>();
-    private static MyNestedIdFactory FACTORY = new MyNestedIdFactory();
+    private static Function<String,MyNestedId> SUPPLIER = ID-> new MyNestedId(ID);
 
 
     protected MyNestedId(String id) {
@@ -27,7 +21,7 @@ public class MyNestedId extends Id {
 
     public static MyNestedId from(String str) {
 
-        return Id.from(str,CACHE,FACTORY);
+        return Id.from(str,CACHE,SUPPLIER);
 
     }
 

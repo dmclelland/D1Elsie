@@ -197,7 +197,7 @@ public class ComplexAggregateTest {
         private final CommandBus commandBus;
 
         private final boolean multiThreaded;
-        private final ExecutorService   senderExecutor = Executors.newFixedThreadPool(SENDER_THREAD_POOL_SIZE);;
+        private final ExecutorService   senderExecutor = Executors.newFixedThreadPool(SENDER_THREAD_POOL_SIZE);
 
 
         public Pinger(final CommandBus commandBus, final long maxEvents, final long pauseTimeNs, boolean multiThreaded) {

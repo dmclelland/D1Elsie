@@ -12,7 +12,7 @@
             <field name="quantity" type="java.lang.Integer" toPrimitive="true"/>
             <field name="tradeDirection" type="com.dmc.d1.domain.TradeDirection"/>
             <field name="security" type="com.dmc.d1.algo.domain.Security"/>
-            <field name="userId" type="com.dmc.d1.domain.WaveId"/>
+            <field name="userId" type="com.dmc.d1.domain.UserId"/>
             <field name="orderId" type="com.dmc.d1.domain.OrderId"/>
             <field name="orderNotes" type="java.lang.String"/>
         </class>
