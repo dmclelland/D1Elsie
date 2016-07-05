@@ -677,7 +677,7 @@ class EventAndCommandGenerator {
                         //if id then treat as string
                         if(Id.class.isAssignableFrom(Class.forName(name))){
                             readMarshallableMethod.addStatement("wireIn.read(()-> $S).text(this, (o, b) -> o.$L = $T.from(b))", key,  key, fieldData.type);
-                            writeMarshallableMethod.addStatement("wireOut.write(()-> $S).$L($L.asString())", key, fieldData.chronicleType, key);
+                            writeMarshallableMethod.addStatement("wireOut.write(()-> $S).text($L.asString())", key,  key);
                         }
                     }
 
