@@ -42,4 +42,9 @@ public class CreateComplexAggregateCommand implements Command {
         return CommandType.PROCESS_STARTER;
     }
 
+    @Override
+    public boolean isAggregateInitiator() {
+        return true;
+    }
+
 }

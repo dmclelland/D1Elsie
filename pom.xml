@@ -37,6 +37,7 @@
         <module>D1CQRSSampleEvents</module>
         <module>D1CQRSSampleHandlers</module>
         <module>D1CQRSSampleTests</module>
+        <module>BenchmarkTesting</module>
     </modules>
 
     <dependencies>

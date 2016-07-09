@@ -31,7 +31,7 @@ public class ComplexAggregate extends Aggregate {
     }
 
     public void createBasket(Basket basket) {
-        apply(BasketCreatedEventBuilder.startBuilding(getId()).basket(basket).buildPooledJournalable());
+        apply(BasketCreatedEventBuilder.startBuilding(getId()).basket(basket).buildJournalable());
     }
 
     @EventHandler

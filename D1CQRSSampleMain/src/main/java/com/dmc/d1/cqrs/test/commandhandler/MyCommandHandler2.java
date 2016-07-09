@@ -25,21 +25,18 @@ public class MyCommandHandler2 extends AbstractCommandHandler<Aggregate2> {
 
 
     @CommandHandler
-    public void handle(CreateAggregate2Command command) {
-        Aggregate2 aggregate = initialiseAggregate(command.getId().asString());
+    public void handle(CreateAggregate2Command command, Aggregate2 aggregate) {
         aggregate.doSomething(command.getStr1(), command.getStr2());
     }
 
     @CommandHandler
-    public void handle(UpdateAggregate2Command command) {
-        Aggregate2 aggregate = getAggregate(command.getAggregateId());
+    public void handle(UpdateAggregate2Command command, Aggregate2 aggregate) {
         aggregate.doSomething(command.getStr1(), command.getStr2());
     }
 
 
     @CommandHandler
-    public void handle(ExceptionTriggeringAggregate2Command command) {
-        Aggregate2 aggregate = getAggregate(command.getAggregateId());
+    public void handle(ExceptionTriggeringAggregate2Command command,  Aggregate2 aggregate) {
         aggregate.doSomethingWhichCausesException(command.getStr1(), command.getStr2());
     }
 }

@@ -14,16 +14,16 @@ public final class Aggregate1AnnotatedMethodInvoker implements AnnotatedAggregat
       aggregate.handleEvent2((IntUpdatedEvent2)event);
       return;
     }
+    if (event.getClassName().equals("com.dmc.d1.test.event.IntUpdatedEvent1")) {
+      aggregate.handleEvent1((IntUpdatedEvent1)event);
+      return;
+    }
     if (event.getClassName().equals("com.dmc.d1.test.event.HandledByExternalHandlersEvent")) {
       aggregate.handleEvent3((HandledByExternalHandlersEvent)event);
       return;
     }
     if (event.getClassName().equals("com.dmc.d1.test.event.TriggerExceptionInNestedAggregateEvent")) {
       aggregate.handleEvent3((TriggerExceptionInNestedAggregateEvent)event);
-      return;
-    }
-    if (event.getClassName().equals("com.dmc.d1.test.event.IntUpdatedEvent1")) {
-      aggregate.handleEvent1((IntUpdatedEvent1)event);
       return;
     }
   }

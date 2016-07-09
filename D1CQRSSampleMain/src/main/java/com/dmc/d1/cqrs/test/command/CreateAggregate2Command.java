@@ -46,4 +46,9 @@ public class CreateAggregate2Command implements Command {
     public String getStr2() {
         return str2;
     }
+
+    @Override
+    public boolean isAggregateInitiator() {
+        return true;
+    }
 }

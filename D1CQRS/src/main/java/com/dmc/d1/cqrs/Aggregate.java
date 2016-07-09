@@ -44,6 +44,7 @@ public abstract class Aggregate {
         applyAggregateEvent(event);
     }
 
+
     protected final String getId() {
         return id;
     }

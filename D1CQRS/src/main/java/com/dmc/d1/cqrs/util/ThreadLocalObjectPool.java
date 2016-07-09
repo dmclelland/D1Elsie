@@ -17,7 +17,7 @@ public final class ThreadLocalObjectPool {
     private ThreadLocalObjectPool() {
     }
 
-    private static List<Supplier<? extends Poolable>> POOLABLE_FACTORIES = new ArrayList<>();
+    private final static List<Supplier<? extends Poolable>> POOLABLE_FACTORIES = new ArrayList<>();
 
 
     static {
@@ -33,7 +33,7 @@ public final class ThreadLocalObjectPool {
                 }
             }
         }catch(Exception e){
-            throw new RuntimeException("Unable to ", e);
+            throw new RuntimeException("Unable to set up thread local object pool", e);
         }
     }
 

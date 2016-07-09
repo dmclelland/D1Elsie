@@ -71,6 +71,7 @@ public class WaveAggregate extends Aggregate {
     }
 
 
+
     private static Supplier<WaveAggregate> SUPPLIER = WaveAggregate::new;
 
     public static Supplier<WaveAggregate> newInstanceFactory() {

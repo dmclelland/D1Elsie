@@ -17,15 +17,13 @@ public class MyNestedCommandHandler1 extends AbstractCommandHandler<NestedAggreg
     }
 
     @CommandHandler
-    public void handle(CreateNestedAggregate1Command command) {
+    public void handle(CreateNestedAggregate1Command command,  NestedAggregate1 aggregate) {
 
-        NestedAggregate1 aggregate = initialiseAggregate(command.getId().asString());
         aggregate.doSomething(command.getStr());
     }
 
     @CommandHandler
-    public void handle(ExceptionTriggeringNestedAggregateCommand command) {
-        NestedAggregate1 aggregate = getAggregate(command.getAggregateId());
+    public void handle(ExceptionTriggeringNestedAggregateCommand command, NestedAggregate1 aggregate ) {
         aggregate.doSomethingCausingError(command.getStr());
     }
 }

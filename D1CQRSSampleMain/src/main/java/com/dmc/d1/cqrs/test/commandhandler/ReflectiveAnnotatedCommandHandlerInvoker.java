@@ -1,6 +1,7 @@
 package com.dmc.d1.cqrs.test.commandhandler;
 
 import com.dmc.d1.cqrs.AbstractCommandHandler;
+import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.AnnotatedCommandHandlerInvoker;
 import com.dmc.d1.cqrs.Utils;
 import com.dmc.d1.cqrs.command.Command;
@@ -46,7 +47,7 @@ public class ReflectiveAnnotatedCommandHandlerInvoker implements AnnotatedComman
     }
 
     @Override
-    public void invoke(Command command, AbstractCommandHandler commandHandler) {
+    public void invoke(Command command, AbstractCommandHandler commandHandler, Aggregate aggregate) {
 
         Method commandMethod = annotatedCommandMethods.get(command.getClassName());
 
@@ -56,7 +57,7 @@ public class ReflectiveAnnotatedCommandHandlerInvoker implements AnnotatedComman
         }
 
         try {
-            commandMethod.invoke(commandHandler, command);
+            commandMethod.invoke(commandHandler, command, aggregate);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {

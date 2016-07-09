@@ -31,10 +31,13 @@ public class SimpleCommandBus<T extends AbstractCommandHandler<? extends Aggrega
                     if(commandToHandler.containsKey(m.getParameterTypes()[0].getName()))
                         throw new IllegalStateException(m.getParameterTypes()[0].getName() + " has more than one handler");
 
-                    if (m.getParameterTypes().length == 1 && Command.class.isAssignableFrom(m.getParameterTypes()[0])) {
+                    if (m.getParameterTypes().length == 2
+                            && Command.class.isAssignableFrom(m.getParameterTypes()[0])
+                            && Aggregate.class.isAssignableFrom(m.getParameterTypes()[1])){
                         commandToHandler.put(m.getParameterTypes()[0].getName(), commandHandler);
                     } else {
-                        throw new IllegalStateException("A command handler must have a single argument of type " + Command.class.getName());
+                        throw new IllegalStateException("A command handler must have a two arguments of type "
+                                + Command.class.getName() + " and " + Aggregate.class.getName());
                     }
                 }
             }

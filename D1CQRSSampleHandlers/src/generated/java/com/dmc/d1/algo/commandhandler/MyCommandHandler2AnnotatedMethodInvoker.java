@@ -9,17 +9,17 @@ import com.dmc.d1.cqrs.test.command.UpdateAggregate2Command;
 import com.dmc.d1.cqrs.test.commandhandler.MyCommandHandler2;
 
 public final class MyCommandHandler2AnnotatedMethodInvoker implements AnnotatedCommandHandlerInvoker<Aggregate2, MyCommandHandler2> {
-  public void invoke(Command command, MyCommandHandler2 commandHandler) {
+  public void invoke(Command command, MyCommandHandler2 commandHandler, Aggregate2 aggregate) {
     if (command.getClassName().equals("com.dmc.d1.cqrs.test.command.UpdateAggregate2Command")) {
-      commandHandler.handle((UpdateAggregate2Command)command);
+      commandHandler.handle((UpdateAggregate2Command)command, aggregate);
       return;
     }
     if (command.getClassName().equals("com.dmc.d1.cqrs.test.command.ExceptionTriggeringAggregate2Command")) {
-      commandHandler.handle((ExceptionTriggeringAggregate2Command)command);
+      commandHandler.handle((ExceptionTriggeringAggregate2Command)command, aggregate);
       return;
     }
     if (command.getClassName().equals("com.dmc.d1.cqrs.test.command.CreateAggregate2Command")) {
-      commandHandler.handle((CreateAggregate2Command)command);
+      commandHandler.handle((CreateAggregate2Command)command, aggregate);
       return;
     }
   }

@@ -34,4 +34,9 @@ public class CreatePairCommand implements Command {
     public CommandType getCommandType() {
         return CommandType.SYSTEM_STARTER;
     }
+
+    @Override
+    public boolean isAggregateInitiator() {
+        return true;
+    }
 }

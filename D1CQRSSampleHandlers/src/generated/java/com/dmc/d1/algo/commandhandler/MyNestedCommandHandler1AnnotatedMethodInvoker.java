@@ -8,13 +8,13 @@ import com.dmc.d1.cqrs.test.command.ExceptionTriggeringNestedAggregateCommand;
 import com.dmc.d1.cqrs.test.commandhandler.MyNestedCommandHandler1;
 
 public final class MyNestedCommandHandler1AnnotatedMethodInvoker implements AnnotatedCommandHandlerInvoker<NestedAggregate1, MyNestedCommandHandler1> {
-  public void invoke(Command command, MyNestedCommandHandler1 commandHandler) {
+  public void invoke(Command command, MyNestedCommandHandler1 commandHandler, NestedAggregate1 aggregate) {
     if (command.getClassName().equals("com.dmc.d1.cqrs.test.command.CreateNestedAggregate1Command")) {
-      commandHandler.handle((CreateNestedAggregate1Command)command);
+      commandHandler.handle((CreateNestedAggregate1Command)command, aggregate);
       return;
     }
     if (command.getClassName().equals("com.dmc.d1.cqrs.test.command.ExceptionTriggeringNestedAggregateCommand")) {
-      commandHandler.handle((ExceptionTriggeringNestedAggregateCommand)command);
+      commandHandler.handle((ExceptionTriggeringNestedAggregateCommand)command, aggregate);
       return;
     }
   }

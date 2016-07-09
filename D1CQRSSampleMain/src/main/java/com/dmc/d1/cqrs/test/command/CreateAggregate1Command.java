@@ -47,4 +47,9 @@ public class CreateAggregate1Command implements Command {
         return CommandType.PROCESS_STARTER;
     }
 
+    @Override
+    public boolean isAggregateInitiator() {
+        return true;
+    }
+
 }

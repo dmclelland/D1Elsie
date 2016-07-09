@@ -64,7 +64,7 @@ public class ComplexAggregateTest {
     static ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     private static final int SENDER_THREAD_POOL_SIZE = 4;
     private static final int BUFFER_SIZE = 1024;
-    private static final long ITERATIONS = 100;//_000;
+    private static final long ITERATIONS = 100_000;
     private static final long PAUSE_NANOS = 1000L;
 
     private final RingBuffer<EmptyEvent> exchangeBuffer =

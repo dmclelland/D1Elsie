@@ -27,31 +27,37 @@ public abstract class AbstractCommandHandler<A extends Aggregate> {
         this.annotatedCommandHandlerInvoker = commandHandlerInvoker;
     }
 
-    protected A getAggregate(String id) {
-        return repository.find(id);
+    private A getAggregate(String id) {
+
+        A aggregate = repository.find(id);
+        if(aggregate==null)
+            throw new IllegalStateException("An aggregate with ID " + id + " does not exist");
+
+
+        return aggregate;
     }
 
-    protected A initialiseAggregate(String id) {
+    private A initialiseAggregate(String id) {
         if(repository.find(id)!=null)
             throw new IllegalStateException("An aggregate with ID " + id + " already exists");
 
         A aggregate = repository.create(id);
-        UnitOfWork.add(aggregate);
+
         return aggregate;
     }
 
     public void invokeCommand(Command command) {
         try {
-            //if the command to invoke actually creates the aggregate then
-            //obviously there won't be an aggregate at this point
-            //in this case the aggregate gets added to the unit or work in the
-            //initialiseAggregate method
-            Aggregate aggregate = getAggregate(command.getAggregateId());
+            A aggregate;
 
-            if (aggregate != null)
-                UnitOfWork.add(aggregate);
+            if(command.isAggregateInitiator()){
+                aggregate = initialiseAggregate(command.getAggregateId());
+            }else {
+                aggregate = getAggregate(command.getAggregateId());
+            }
 
-            annotatedCommandHandlerInvoker.invoke(command, this);
+            UnitOfWork.add(aggregate);
+            annotatedCommandHandlerInvoker.invoke(command, this, aggregate);
             UnitOfWork.commit();
         } catch (Throwable e) {
             //rollback aggregate if any error

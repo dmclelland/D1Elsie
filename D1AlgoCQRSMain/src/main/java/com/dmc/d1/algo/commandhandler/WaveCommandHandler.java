@@ -24,22 +24,22 @@ public class WaveCommandHandler extends AbstractCommandHandler<WaveAggregate> {
     private BasketService basketService;
 
     @CommandHandler
-    public void handle(CreateWaveCommand command) {
-        WaveAggregate aggregate = initialiseAggregate(command.getWaveId().asString());
+    public void handle(CreateWaveCommand command, WaveAggregate aggregate) {
+
         aggregate.setServices(basketService);
         //aggregate.createWave(command.getWaveId(),);
     }
 
     @CommandHandler
-    public void handle(CancelWaveCommand command) {
-        getAggregate(command.getAggregateId());
+    public void handle(CancelWaveCommand command, WaveAggregate aggregate) {
+
     }
 
     @CommandHandler
-    public void handle(PauseWaveCommand command) {
+    public void handle(PauseWaveCommand command, WaveAggregate aggregate) {
     }
 
     @CommandHandler
-    public void handle(ResumeWaveCommand command) {
+    public void handle(ResumeWaveCommand command, WaveAggregate aggregate) {
     }
 }

@@ -12,10 +12,11 @@ public interface Command {
 
     String getClassName();
 
-
-    
-
     CommandType getCommandType();
+
+    default boolean isAggregateInitiator(){
+        return false;
+    }
 
     enum CommandType {
         NESTED(1), PROCESS_STARTER(2), SYSTEM_STARTER(3);

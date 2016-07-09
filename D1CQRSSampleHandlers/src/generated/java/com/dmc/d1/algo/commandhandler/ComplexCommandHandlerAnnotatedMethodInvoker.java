@@ -7,9 +7,9 @@ import com.dmc.d1.cqrs.test.command.CreateComplexAggregateCommand;
 import com.dmc.d1.cqrs.test.commandhandler.ComplexCommandHandler;
 
 public final class ComplexCommandHandlerAnnotatedMethodInvoker implements AnnotatedCommandHandlerInvoker<ComplexAggregate, ComplexCommandHandler> {
-  public void invoke(Command command, ComplexCommandHandler commandHandler) {
+  public void invoke(Command command, ComplexCommandHandler commandHandler, ComplexAggregate aggregate) {
     if (command.getClassName().equals("com.dmc.d1.cqrs.test.command.CreateComplexAggregateCommand")) {
-      commandHandler.handle((CreateComplexAggregateCommand)command);
+      commandHandler.handle((CreateComplexAggregateCommand)command, aggregate);
       return;
     }
   }
