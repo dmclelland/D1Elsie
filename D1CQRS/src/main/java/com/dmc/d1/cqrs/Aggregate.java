@@ -22,14 +22,13 @@ public abstract class Aggregate {
     private AnnotatedAggregateEventHandlerInvoker eventHandler;
     private EventBus eventBus;
     private AggregateEventStore aggregateEventStore;
+    private AggregateRepository repository;
     private String id;
 
     //concrete class name of this aggregate
     private String aggregateClassName;
 
     private Aggregate old;
-
-    protected abstract void revertState(Aggregate old);
 
     protected final <E extends AggregateEvent> void apply(E event) {
         //assign the aggregate class that raised the event
@@ -44,7 +43,6 @@ public abstract class Aggregate {
         applyAggregateEvent(event);
     }
 
-
     protected final String getId() {
         return id;
     }
@@ -55,20 +53,17 @@ public abstract class Aggregate {
 
     final void commit() {
         aggregateEventStore.add(uncommittedEvents);
-
         //apply events to old
-        for(AggregateEvent event : uncommittedEvents){
+        for (AggregateEvent event : uncommittedEvents) {
             old.applyAggregateEvent(event);
         }
-
         clearUncommittedEvents();
     }
 
     final void rollback() {
         clearUncommittedEvents();
-        this.revertState(old);
+        repository.store(this.old);
     }
-
 
     private void addToUncommitted(AggregateEvent e) {
         uncommittedEvents.add(e);
@@ -92,6 +87,10 @@ public abstract class Aggregate {
 
     final void setId(String id) {
         this.id = id;
+    }
+
+    final <A extends Aggregate> void setRepository(AggregateRepository<A> repository) {
+        this.repository = repository;
     }
 
     final void setAggregateClassName(String aggregateClassName) {

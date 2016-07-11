@@ -14,13 +14,6 @@ public class PairsAggregate extends Aggregate {
     PairsAggregate() {
     }
 
-
-    @Override
-    protected void revertState(Aggregate copy) {
-        PairsAggregate agg = (PairsAggregate) copy;
-    }
-
-
     private static Supplier<PairsAggregate> SUPPLIER = PairsAggregate::new;
 
     public static Supplier<PairsAggregate> newInstanceFactory() {

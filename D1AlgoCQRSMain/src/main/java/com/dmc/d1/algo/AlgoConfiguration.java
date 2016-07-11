@@ -1,5 +1,7 @@
 package com.dmc.d1.algo;
 
+import com.dmc.d1.algo.aggregate.Basket;
+import com.dmc.d1.algo.aggregate.BasketService;
 import com.dmc.d1.algo.aggregate.PairsAggregate;
 import com.dmc.d1.algo.aggregate.WaveAggregate;
 import com.dmc.d1.algo.commandhandler.PairsCommandHandler;
@@ -15,6 +17,7 @@ import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
 import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;
+import com.dmc.d1.domain.InstrumentId;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -53,10 +56,28 @@ public class AlgoConfiguration {
             (ID) -> AlgoAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
 
+
     @Bean
-    AggregateRepository<WaveAggregate> waveAggregateRepository()
+    BasketService basketService(){
+        return new BasketService() {
+            @Override
+            public Basket createBasket(InstrumentId id, int qty) {
+                return new Basket();
+            }
+        };
+    }
+
+    @Bean
+    WaveAggregate.WaveSupplier waveSupplier(BasketService basketService){
+        return new WaveAggregate.WaveSupplier(basketService);
+
+    }
+
+
+    @Bean
+    AggregateRepository<WaveAggregate> waveAggregateRepository(WaveAggregate.WaveSupplier waveSupplier)
     {
-        return new AggregateRepository<>(aggregateEventStore(), WaveAggregate.class, eventBus(), WaveAggregate.newInstanceFactory(),
+        return new AggregateRepository<>(aggregateEventStore(), WaveAggregate.class, eventBus(), waveSupplier,
                 initialisationEventFactory
         );
     }

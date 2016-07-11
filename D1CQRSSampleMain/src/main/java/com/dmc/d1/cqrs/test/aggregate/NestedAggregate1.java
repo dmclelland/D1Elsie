@@ -24,12 +24,6 @@ public class NestedAggregate1 extends Aggregate {
     }
 
 
-    @Override
-    protected void revertState(Aggregate old) {
-        NestedAggregate1 agg = (NestedAggregate1) old;
-        this.nestedProperty = agg.nestedProperty;
-    }
-
     public void doSomething(String nestedProperty) {
         apply(NestedUpdatedEvent1Builder.startBuilding(getId()).str(nestedProperty).buildPooledJournalable());
     }

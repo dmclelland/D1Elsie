@@ -71,6 +71,11 @@ public class AggregateRepository<A extends Aggregate> {
         aggregate.setEventHandler(annotatedAggregateEventHandlerInvoker);
         aggregate.setEventBus(eventBus);
         aggregate.setAggregateEventStore(aggregateEventStore);
+        aggregate.setRepository(this);
+    }
+
+    final void store(A a){
+        this.cache.put(a.getId(), a);
     }
 
 

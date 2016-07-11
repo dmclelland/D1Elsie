@@ -22,14 +22,6 @@ public class ComplexAggregate extends Aggregate {
     ComplexAggregate() {
     }
 
-    @Override
-    protected void revertState(Aggregate old) {
-        ComplexAggregate fromAgg = (ComplexAggregate) old;
-
-        if (fromAgg.basket != null)
-            this.basket = BasketBuilder.copyBuilder(fromAgg.basket).buildImmutable();
-    }
-
     public void createBasket(Basket basket) {
         apply(BasketCreatedEventBuilder.startBuilding(getId()).basket(basket).buildJournalable());
     }

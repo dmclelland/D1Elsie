@@ -19,13 +19,6 @@ public class Aggregate2 extends Aggregate {
     Aggregate2() {
     }
 
-    @Override
-    protected void revertState(Aggregate old) {
-        Aggregate2 agg = (Aggregate2) old;
-        this.s1 = agg.s1;
-        this.s2 = agg.s2;
-    }
-
 
     public void doSomething(String s1, String s2) {
         apply(StringUpdatedEvent1Builder.startBuilding(getId()).str(s1).buildPooledJournalable());

@@ -19,24 +19,31 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class WaveAggregate extends Aggregate {
 
+    private static Supplier<WaveAggregate> SUPPLIER = WaveAggregate::new;
+
+    public static class WaveSupplier implements Supplier<WaveAggregate>{
+
+        private final BasketService basketService;
+
+        public WaveSupplier(BasketService basketService){
+            this.basketService = checkNotNull(basketService);
+        }
+
+        @Override
+        public WaveAggregate get() {
+            WaveAggregate aggregate = SUPPLIER.get();
+            aggregate.basketService = basketService;
+            return aggregate;
+        };
+    }
+
+
     private BasketService basketService;
 
     WaveAggregate() {
     }
 
     private Wave wave;
-
-    public void setServices(BasketService basketService){
-        this.basketService = checkNotNull(basketService);
-    }
-
-    @Override
-    protected void revertState(Aggregate copy) {
-
-        WaveAggregate fromAgg = (WaveAggregate) copy;
-        if(fromAgg.wave!=null)
-            this.wave = WaveBuilder.copyBuilder(fromAgg.wave).buildImmutable();
-    }
 
     public void createWave(WaveId waveId, OrderId orderId,InstrumentId instrumentId,
                            int quantity, TradeDirection tradeDirection, LocalDate tradeDate, UserId userId){
@@ -72,10 +79,8 @@ public class WaveAggregate extends Aggregate {
 
 
 
-    private static Supplier<WaveAggregate> SUPPLIER = WaveAggregate::new;
 
-    public static Supplier<WaveAggregate> newInstanceFactory() {
-        return SUPPLIER;
-    }
+
+
 
 }
