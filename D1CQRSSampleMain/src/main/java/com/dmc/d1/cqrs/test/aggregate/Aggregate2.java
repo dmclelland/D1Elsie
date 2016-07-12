@@ -10,7 +10,7 @@ import java.util.function.Supplier;
  * Created by davidclelland on 17/05/2016.
  */
 @com.dmc.d1.cqrs.annotations.Aggregate
-public class Aggregate2 extends Aggregate {
+public class Aggregate2 extends Aggregate<Aggregate2> {
     private static String CLASS_NAME = Aggregate2.class.getName();
 
     private String s1;
@@ -65,4 +65,11 @@ public class Aggregate2 extends Aggregate {
         return SUPPLIER;
     }
 
+    @Override
+    protected Aggregate2 stateCopy(Aggregate2 from) {
+        this.s1 = from.s1;
+        this.s2 = from.s2;
+
+        return this;
+    }
 }

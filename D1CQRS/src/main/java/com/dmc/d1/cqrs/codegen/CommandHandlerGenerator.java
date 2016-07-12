@@ -74,6 +74,7 @@ class CommandHandlerGenerator {
 
                 if (m.isAnnotationPresent(CommandHandler.class)) {
 
+
                     if (m.getParameterTypes().length == 2
                             && Command.class.isAssignableFrom(m.getParameterTypes()[0])
                             && Aggregate.class.isAssignableFrom(m.getParameterTypes()[1])

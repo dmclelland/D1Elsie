@@ -7,7 +7,7 @@ import java.util.function.Supplier;
 /**
  * Created by davidclelland on 18/05/2016.
  */
-public class PairsAggregate extends Aggregate {
+public class PairsAggregate extends Aggregate<PairsAggregate> {
 
     private static String CLASS_NAME = PairsAggregate.class.getName();
 
@@ -21,4 +21,8 @@ public class PairsAggregate extends Aggregate {
     }
 
 
+    @Override
+    protected PairsAggregate stateCopy(PairsAggregate o) {
+        return null;
+    }
 }

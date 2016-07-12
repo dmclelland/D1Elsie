@@ -9,7 +9,6 @@ import com.dmc.d1.cqrs.annotations.EventHandler;
 import com.dmc.d1.domain.*;
 
 import java.time.LocalDate;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -17,26 +16,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Created by davidclelland on 18/05/2016.
  */
-public class WaveAggregate extends Aggregate {
-
-    private static Supplier<WaveAggregate> SUPPLIER = WaveAggregate::new;
-
-    public static class WaveSupplier implements Supplier<WaveAggregate>{
-
-        private final BasketService basketService;
-
-        public WaveSupplier(BasketService basketService){
-            this.basketService = checkNotNull(basketService);
-        }
-
-        @Override
-        public WaveAggregate get() {
-            WaveAggregate aggregate = SUPPLIER.get();
-            aggregate.basketService = basketService;
-            return aggregate;
-        };
-    }
-
+public class WaveAggregate extends Aggregate<WaveAggregate> {
 
     private BasketService basketService;
 
@@ -45,8 +25,8 @@ public class WaveAggregate extends Aggregate {
 
     private Wave wave;
 
-    public void createWave(WaveId waveId, OrderId orderId,InstrumentId instrumentId,
-                           int quantity, TradeDirection tradeDirection, LocalDate tradeDate, UserId userId){
+    public void createWave(WaveId waveId, OrderId orderId, InstrumentId instrumentId,
+                           int quantity, TradeDirection tradeDirection, LocalDate tradeDate, UserId userId) {
 
         Wave wave = WaveBuilder.startBuilding()
                 .waveId(waveId)
@@ -55,7 +35,7 @@ public class WaveAggregate extends Aggregate {
                 .tradeDirection(tradeDirection)
                 .tradeDate(tradeDate)
                 .userId(userId)
-                .buildPooledJournalable();
+                .buildJournalable();
 
         apply(WaveCreatedEventBuilder.startBuilding(waveId.asString())
                 .wave(wave).buildPooledJournalable());
@@ -73,14 +53,31 @@ public class WaveAggregate extends Aggregate {
     }
 
     @EventHandler
-    public void handleEvent(WaveCreatedEvent event){
+    public void handleEvent(WaveCreatedEvent event) {
         this.wave = WaveBuilder.copyBuilder(event.getWave()).buildImmutable();
     }
 
+    @Override
+    protected WaveAggregate stateCopy(WaveAggregate orig) {
+        this.wave = WaveBuilder.copyBuilder(orig.wave).buildImmutable();
+
+        return this;
+    }
 
 
+    public static class WaveSupplier implements Supplier<WaveAggregate> {
 
+        private final BasketService basketService;
 
+        public WaveSupplier(BasketService basketService) {
+            this.basketService = checkNotNull(basketService);
+        }
 
-
+        @Override
+        public WaveAggregate get() {
+            WaveAggregate aggregate = new WaveAggregate();
+            aggregate.basketService = basketService;
+            return aggregate;
+        }
+    }
 }

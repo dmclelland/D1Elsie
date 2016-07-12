@@ -13,7 +13,7 @@ import java.util.function.Supplier;
  * Created by davidclelland on 17/05/2016.
  */
 @com.dmc.d1.cqrs.annotations.Aggregate
-public class NestedAggregate1 extends Aggregate {
+public class NestedAggregate1 extends Aggregate<NestedAggregate1> {
 
     private static String CLASS_NAME = NestedAggregate1.class.getName();
 
@@ -54,6 +54,12 @@ public class NestedAggregate1 extends Aggregate {
 
     public static Supplier<NestedAggregate1> newInstanceFactory() {
         return SUPPLIER;
+    }
+
+    @Override
+    protected NestedAggregate1 stateCopy(NestedAggregate1 from) {
+        this.nestedProperty = from.nestedProperty;
+        return this;
     }
 }
 

@@ -13,7 +13,7 @@ import java.util.function.Supplier;
  * Created by davidclelland on 17/05/2016.
  */
 @com.dmc.d1.cqrs.annotations.Aggregate
-public class ComplexAggregate extends Aggregate {
+public class ComplexAggregate extends Aggregate<ComplexAggregate> {
 
     private static String CLASS_NAME = ComplexAggregate.class.getName();
 
@@ -39,5 +39,11 @@ public class ComplexAggregate extends Aggregate {
 
     public static Supplier<ComplexAggregate> newInstanceFactory() {
         return SUPPLIER;
+    }
+
+    @Override
+    protected ComplexAggregate stateCopy(ComplexAggregate from) {
+        this.basket = BasketBuilder.copyBuilder(from.basket).buildImmutable();
+        return this;
     }
 }

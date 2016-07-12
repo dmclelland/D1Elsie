@@ -15,20 +15,20 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Created by davidclelland on 16/05/2016.
  */
-public abstract class Aggregate {
+public abstract class Aggregate<A extends Aggregate<A>> {
 
     private static final Logger LOG = LoggerFactory.getLogger(Aggregate.class);
     private final List<AggregateEvent> uncommittedEvents = new ArrayList<>();
     private AnnotatedAggregateEventHandlerInvoker eventHandler;
     private EventBus eventBus;
-    private AggregateEventStore aggregateEventStore;
-    private AggregateRepository repository;
+    private AggregateEventStore<AggregateEvent> aggregateEventStore;
+    private AggregateRepository<A> repository;
     private String id;
 
     //concrete class name of this aggregate
     private String aggregateClassName;
 
-    private Aggregate old;
+    private A old;
 
     protected final <E extends AggregateEvent> void apply(E event) {
         //assign the aggregate class that raised the event
@@ -47,7 +47,7 @@ public abstract class Aggregate {
         return id;
     }
 
-    private void applyAggregateEvent(AggregateEvent event) {
+    final void applyAggregateEvent(AggregateEvent event) {
         eventHandler.invoke(event, this);
     }
 
@@ -60,17 +60,11 @@ public abstract class Aggregate {
         clearUncommittedEvents();
     }
 
+    protected abstract A stateCopy(A o);
+
     final void rollback() {
         clearUncommittedEvents();
-        repository.store(this.old);
-    }
-
-    private void addToUncommitted(AggregateEvent e) {
-        uncommittedEvents.add(e);
-    }
-
-    private void clearUncommittedEvents() {
-        uncommittedEvents.clear();
+        repository.rollback(this.old);
     }
 
     final void setEventHandler(AnnotatedAggregateEventHandlerInvoker eventHandler) {
@@ -89,7 +83,7 @@ public abstract class Aggregate {
         this.id = id;
     }
 
-    final <A extends Aggregate> void setRepository(AggregateRepository<A> repository) {
+    final void setRepository(AggregateRepository<A> repository) {
         this.repository = repository;
     }
 
@@ -98,6 +92,14 @@ public abstract class Aggregate {
     }
 
     final void setOld(Aggregate old) {
-        this.old = old;
+        this.old = (A) old;
+    }
+
+    private void addToUncommitted(AggregateEvent e) {
+        uncommittedEvents.add(e);
+    }
+
+    private void clearUncommittedEvents() {
+        uncommittedEvents.clear();
     }
 }
