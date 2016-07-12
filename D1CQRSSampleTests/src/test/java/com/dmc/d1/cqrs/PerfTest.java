@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.springframework.util.StopWatch;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -78,12 +79,12 @@ public class PerfTest {
             (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
     private void setup() throws Exception {
-        chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
-
         SimpleEventBus eventBus = new SimpleEventBus();
 
         repo1 = new AggregateRepository(chronicleAES, Aggregate1.class, eventBus, Aggregate1.newInstanceFactory(), initialisationFactory);
         repo2 = new AggregateRepository(chronicleAES, Aggregate2.class, eventBus, Aggregate2.newInstanceFactory(), initialisationFactory);
+
+        chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
 

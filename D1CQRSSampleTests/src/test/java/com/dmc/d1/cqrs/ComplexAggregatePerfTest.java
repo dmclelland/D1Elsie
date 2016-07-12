@@ -11,7 +11,7 @@ import com.dmc.d1.cqrs.test.aggregate.ComplexAggregate;
 import com.dmc.d1.cqrs.test.command.CreateComplexAggregateCommand;
 import com.dmc.d1.cqrs.test.commandhandler.ComplexCommandHandler;
 import com.dmc.d1.cqrs.test.domain.MyId;
-import com.dmc.d1.test.domain.*;
+import com.dmc.d1.test.domain.Basket;
 import com.dmc.d1.test.event.TestAggregateInitialisedEventBuilder;
 import org.HdrHistogram.Histogram;
 import org.junit.After;
@@ -34,7 +34,6 @@ public class ComplexAggregatePerfTest {
 
     CommandBus commandBus;
 
-    AggregateEventReplayer replayer;
     Function<String, AggregateInitialisedEvent> initialisationFactory =
             (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
@@ -61,7 +60,6 @@ public class ComplexAggregatePerfTest {
 
     private void setup() throws Exception {
 
-        chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         SimpleEventBus eventBus = new SimpleEventBus();
 
@@ -71,12 +69,8 @@ public class ComplexAggregatePerfTest {
 
         lst.add(new ComplexCommandHandler(repo1));
 
-
+        chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
         commandBus = new SimpleCommandBus(lst);
-
-        List<AggregateRepository> repos = Arrays.asList(repo1);
-
-        replayer = new AggregateEventReplayer(chronicleAES, repos);
 
     }
 
@@ -100,7 +94,7 @@ public class ComplexAggregatePerfTest {
         aggregate1Repo.clear();
         StopWatch watch = new StopWatch();
         watch.start();
-        replayer.replay();
+        chronicleAES.replay(Collections.singletonMap(repo1.getAggregateClassName(), repo1));
         watch.stop();
         System.out.println("It took " + watch.getTotalTimeSeconds() + " to replay");
         CREATE_HISTOGRAM.getHistogramData().outputPercentileDistribution(System.out, 10d);
@@ -127,9 +121,6 @@ public class ComplexAggregatePerfTest {
 
         return rnd;
     }
-
-
-
 
 
     private int xorShift(int x) {

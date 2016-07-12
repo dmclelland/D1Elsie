@@ -1,8 +1,12 @@
 package com.dmc.d1.cqrs.event.store;
 
+import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.event.AggregateEventAbstract;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by davidclelland on 17/05/2016.
@@ -18,7 +22,7 @@ public class InMemoryAggregateEventStore implements AggregateEventStore<Aggregat
         events.add(event);
 
         List<AggregateEventAbstract> list = eventsById.get(event.getAggregateId());
-        if(list==null) {
+        if (list == null) {
             list = new ArrayList<>();
             eventsById.put(event.getAggregateId(), list);
         }
@@ -30,36 +34,9 @@ public class InMemoryAggregateEventStore implements AggregateEventStore<Aggregat
         eventsToAdd.forEach(this::add);
     }
 
-
     @Override
-    public Iterator<List<AggregateEventAbstract>> iterator() {
-        return new InMemoryIterator(events);
-    }
+    public void replay(Map<String,AggregateRepository> repo) {
 
-
-    private static class InMemoryIterator implements Iterator<List<AggregateEventAbstract>> {
-
-        private final List<AggregateEventAbstract> lst;
-        private boolean hasNext = true;
-
-        InMemoryIterator(List<AggregateEventAbstract> lst) {
-            this.lst = lst;
-
-        }
-
-
-
-        @Override
-        public boolean hasNext() {
-            return hasNext;
-        }
-
-        @Override
-        public List<AggregateEventAbstract> next() {
-            this.hasNext = false;
-
-            return lst;
-        }
     }
 
 

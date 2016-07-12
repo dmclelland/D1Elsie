@@ -16,7 +16,6 @@ import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
-import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;
 import com.dmc.d1.domain.InstrumentId;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,23 +41,12 @@ public class AlgoConfiguration {
         return new SimpleEventBus<>();
     }
 
-    @Bean
-    AggregateEventStore aggregateEventStore() {
-        try {
-            return new ChronicleAggregateEventStore(getChroniclePath() );
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to configure chronicle event store",e);
-        }
-    }
-
-
     Function<String, AggregateInitialisedEvent> initialisationEventFactory =
             (ID) -> AlgoAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
 
-
     @Bean
-    BasketService basketService(){
+    BasketService basketService() {
         return new BasketService() {
             @Override
             public Basket createBasket(InstrumentId id, int qty) {
@@ -68,18 +56,28 @@ public class AlgoConfiguration {
     }
 
     @Bean
-    WaveAggregate.WaveSupplier waveSupplier(BasketService basketService){
+    WaveAggregate.WaveSupplier waveSupplier(BasketService basketService) {
         return new WaveAggregate.WaveSupplier(basketService);
 
     }
 
 
     @Bean
-    AggregateRepository<WaveAggregate> waveAggregateRepository(WaveAggregate.WaveSupplier waveSupplier)
-    {
+    AggregateEventStore aggregateEventStore() {
+        try {
+            return new ChronicleAggregateEventStore(getChroniclePath());
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to configure chronicle event store", e);
+        }
+    }
+
+    @Bean
+    AggregateRepository<WaveAggregate> waveAggregateRepository(WaveAggregate.WaveSupplier waveSupplier) {
         return new AggregateRepository<>(aggregateEventStore(), WaveAggregate.class, eventBus(), waveSupplier,
                 initialisationEventFactory
         );
+
+
     }
 
     @Bean
@@ -88,6 +86,7 @@ public class AlgoConfiguration {
                 initialisationEventFactory
         );
     }
+
 
     @Bean
     WaveCommandHandler waveCommandHandler(AggregateRepository<WaveAggregate> waveAggregateRepository) {

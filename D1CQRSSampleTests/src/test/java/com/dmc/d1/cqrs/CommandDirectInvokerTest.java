@@ -24,10 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
@@ -55,9 +52,10 @@ public class CommandDirectInvokerTest {
 
     @Before
     public void setup() throws Exception {
-        aes = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         SimpleEventBus eventBus = new SimpleEventBus();
+
+        aes = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, Aggregate1.newInstanceFactory(), initialisationFactory);
         repo2 = new AggregateRepository(aes, Aggregate2.class, eventBus, Aggregate2.newInstanceFactory(), initialisationFactory);
@@ -68,6 +66,8 @@ public class CommandDirectInvokerTest {
         lst.add(new MyCommandHandler1(repo1));
         lst.add(new MyCommandHandler2(repo2));
         lst.add(new MyNestedCommandHandler1(repo3));
+
+
 
         commandBus = new SimpleCommandBus(lst);
 

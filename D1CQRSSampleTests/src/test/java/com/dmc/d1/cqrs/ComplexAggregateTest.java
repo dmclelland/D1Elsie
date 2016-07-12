@@ -45,8 +45,6 @@ public class ComplexAggregateTest {
 
     CommandBus commandBus;
 
-    AggregateEventReplayer replayer;
-
     Function<String, AggregateInitialisedEvent> initialisationFactory =
             (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
@@ -82,10 +80,8 @@ public class ComplexAggregateTest {
         //force initialisation of thread pool
         ThreadLocalObjectPool.clear();
 
-        chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
-
         SimpleEventBus eventBus = new SimpleEventBus();
-
+        chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         repo1 = new AggregateRepository(chronicleAES, ComplexAggregate.class, eventBus,
                 ComplexAggregate.newInstanceFactory(), initialisationFactory);
@@ -98,9 +94,6 @@ public class ComplexAggregateTest {
         commandBus = new DisruptorCommandBus(new SimpleCommandBus(lst),
                 Arrays.asList(ponger));
 
-        List<AggregateRepository> repos = Arrays.asList(repo1);
-
-        replayer = new AggregateEventReplayer(chronicleAES, repos);
 
         this.pinger = new Pinger(commandBus, ITERATIONS, PAUSE_NANOS, false);
 
@@ -135,7 +128,7 @@ public class ComplexAggregateTest {
         aggregate1Repo.clear();
         StopWatch watch = new StopWatch();
         watch.start();
-        replayer.replay();
+        chronicleAES.replay(Collections.singletonMap(repo1.getAggregateClassName(), repo1));
         watch.stop();
         System.out.println("It took " + watch.getTotalTimeSeconds() + " to replay");
 
@@ -162,7 +155,7 @@ public class ComplexAggregateTest {
             assertEquals(aggExpected.getBasket().getSecurity().getName(), agg.getBasket().getSecurity().getName());
             assertEquals(aggExpected.getBasket().getSecurity().getAdv20Day(), agg.getBasket().getSecurity().getAdv20Day());
 
-            assertTrue(aggExpected.getBasket().getSecurity().getAssetType()!=null);
+            assertTrue(aggExpected.getBasket().getSecurity().getAssetType() != null);
             assertEquals(aggExpected.getBasket().getSecurity().getAssetType(), agg.getBasket().getSecurity().getAssetType());
 
 
@@ -197,7 +190,7 @@ public class ComplexAggregateTest {
         private final CommandBus commandBus;
 
         private final boolean multiThreaded;
-        private final ExecutorService   senderExecutor = Executors.newFixedThreadPool(SENDER_THREAD_POOL_SIZE);
+        private final ExecutorService senderExecutor = Executors.newFixedThreadPool(SENDER_THREAD_POOL_SIZE);
 
 
         public Pinger(final CommandBus commandBus, final long maxEvents, final long pauseTimeNs, boolean multiThreaded) {
@@ -235,17 +228,16 @@ public class ComplexAggregateTest {
             Command command = new CreateComplexAggregateCommand(id, basket);
 
 
-            if(multiThreaded){
-                senderExecutor.submit(()->{
+            if (multiThreaded) {
+                senderExecutor.submit(() -> {
                     t0 = System.nanoTime();
-                    commandBus.dispatch(command);});
-            }else {
+                    commandBus.dispatch(command);
+                });
+            } else {
                 t0 = System.nanoTime();
                 commandBus.dispatch(command);
             }
         }
-
-
 
 
         @Override

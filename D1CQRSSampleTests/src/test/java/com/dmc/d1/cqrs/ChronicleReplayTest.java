@@ -24,6 +24,7 @@ import org.springframework.util.StopWatch;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -36,8 +37,6 @@ public class ChronicleReplayTest {
 
     CommandBus commandBus;
 
-    AggregateEventReplayer replayer;
-
     Function<String, AggregateInitialisedEvent> initialisationFactory =
             (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
@@ -48,12 +47,16 @@ public class ChronicleReplayTest {
 
     private void setup() throws Exception {
 
-        chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         SimpleEventBus eventBus = new SimpleEventBus();
 
         repo1 = new AggregateRepository(chronicleAES, Aggregate1.class, eventBus, Aggregate1.newInstanceFactory(), initialisationFactory);
         repo2 = new AggregateRepository(chronicleAES, Aggregate2.class, eventBus, Aggregate2.newInstanceFactory(), initialisationFactory);
+
+        List<AggregateRepository> repos = Arrays.asList(repo1, repo2);
+
+
+        chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
 
@@ -61,10 +64,6 @@ public class ChronicleReplayTest {
         lst.add(new MyCommandHandler2(repo2));
 
         commandBus = new SimpleCommandBus(lst);
-
-        List<AggregateRepository> repos = Arrays.asList(repo1, repo2);
-
-        replayer = new AggregateEventReplayer(chronicleAES, repos);
 
     }
 
@@ -92,7 +91,9 @@ public class ChronicleReplayTest {
 
         StopWatch watch = new StopWatch();
         watch.start();
-        replayer.replay();
+
+        List<AggregateRepository> repos = Arrays.asList(repo1, repo2);
+        chronicleAES.replay(repos.stream().collect(Collectors.toMap(a -> a.getAggregateClassName(), a -> a)));
         watch.stop();
         System.out.println("It took " + watch.getTotalTimeSeconds() + " to replay");
 

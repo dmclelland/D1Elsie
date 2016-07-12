@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.springframework.util.StopWatch;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -68,10 +69,13 @@ public class PerfTest2 {
             (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
     private void setup() throws Exception {
-        aes = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
         SimpleEventBus eventBus = new SimpleEventBus();
 
         repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, Aggregate1.newInstanceFactory(), initialisationFactory);
+
+
+        aes = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
+
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
         lst.add(new MyCommandHandler1(repo1));

@@ -72,7 +72,7 @@ public class AggregateRepository<A extends Aggregate> {
     }
 
 
-    final A handleAggregateInitialisedEvent(AggregateInitialisedEvent event) {
+    public final A handleAggregateInitialisedEvent(AggregateInitialisedEvent event) {
         A aggregate = aggregateInstanceFactory.get();
         initialise(aggregate, event);
 
@@ -95,7 +95,7 @@ public class AggregateRepository<A extends Aggregate> {
         aggregate.setRepository(this);
     }
 
-    final A find(String id) {
+    public final A find(String id) {
         return cache.get(id);
     }
 
@@ -109,7 +109,7 @@ public class AggregateRepository<A extends Aggregate> {
         }
     }
 
-    final String getAggregateClassName() {
+    public final String getAggregateClassName() {
         return aggregateClassName;
     }
 }
