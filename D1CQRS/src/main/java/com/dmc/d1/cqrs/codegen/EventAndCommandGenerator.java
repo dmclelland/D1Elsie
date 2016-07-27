@@ -4,10 +4,7 @@ import com.dmc.d1.cqrs.event.AggregateEvent;
 import com.dmc.d1.cqrs.event.AggregateEventAbstract;
 import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.JournalableAggregateEvent;
-import com.dmc.d1.cqrs.util.Poolable;
-import com.dmc.d1.cqrs.util.Resettable;
 import com.dmc.d1.cqrs.util.StateEquals;
-import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import com.dmc.d1.domain.Id;
 import com.squareup.javapoet.*;
 import net.openhft.chronicle.core.io.IORuntimeException;
@@ -490,11 +487,11 @@ class EventAndCommandGenerator {
 
         if ("object".equals(fieldData.chronicleType)) {
 
-            // return basket instanceof Journalable ? basket : pooled ?  BasketBuilder.copyBuilder(basket).buildPooledJournalable() : BasketBuilder.copyBuilder(basket).buildJournalable();
+            // return basket instanceof Journalable ? basket : pooled ?  BasketBuilder.copyBuilder(basket).buildJournalable() : BasketBuilder.copyBuilder(basket).buildJournalable();
 
             builder.addStatement("return $L instanceof $T ? " +
-                            "$L :pooled ?  $T.copyBuilder($L).buildPooledJournalable() : $T.copyBuilder($L).buildJournalable()",
-                    key, Journalable.class, key, builderClass, key, builderClass, key);
+                            "$L :$T.copyBuilder($L).buildJournalable()",
+                    key, Journalable.class, key, builderClass, key);
         } else if ("sequence".equals(fieldData.chronicleType)) {
 
             if ("java.util.Map".equals(fieldData.className)) {
@@ -504,8 +501,8 @@ class EventAndCommandGenerator {
 
                 builder.addStatement("$T newMap = new $T()", fieldData.type, fieldData.concreteType);
 
-                builder.addStatement("$L.forEach((key, val) -> newMap.put(key, val instanceof $T ? val : pooled ?  $T.copyBuilder(val).buildPooledJournalable() : $T.copyBuilder(val).buildJournalable()))",
-                        key, Journalable.class, builderClass, builderClass);
+                builder.addStatement("$L.forEach((key, val) -> newMap.put(key, val instanceof $T ? val : $T.copyBuilder(val).buildJournalable()))",
+                        key, Journalable.class, builderClass);
                 builder.addStatement("return newMap");
             } else {
                 builder.beginControlFlow("if (!$L.isEmpty() && $L.get(0) instanceof Journalable)", key, key);
@@ -514,8 +511,8 @@ class EventAndCommandGenerator {
                 builder.addStatement("$T newList = new $T()", fieldData.type, fieldData.concreteType);
 
 
-                builder.addStatement("$L.forEach((val) -> newList.add(val instanceof $T ? val :  pooled ?  $T.copyBuilder(val).buildPooledJournalable() : $T.copyBuilder(val).buildJournalable()))",
-                        key, Journalable.class, builderClass, builderClass);
+                builder.addStatement("$L.forEach((val) -> newList.add(val instanceof $T ? val : $T.copyBuilder(val).buildJournalable()))",
+                        key, Journalable.class, builderClass);
                 builder.addStatement("return newList");
 
             }
@@ -567,23 +564,10 @@ class EventAndCommandGenerator {
                 .addField(SUPPLIER)
                 .addMethod(newInstanceFactoryMethod);
 
-        eventBuilder.addField(FieldSpec.builder(TypeName.BOOLEAN, "pooled", Modifier.PRIVATE).build());
-
-        eventBuilder.addMethod(
-                MethodSpec.methodBuilder("setPooled")
-                        .addModifiers(Modifier.PUBLIC)
-                        .addParameter(TypeName.BOOLEAN, "pooled")
-                        .addStatement("this.pooled = pooled")
-                        .build()
-        );
-
-
         if (Type.EVENT == type) {
             eventBuilder.superclass(JournalableAggregateEvent.class);
         } else if (Type.DOMAIN == type) {
-            eventBuilder.addSuperinterface(Resettable.class);
             eventBuilder.addSuperinterface(Marshallable.class);
-            eventBuilder.addSuperinterface(Poolable.class);
         }
 
 
@@ -630,13 +614,10 @@ class EventAndCommandGenerator {
 
 
                     if ("java.util.Map".equals(fieldData.className)) {
-
-                        readMarshallableMethod.addCode("$T e = $T.allocateObject($T.class.getName());", parameterizedType, ThreadLocalObjectPool.class, parameterizedType);
-                        readMarshallableMethod.addCode("$T o = v.object(e,$T.class);", parameterizedType, parameterizedType);
+                        readMarshallableMethod.addCode("$T o = v.object($T.class);", parameterizedType, parameterizedType);
                         readMarshallableMethod.addCode("l.put(o.get$L(), o);}", capitalize(fieldData.keyName));
                     } else {
-                        readMarshallableMethod.addCode("$T e = $T.allocateObject($T.class.getName());", parameterizedType, ThreadLocalObjectPool.class, parameterizedType);
-                        readMarshallableMethod.addCode("l.add(v.object(e, $T.class));}", parameterizedType);
+                        readMarshallableMethod.addCode("l.add(v.object($T.class));}", parameterizedType);
                     }
                     readMarshallableMethod.addCode(" });\n");
 
@@ -668,16 +649,14 @@ class EventAndCommandGenerator {
                     ClassVo domain = vos.get(name);
 
                     if (domain != null) {
-                        readMarshallableMethod.addStatement("$T $L = $T.allocateObject($T.class.getName())", fieldData.type, key, ThreadLocalObjectPool.class, fieldData.type);
-                        readMarshallableMethod.addStatement("wireIn.read(() -> $S).object($L, $T.class)", key, key, fieldData.type);
-                        readMarshallableMethod.addStatement("this.$L=$L", key, key);
+                        //wireIn.read(() -> "basket").object(Basket.class, this, (o,b) -> o.basket = b);
+                        readMarshallableMethod.addStatement("wireIn.read(() -> $S).object($T.class, this, (o,b) -> o.$L = b)", key, fieldData.type, key);
                         writeMarshallableMethod.addStatement("wireOut.write(()-> $S).object($T.class, this.$L)", key, fieldData.type, key);
-
                     } else {
                         //if id then treat as string
-                        if(Id.class.isAssignableFrom(Class.forName(name))){
-                            readMarshallableMethod.addStatement("wireIn.read(()-> $S).text(this, (o, b) -> o.$L = $T.from(b))", key,  key, fieldData.type);
-                            writeMarshallableMethod.addStatement("wireOut.write(()-> $S).text($L.asString())", key,  key);
+                        if (Id.class.isAssignableFrom(Class.forName(name))) {
+                            readMarshallableMethod.addStatement("wireIn.read(()-> $S).text(this, (o, b) -> o.$L = $T.from(b))", key, key, fieldData.type);
+                            writeMarshallableMethod.addStatement("wireOut.write(()-> $S).text($L.asString())", key, key);
                         }
                     }
 
@@ -746,17 +725,6 @@ class EventAndCommandGenerator {
                             .addAnnotation(Override.class)
                             .addStatement("return $N", key)
                             .returns(fieldData.type)
-                            .build()
-            );
-        }
-
-        if (Type.DOMAIN == type) {
-            eventBuilder.addMethod(
-                    MethodSpec.methodBuilder("getClassName")
-                            .addModifiers(Modifier.PUBLIC)
-                            .addAnnotation(Override.class)
-                            .addStatement("return CLASS_NAME")
-                            .returns(String.class)
                             .build()
             );
         }
@@ -976,15 +944,7 @@ class EventAndCommandGenerator {
                 .returns(vo.initialisationEvent ? ClassName.get(AggregateInitialisedEvent.class) : interfaceClass);
 
 
-        MethodSpec.Builder buildPooledJournalableMethod = MethodSpec.methodBuilder("buildPooledJournalable")
-                .addModifiers(Modifier.PUBLIC)
-                .returns(vo.initialisationEvent ? ClassName.get(AggregateInitialisedEvent.class) : interfaceClass);
-
-
         buildJournalableMethod.addStatement("$T journalable =  $T.newInstanceFactory().get()", journalableClass, journalableClass);
-        buildJournalableMethod.addStatement("journalable.setPooled(false)");
-        buildPooledJournalableMethod.addStatement("$T journalable = $T.allocateObject($T.CLASS_NAME)", journalableClass, ThreadLocalObjectPool.class, journalableClass);
-        buildPooledJournalableMethod.addStatement("journalable.setPooled(true)");
 
         CodeBlock.Builder journalableSet = CodeBlock.builder().add("journalable.set(");
 
@@ -1105,8 +1065,6 @@ class EventAndCommandGenerator {
         buildJournalableMethod.addCode(journalableSet.build());
         buildJournalableMethod.addStatement("return journalable");
 
-        buildPooledJournalableMethod.addCode(journalableSet.build());
-        buildPooledJournalableMethod.addStatement("return journalable");
 
         buildImmutableMethod.addCode(immutableNew.build());
         buildImmutableMethod.addStatement("return immutable");
@@ -1120,7 +1078,6 @@ class EventAndCommandGenerator {
 
         builderBuilder.addMethod(startBuilding.build());
         builderBuilder.addMethod(buildJournalableMethod.build());
-        builderBuilder.addMethod(buildPooledJournalableMethod.build());
         builderBuilder.addMethod(buildImmutableMethod.build());
 
         if (vo.updatable)

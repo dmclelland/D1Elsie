@@ -44,6 +44,7 @@ public class AggregateTest {
         Aggregate1 aggregate1 = aggregate1Repo.create(id1.asString());
         Aggregate2 aggregate2 = aggregate2Repo.create(id2.asString());
 
+
         aggregate1.doSomething(5, 12);
         aggregate2.doSomething("Hello", "Goodbye");
 

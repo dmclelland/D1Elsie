@@ -23,15 +23,15 @@ public class Aggregate1 extends Aggregate<Aggregate1> {
 
 
     public void doSomething(int i1, int i2) {
-        apply(IntUpdatedEvent1Builder.startBuilding(getId()).i(i1).buildPooledJournalable());
-        apply(IntUpdatedEvent2Builder.startBuilding(getId()).i(i2).buildPooledJournalable());
+        apply(IntUpdatedEvent1Builder.startBuilding(getId()).i(i1).buildJournalable());
+        apply(IntUpdatedEvent2Builder.startBuilding(getId()).i(i2).buildJournalable());
     }
 
     public void doSomething2(String str) {
 
         String nestedId = generateNestedId(getId());
         apply(HandledByExternalHandlersEventBuilder.startBuilding(getId())
-                .nestedId(nestedId).str(str).buildPooledJournalable());
+                .nestedId(nestedId).str(str).buildJournalable());
 
     }
 
@@ -39,7 +39,7 @@ public class Aggregate1 extends Aggregate<Aggregate1> {
     public void triggerExceptionInNestedAggregate(String str) {
         String nestedId = generateNestedId(getId());
         apply(TriggerExceptionInNestedAggregateEventBuilder.startBuilding(getId())
-                .nestedId(nestedId).str(str).buildPooledJournalable());
+                .nestedId(nestedId).str(str).buildJournalable());
     }
 
     private String generateNestedId(String id) {

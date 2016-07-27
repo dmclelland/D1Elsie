@@ -4,17 +4,21 @@ import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.JournalableAggregateEvent;
-import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.queue.ChronicleQueueBuilder;
 import net.openhft.chronicle.queue.ExcerptAppender;
 import net.openhft.chronicle.queue.ExcerptTailer;
 import net.openhft.chronicle.wire.DocumentContext;
+import org.reflections.Reflections;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -28,8 +32,6 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
     private final ExcerptAppender appender;
     private final ExcerptTailer tailer;
     private final String path;
-
-    private final Map<String, AggregateRepository> repos = new HashMap<>();
 
     public ChronicleAggregateEventStore(String path) throws IOException {
         chronicle = ChronicleQueueBuilder.single(path)
@@ -56,7 +58,6 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
         }
     }
 
-
     @Override
     public void replay(Map<String, AggregateRepository> repos) {
         tailer.toStart();
@@ -66,7 +67,9 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
         Aggregate agg;
         while ((classIdentifier = tailer.readText()) != null) {
             try (DocumentContext documentContext = tailer.readingDocument()) {
-                JournalableAggregateEvent e = ThreadLocalObjectPool.allocateObject(classIdentifier);
+
+                JournalableAggregateEvent e = NEW_INSTANCE_FACTORIES.get(classIdentifier).get();
+
                 e.readMarshallable(documentContext.wire());
 
                 repo = repos.get(e.getAggregateClassName());
@@ -86,5 +89,27 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
     public String getChroniclePath() {
         return path;
     }
+
+    private static Map<String,Supplier<? extends JournalableAggregateEvent>> NEW_INSTANCE_FACTORIES
+            = new HashMap<>();
+
+    static {
+        try {
+            Reflections ref = new Reflections("com.dmc.d1");
+            Set<Class<? extends JournalableAggregateEvent>> journalableSet = ref.getSubTypesOf(JournalableAggregateEvent.class);
+            for (Class<? extends JournalableAggregateEvent> journalable : journalableSet) {
+                if (!(Modifier.isAbstract(journalable.getModifiers()) || Modifier.isInterface(journalable.getModifiers()))) {
+                    Method m = journalable.getDeclaredMethod("newInstanceFactory", null);
+                    m.setAccessible(true);
+                    Supplier<? extends JournalableAggregateEvent> newInstanceFactory = (Supplier<? extends JournalableAggregateEvent>) m.invoke(null);
+                    NEW_INSTANCE_FACTORIES.put(newInstanceFactory.get().getClassName(), newInstanceFactory);
+
+                }
+            }
+        }catch(Exception e){
+            throw new RuntimeException("Unable to set up thread local object pool", e);
+        }
+    }
+
 
 }

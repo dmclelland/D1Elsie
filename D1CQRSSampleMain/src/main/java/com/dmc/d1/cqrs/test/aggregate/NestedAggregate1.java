@@ -25,12 +25,12 @@ public class NestedAggregate1 extends Aggregate<NestedAggregate1> {
 
 
     public void doSomething(String nestedProperty) {
-        apply(NestedUpdatedEvent1Builder.startBuilding(getId()).str(nestedProperty).buildPooledJournalable());
+        apply(NestedUpdatedEvent1Builder.startBuilding(getId()).str(nestedProperty).buildJournalable());
     }
 
     public void doSomethingCausingError(String nestedProperty) {
-        apply(NestedUpdatedEvent1Builder.startBuilding(getId()).str(nestedProperty).buildPooledJournalable());
-        apply(TriggerExceptionNestedEventBuilder.startBuilding(getId()).buildPooledJournalable());
+        apply(NestedUpdatedEvent1Builder.startBuilding(getId()).str(nestedProperty).buildJournalable());
+        apply(TriggerExceptionNestedEventBuilder.startBuilding(getId()).buildJournalable());
     }
 
 

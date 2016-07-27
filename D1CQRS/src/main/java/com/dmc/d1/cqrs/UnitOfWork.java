@@ -1,6 +1,5 @@
 package com.dmc.d1.cqrs;
 
-import com.dmc.d1.cqrs.util.ThreadLocalObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,8 +53,6 @@ class UnitOfWork {
 
     private static void clear() {
         threadLocal.get().clear();
-
-        ThreadLocalObjectPool.clear();
     }
 
     //if root then commit -> unless a nested aggregate flagged that the aggregates should be rolled back

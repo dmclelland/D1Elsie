@@ -38,7 +38,7 @@ public class WaveAggregate extends Aggregate<WaveAggregate> {
                 .buildJournalable();
 
         apply(WaveCreatedEventBuilder.startBuilding(waveId.asString())
-                .wave(wave).buildPooledJournalable());
+                .wave(wave).buildJournalable());
 
         Basket theoretical = basketService.createBasket(instrumentId, quantity);
         //optimise

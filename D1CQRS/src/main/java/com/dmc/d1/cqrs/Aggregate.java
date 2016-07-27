@@ -20,8 +20,6 @@ public abstract class Aggregate<A extends Aggregate<A>> {
     private static final Logger LOG = LoggerFactory.getLogger(Aggregate.class);
 
     private final List<AggregateEvent> uncommittedEvents = new ArrayList<>();
-
-
     private AnnotatedAggregateEventHandlerInvoker eventHandler;
     private EventBus eventBus;
     private AggregateEventStore<AggregateEvent> aggregateEventStore;

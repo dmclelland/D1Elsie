@@ -21,15 +21,15 @@ public class Aggregate2 extends Aggregate<Aggregate2> {
 
 
     public void doSomething(String s1, String s2) {
-        apply(StringUpdatedEvent1Builder.startBuilding(getId()).str(s1).buildPooledJournalable());
-        apply(StringUpdatedEvent2Builder.startBuilding(getId()).str(s2).buildPooledJournalable());
+        apply(StringUpdatedEvent1Builder.startBuilding(getId()).str(s1).buildJournalable());
+        apply(StringUpdatedEvent2Builder.startBuilding(getId()).str(s2).buildJournalable());
 
     }
 
     public void doSomethingWhichCausesException(String s1, String s2) {
-        apply(StringUpdatedEvent1Builder.startBuilding(getId()).str(s1).buildPooledJournalable());
-        apply(StringUpdatedEvent2Builder.startBuilding(getId()).str(s2).buildPooledJournalable());
-        apply(TriggerExceptionEventBuilder.startBuilding(getId()).buildPooledJournalable());
+        apply(StringUpdatedEvent1Builder.startBuilding(getId()).str(s1).buildJournalable());
+        apply(StringUpdatedEvent2Builder.startBuilding(getId()).str(s2).buildJournalable());
+        apply(TriggerExceptionEventBuilder.startBuilding(getId()).buildJournalable());
     }
 
     @EventHandler
