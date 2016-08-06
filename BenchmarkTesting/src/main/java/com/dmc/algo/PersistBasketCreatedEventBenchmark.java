@@ -31,14 +31,17 @@
 
 package com.dmc.algo;
 
+import com.dmc.algo.nostrings.BasketCreatedEventNoStringsJournalable;
+import com.dmc.algo.nostrings.BasketNoStringJournalable;
+import com.dmc.algo.nostrings.ChronicleAggregateEventStoreNoStrings;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
 import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
 import com.dmc.d1.cqrs.test.domain.MyId;
+import com.dmc.d1.domain.TradeDirection;
 import com.dmc.d1.test.domain.Basket;
 import com.dmc.d1.test.event.BasketCreatedEvent;
 import com.dmc.d1.test.event.BasketCreatedEventBuilder;
 import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.profile.GCProfiler;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
@@ -56,12 +59,18 @@ public class PersistBasketCreatedEventBenchmark {
 
     AggregateEventStore chronicleAES;
 
+    ChronicleAggregateEventStoreNoStrings chronicleAESNoStrings;
+
+    ChronicleAggregateEventStoreNoStrings chronicleAESNoStringsAM;
 
     @Setup
     public void setUp() throws Exception {
         String chroniclePath = System.getProperty("java.io.tmpdir") + "/d1-events-" + System.currentTimeMillis();
         chronicleAES = new ChronicleAggregateEventStore(chroniclePath);
-     }
+        chronicleAESNoStrings = new ChronicleAggregateEventStoreNoStrings(chroniclePath + "-noStrings");
+        chronicleAESNoStringsAM = new ChronicleAggregateEventStoreNoStrings(chroniclePath + "-noStringsAM");
+
+    }
 
     int rnd = ((this.hashCode() ^ (int) System.nanoTime()));
 
@@ -78,6 +87,22 @@ public class PersistBasketCreatedEventBenchmark {
 
 
     @Benchmark
+    public BasketCreatedEventNoStringsJournalable persistBasketCreatedAvgSize10EventNoStrings() {
+        rnd = xorShift(rnd);
+
+        BasketNoStringJournalable basket = TestBasketBuilder.createBasketNoStrings(rnd, 10);
+        BasketCreatedEventNoStringsJournalable event = new BasketCreatedEventNoStringsJournalable();
+
+        event.aggregateId = rnd;
+        event.basket = basket;
+        event.tradeDirection = TradeDirection.BUY;
+
+        chronicleAESNoStrings.add(event);
+        return event;
+    }
+
+
+    @Benchmark
     public BasketCreatedEvent persistBasketCreatedAvgSize100Event() {
         rnd = xorShift(rnd);
         MyId id = MyId.from("" + rnd);
@@ -86,6 +111,23 @@ public class PersistBasketCreatedEventBenchmark {
         chronicleAES.add(event);
         return event;
     }
+
+
+    @Benchmark
+    public BasketCreatedEventNoStringsJournalable persistBasketCreatedAvgSize100EventNoStrings() {
+        rnd = xorShift(rnd);
+
+        BasketNoStringJournalable basket = TestBasketBuilder.createBasketNoStrings(rnd, 100);
+        BasketCreatedEventNoStringsJournalable event = new BasketCreatedEventNoStringsJournalable();
+
+        event.aggregateId = rnd;
+        event.basket = basket;
+        event.tradeDirection = TradeDirection.BUY;
+
+        chronicleAESNoStrings.add(event);
+        return event;
+    }
+
 
     @Benchmark
     public BasketCreatedEvent persistBasketCreatedAvgSize500Event() {
@@ -98,7 +140,6 @@ public class PersistBasketCreatedEventBenchmark {
     }
 
 
-
     private static int xorShift(int x) {
         x ^= x << 6;
         x ^= x >>> 21;
@@ -106,11 +147,11 @@ public class PersistBasketCreatedEventBenchmark {
         return x;
     }
 
-//-Xmx3G -Xms3g -XX:NewRatio=1 -XX:+PrintGC -XX:+DoEscapeAnalysis -XX:=Inline
+    //-Xmx3G -Xms3g -XX:NewRatio=1 -XX:+PrintGC -XX:+DoEscapeAnalysis -XX:=Inline
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
                 .include(".*" + PersistBasketCreatedEventBenchmark.class.getSimpleName() + ".*")
-                .addProfiler(GCProfiler.class)
+                //.addProfiler(GCProfiler.class)
                 //.jvmArgsAppend("-Xmx2G", "-Xms2G", "-XX:NewRatio=1", "-XX:+PrintGC", "-XX:+DoEscapeAnalysis", "-XX:+Inline")
                 .jvmArgsAppend("-Xmx4G", "-Xms4G", "-XX:NewRatio=1", "-XX:+PrintGC")
 
