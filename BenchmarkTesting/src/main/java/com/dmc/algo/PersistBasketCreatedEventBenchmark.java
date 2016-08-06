@@ -61,15 +61,12 @@ public class PersistBasketCreatedEventBenchmark {
 
     ChronicleAggregateEventStoreNoStrings chronicleAESNoStrings;
 
-    ChronicleAggregateEventStoreNoStrings chronicleAESNoStringsAM;
 
     @Setup
     public void setUp() throws Exception {
         String chroniclePath = System.getProperty("java.io.tmpdir") + "/d1-events-" + System.currentTimeMillis();
         chronicleAES = new ChronicleAggregateEventStore(chroniclePath);
         chronicleAESNoStrings = new ChronicleAggregateEventStoreNoStrings(chroniclePath + "-noStrings");
-        chronicleAESNoStringsAM = new ChronicleAggregateEventStoreNoStrings(chroniclePath + "-noStringsAM");
-
     }
 
     int rnd = ((this.hashCode() ^ (int) System.nanoTime()));
