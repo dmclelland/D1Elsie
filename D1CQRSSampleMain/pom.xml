@@ -19,9 +19,10 @@
         </dependency>
         <dependency>
             <groupId>com.dmc.d1</groupId>
-            <artifactId>d1-cqrs-sample-events</artifactId>
+            <artifactId>d1-cqrs-sample-configuration</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
@@ -33,4 +34,52 @@
             <version>4.2.6.RELEASE</version>
         </dependency>
     </dependencies>
+
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generateTestEvents</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>com.dmc.d1.cqrs.codegen.CodeGen</mainClass>
+                            <arguments>
+                                <argument>EVENT</argument>
+                                <argument>NOT_REQUIRED</argument>
+                                <argument>${project.parent.basedir}/D1CQRSSampleMain/target/generated-sources</argument>
+                                <argument>NOT_REQUIRED</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>target/generated-sources</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

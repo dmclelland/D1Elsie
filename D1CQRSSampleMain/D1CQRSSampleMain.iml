@@ -5,7 +5,11 @@
     <output-test url="file://$MODULE_DIR$/target/test-classes" />
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
-      <excludeFolder url="file://$MODULE_DIR$/target" />
+      <sourceFolder url="file://$MODULE_DIR$/src/main/resources" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/target/generated-sources" isTestSource="false" generated="true" />
+      <excludeFolder url="file://$MODULE_DIR$/target/classes" />
+      <excludeFolder url="file://$MODULE_DIR$/target/maven-archiver" />
+      <excludeFolder url="file://$MODULE_DIR$/target/maven-status" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
@@ -16,17 +20,16 @@
     <orderEntry type="library" name="Maven: com.google.code.findbugs:annotations:2.0.1" level="project" />
     <orderEntry type="library" name="Maven: org.jdom:jdom2:2.0.6" level="project" />
     <orderEntry type="library" name="Maven: com.squareup:javapoet:1.7.0" level="project" />
-    <orderEntry type="library" name="Maven: net.openhft:chronicle-queue:4.4.3" level="project" />
-    <orderEntry type="library" name="Maven: net.openhft:chronicle-wire:1.6.2" level="project" />
-    <orderEntry type="library" name="Maven: net.openhft:chronicle-bytes:1.6.1" level="project" />
-    <orderEntry type="library" name="Maven: net.openhft:chronicle-threads:1.6.1" level="project" />
+    <orderEntry type="library" name="Maven: net.openhft:chronicle-queue:4.5.5" level="project" />
+    <orderEntry type="library" name="Maven: net.openhft:chronicle-wire:1.7.5" level="project" />
+    <orderEntry type="library" name="Maven: net.openhft:chronicle-bytes:1.7.3" level="project" />
+    <orderEntry type="library" name="Maven: net.openhft:chronicle-threads:1.7.2" level="project" />
     <orderEntry type="library" name="Maven: net.openhft:affinity:3.0.5" level="project" />
     <orderEntry type="library" name="Maven: net.java.dev.jna:jna:4.2.1" level="project" />
     <orderEntry type="library" name="Maven: net.java.dev.jna:jna-platform:4.2.1" level="project" />
-    <orderEntry type="library" name="Maven: net.openhft:chronicle-core:1.6.2" level="project" />
+    <orderEntry type="library" name="Maven: net.openhft:chronicle-core:1.7.3" level="project" />
     <orderEntry type="library" name="Maven: com.intellij:annotations:12.0" level="project" />
     <orderEntry type="library" name="Maven: com.lmax:disruptor:3.3.4" level="project" />
-    <orderEntry type="module" module-name="D1CQRSSampleEvents" />
     <orderEntry type="module" module-name="D1CQRSSampleConfiguration" />
     <orderEntry type="library" name="Maven: org.springframework:spring-test:4.2.6.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-core:4.2.6.RELEASE" level="project" />

@@ -29,12 +29,10 @@
         <module>D1Oms</module>
         <module>D1AlgoCQRSConfiguration</module>
         <module>D1AlgoCQRSMain</module>
-        <module>D1AlgoCQRSEvents</module>
         <module>D1AlgoCQRSHandlers</module>
         <module>D1AlgoCQRSTests</module>
         <module>D1CQRSSampleConfiguration</module>
         <module>D1CQRSSampleMain</module>
-        <module>D1CQRSSampleEvents</module>
         <module>D1CQRSSampleHandlers</module>
         <module>D1CQRSSampleTests</module>
         <module>BenchmarkTesting</module>
