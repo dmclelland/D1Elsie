@@ -28,9 +28,7 @@
         <module>D1Algo</module>
         <module>D1Oms</module>
         <module>D1AlgoCQRSMain</module>
-        <module>D1AlgoCQRSTests</module>
         <module>D1CQRSSampleMain</module>
-        <module>D1CQRSSampleTests</module>
         <module>BenchmarkTesting</module>
     </modules>
 
@@ -62,6 +60,14 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.hdrhistogram</groupId>
+            <artifactId>HdrHistogram</artifactId>
+            <version>1.0.9</version>
             <scope>test</scope>
         </dependency>
 
