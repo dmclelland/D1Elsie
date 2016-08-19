@@ -30,7 +30,6 @@
     <orderEntry type="library" name="Maven: net.openhft:chronicle-core:1.7.3" level="project" />
     <orderEntry type="library" name="Maven: com.intellij:annotations:12.0" level="project" />
     <orderEntry type="library" name="Maven: com.lmax:disruptor:3.3.4" level="project" />
-    <orderEntry type="module" module-name="D1CQRSSampleConfiguration" />
     <orderEntry type="library" name="Maven: org.springframework:spring-test:4.2.6.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-core:4.2.6.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: com.google.guava:guava:19.0" level="project" />

@@ -36,7 +36,7 @@ public class SimpleCommandBus<T extends AbstractCommandHandler<? extends Aggrega
                             && Aggregate.class.isAssignableFrom(m.getParameterTypes()[1])){
                         commandToHandler.put(m.getParameterTypes()[0].getName(), commandHandler);
                     } else {
-                        throw new IllegalStateException("A command handler must have a two arguments of type "
+                        throw new IllegalStateException("A command handler must have two arguments of type "
                                 + Command.class.getName() + " and " + Aggregate.class.getName());
                     }
                 }
@@ -44,8 +44,6 @@ public class SimpleCommandBus<T extends AbstractCommandHandler<? extends Aggrega
         }
     }
 
-
-    //TODO locking policy needs to be established
     @Override
     public void dispatch(Command command) {
        T handler =  commandToHandler.get(command.getClassName());

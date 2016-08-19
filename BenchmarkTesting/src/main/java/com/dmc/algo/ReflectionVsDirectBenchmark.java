@@ -27,6 +27,14 @@ public class ReflectionVsDirectBenchmark {
         return i;
     }
 
+
+    Method f;
+
+    @Setup
+    public void setup() throws Exception{
+        f = this.getClass().getMethod("a");
+    }
+
     @Benchmark
     public int directCalcTest() {
         return a();
@@ -37,7 +45,6 @@ public class ReflectionVsDirectBenchmark {
     public Object reflectiveCalcTest() throws Exception {
 
 
-        Method f = this.getClass().getMethod("a");
 
         return f.invoke(this);
 

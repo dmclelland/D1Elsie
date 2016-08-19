@@ -34,9 +34,7 @@ package com.dmc.algo;
 import com.dmc.d1.cqrs.AbstractCommandHandler;
 import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.AggregateRepository;
-import com.dmc.d1.cqrs.command.Command;
-import com.dmc.d1.cqrs.command.CommandBus;
-import com.dmc.d1.cqrs.command.SimpleCommandBus;
+import com.dmc.d1.cqrs.command.*;
 import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
@@ -61,12 +59,9 @@ import java.util.function.Function;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 2, time = 10, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 5, time = 10, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 5)
-
-
-
+@Warmup(iterations = 2, time = 5, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 5, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3)
 public class CreateComplexAggregateCommandBenchmark {
 
     CommandBus commandBus;
@@ -95,7 +90,7 @@ public class CreateComplexAggregateCommandBenchmark {
         lst.add(new ComplexCommandHandler(repo1));
 
         commandBus = new SimpleCommandBus<>(lst);
-
+        //commandBus = new StripedLockCommandBus<>(new SimpleCommandBus<>(lst));
     }
 
     int rnd = ((this.hashCode() ^ (int) System.nanoTime()));

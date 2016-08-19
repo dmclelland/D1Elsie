@@ -1,10 +1,10 @@
 package com.dmc.d1.cqrs.codegen;
 
+import com.dmc.d1.cqrs.AbstractCommandHandler;
 import com.dmc.d1.cqrs.Aggregate;
+import com.dmc.d1.cqrs.AnnotatedCommandHandlerInvoker;
 import com.dmc.d1.cqrs.Utils;
 import com.dmc.d1.cqrs.annotations.CommandHandler;
-import com.dmc.d1.cqrs.AbstractCommandHandler;
-import com.dmc.d1.cqrs.AnnotatedCommandHandlerInvoker;
 import com.dmc.d1.cqrs.command.Command;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -20,15 +20,37 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Created by davidclelland on 20/05/2016.
  */
-class CommandHandlerGenerator {
+public class CommandHandlerGenerator {
 
     private final String rootPackageToScan;
     private final String generatedSourceDirectory;
     private final String generatedPackageName;
+
+
+    public static void main(String[] args) {
+        checkState(args.length == 3);
+
+        String rootPackageToScan = args[0];
+        String generatedSourceDirectory = args[1];
+        String generatedPackageName = args[2];
+
+        try {
+
+            CommandHandlerGenerator generator = new CommandHandlerGenerator(rootPackageToScan,
+                    generatedSourceDirectory,
+                    generatedPackageName);
+
+            generator.generate();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to generate code", e);
+        }
+    }
 
     CommandHandlerGenerator(String rootPackageToScan,
                             String generatedSourceDirectory,

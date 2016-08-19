@@ -20,15 +20,36 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Created by davidclelland on 20/05/2016.
  */
-class EventHandlerGenerator {
+public class EventHandlerGenerator {
 
     private final String rootPackageToScan;
     private final String generatedSourceDirectory;
     private final String generatedPackageName;
+
+    public static void main(String[] args) {
+        checkState(args.length == 3);
+
+        String rootPackageToScan = args[0];
+        String generatedSourceDirectory = args[1];
+        String generatedPackageName = args[2];
+
+        try {
+
+            EventHandlerGenerator generator = new EventHandlerGenerator(
+                    rootPackageToScan, generatedSourceDirectory, generatedPackageName);
+
+            generator.generate();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to generate code", e);
+        }
+    }
+
 
     EventHandlerGenerator(String rootPackageToScan,
                           String generatedSourceDirectory,

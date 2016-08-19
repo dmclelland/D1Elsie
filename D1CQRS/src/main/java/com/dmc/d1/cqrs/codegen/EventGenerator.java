@@ -18,39 +18,59 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.lang.model.element.Modifier;
 import java.io.File;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Created by davidclelland on 20/05/2016.
  */
-class EventAndCommandGenerator {
+public class EventGenerator {
+
+
+    public static void main(String[] args) {
+        checkState(args.length == 2);
+
+        String configFilePath = args[0];
+        String generatedSourceDirectory = args[1];
+
+        try {
+
+            EventGenerator generator = new EventGenerator(configFilePath,
+                    generatedSourceDirectory);
+
+            generator.generate();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to generate code", e);
+        }
+    }
 
     enum Type {
-        EVENT, COMMAND, DOMAIN
+        EVENT, DOMAIN
     }
 
     private final String generatedSourceDirectory;
+    private final String configFilePath;
 
 
-    EventAndCommandGenerator(
-            String generatedSourceDirectory) {
-
+    EventGenerator(
+            String configFilePath, String generatedSourceDirectory) {
+        this.configFilePath = checkNotNull(configFilePath);
         this.generatedSourceDirectory = checkNotNull(generatedSourceDirectory);
     }
 
     private Map<String, ClassVo> vos = new HashMap<>();
 
     public void generate() throws Exception {
-        URL fileName = getClass().getClassLoader().getResource("CodeGen.xml");
+        File configFile = new File(configFilePath);
 
         SAXBuilder builder = new SAXBuilder();
-        Document doc = builder.build(fileName);
+        Document doc = builder.build(configFile);
 
         Element root = doc.getRootElement();
 
