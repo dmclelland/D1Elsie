@@ -3,7 +3,7 @@ package com.dmc.algo.nostrings;
 import com.dmc.algo.Ric;
 import com.dmc.d1.cqrs.codegen.Journalable;
 import com.dmc.d1.domain.TradeDirection;
-import com.dmc.d1.test.domain.BasketConstituent;
+import com.dmc.d1.sample.domain.BasketConstituent;
 import net.openhft.chronicle.core.io.IORuntimeException;
 import net.openhft.chronicle.wire.Marshallable;
 import net.openhft.chronicle.wire.WireIn;

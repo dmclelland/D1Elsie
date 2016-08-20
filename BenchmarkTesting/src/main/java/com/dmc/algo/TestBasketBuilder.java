@@ -4,7 +4,7 @@ import com.dmc.algo.nostrings.BasketConstituentNoStringJournalable;
 import com.dmc.algo.nostrings.BasketNoStringJournalable;
 import com.dmc.algo.nostrings.SecurityNoStringJournalable;
 import com.dmc.d1.domain.AssetType;
-import com.dmc.d1.test.domain.*;
+import com.dmc.d1.sample.domain.*;
 
 import java.time.LocalDate;
 import java.util.*;

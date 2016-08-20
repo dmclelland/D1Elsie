@@ -3,7 +3,7 @@ package com.dmc.algo.nostrings;
 import com.dmc.algo.Ric;
 import com.dmc.d1.cqrs.codegen.Journalable;
 import com.dmc.d1.domain.AssetType;
-import com.dmc.d1.test.domain.Security;
+import com.dmc.d1.sample.domain.Security;
 import net.openhft.chronicle.core.io.IORuntimeException;
 import net.openhft.chronicle.wire.Marshallable;
 import net.openhft.chronicle.wire.WireIn;

@@ -27,8 +27,8 @@
         <module>D1CQRS</module>
         <module>D1Algo</module>
         <module>D1Oms</module>
-        <module>D1AlgoCQRSMain</module>
-        <module>D1CQRSSampleMain</module>
+        <module>D1AlgoCQRS</module>
+        <module>D1CQRSSample</module>
         <module>BenchmarkTesting</module>
     </modules>
 
