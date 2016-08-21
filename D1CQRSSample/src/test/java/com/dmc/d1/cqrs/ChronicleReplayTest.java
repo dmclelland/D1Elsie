@@ -50,13 +50,11 @@ public class ChronicleReplayTest {
 
         SimpleEventBus eventBus = new SimpleEventBus();
 
+        chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
+
         repo1 = new AggregateRepository(chronicleAES, Aggregate1.class, eventBus, Aggregate1.newInstanceFactory(), initialisationFactory);
         repo2 = new AggregateRepository(chronicleAES, Aggregate2.class, eventBus, Aggregate2.newInstanceFactory(), initialisationFactory);
 
-        List<AggregateRepository> repos = Arrays.asList(repo1, repo2);
-
-
-        chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
 

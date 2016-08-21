@@ -37,7 +37,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>generateTestEvents</id>
+                        <id>generateEvents</id>
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>java</goal>
@@ -52,7 +52,7 @@
                     </execution>
 
                     <execution>
-                        <id>generateTestCommands</id>
+                        <id>generateCommands</id>
                         <phase>process-sources</phase>
                         <goals>
                             <goal>java</goal>
@@ -67,7 +67,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>generateTestEventHandlers</id>
+                        <id>generateEventHandlers</id>
                         <phase>process-sources</phase>
                         <goals>
                             <goal>java</goal>

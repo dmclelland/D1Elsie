@@ -1,6 +1,7 @@
 package com.dmc.d1.cqrs;
 
 
+import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.event.store.AggregateEventStore;
