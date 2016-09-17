@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Created By davidclelland on 01/06/2016.
  * <p>
- * Holds an ordered set of aggregates that require committing or rolling back
+ * Holds a list of aggregates that require committing or rolling back
  * <p>
  * The entire stack is either rolled back or committed - if if any of the aggregates
  * require rolling back then all aggregates are rolled back
@@ -35,8 +35,6 @@ class UnitOfWork {
         protected Aggregates initialValue() {
             return new Aggregates();
         }
-
-
     };
 
     private UnitOfWork() {
@@ -44,9 +42,6 @@ class UnitOfWork {
 
     static <A extends Aggregate> void add(Aggregate aggregate) {
 
-        if (threadLocal.get() == null) {
-            threadLocal.set(new Aggregates());
-        }
         threadLocal.get().list.add(aggregate);
         threadLocal.get().counter++;
     }
@@ -57,29 +52,29 @@ class UnitOfWork {
 
     //if root then commit -> unless a nested aggregate flagged that the aggregates should be rolled back
     static void commit() {
-        if (threadLocal.get() != null) {
-            threadLocal.get().counter--;
-            if (aggregateIsRoot()) {
-                try {
-                    if (threadLocal.get().rollback) {
-                        doRollback();
-                    } else {
-                        for (int i = threadLocal.get().list.size() - 1; i >= 0; i--) {
-                            Aggregate aggregate = threadLocal.get().list.get(i);
-                            aggregate.commit();
-                        }
+
+        threadLocal.get().counter--;
+        if (aggregateIsRoot()) {
+            try {
+                if (threadLocal.get().rollback) {
+                    doRollback();
+                } else {
+                    for (int i = threadLocal.get().list.size() - 1; i >= 0; i--) {
+                        Aggregate aggregate = threadLocal.get().list.get(i);
+                        aggregate.commit();
                     }
-                } catch (Exception e) {
-                    LOG.error("Unexpected error committing aggregates - attempt roll back", e);
-                    try {
-                        doRollback();
-                    } catch (Exception e1) {
-                        LOG.error("Unable to roll back", e1);
-                    }
-                } finally {
-                    clear();
                 }
+            } catch (Exception e) {
+                LOG.error("Unexpected error committing aggregates - attempt roll back", e);
+                try {
+                    doRollback();
+                } catch (Exception e1) {
+                    LOG.error("Unable to roll back", e1);
+                }
+            } finally {
+                clear();
             }
+
         }
     }
 
@@ -88,15 +83,14 @@ class UnitOfWork {
     }
 
     static void rollback() {
-        if (threadLocal.get() != null) {
-            threadLocal.get().counter--;
+        threadLocal.get().counter--;
 
-            if (aggregateIsRoot())
-                doRollback();
-            else {
-                threadLocal.get().rollback = true;
-            }
+        if (aggregateIsRoot())
+            doRollback();
+        else {
+            threadLocal.get().rollback = true;
         }
+
     }
 
     private static void doRollback() {

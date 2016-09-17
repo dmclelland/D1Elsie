@@ -20,17 +20,8 @@ public class ComplexCommandHandler extends AbstractCommandHandler<ComplexAggrega
 
     }
 
-    public ComplexCommandHandler(AggregateRepository repository, AnnotatedCommandHandlerInvoker commandHandlerInvoker) {
-        super(repository, commandHandlerInvoker);
-    }
-
-
     @CommandHandler
     public void handle(CreateComplexAggregateCommand command, ComplexAggregate aggregate) {
-
         aggregate.createBasket(command.getBasket());
     }
-
-
-
 }

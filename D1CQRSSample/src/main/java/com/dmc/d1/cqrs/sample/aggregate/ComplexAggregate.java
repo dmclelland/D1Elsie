@@ -15,8 +15,6 @@ import java.util.function.Supplier;
 @com.dmc.d1.cqrs.annotations.Aggregate
 public class ComplexAggregate extends Aggregate<ComplexAggregate> {
 
-    private static String CLASS_NAME = ComplexAggregate.class.getName();
-
     private Basket basket;
 
     ComplexAggregate() {
