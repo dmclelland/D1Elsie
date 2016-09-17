@@ -2,7 +2,6 @@ package com.dmc.d1.cqrs.codegen;
 
 import com.dmc.d1.cqrs.event.AggregateEvent;
 import com.dmc.d1.cqrs.event.AggregateEventAbstract;
-import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.JournalableAggregateEvent;
 import com.dmc.d1.cqrs.util.StateEquals;
 import com.dmc.d1.domain.Id;
@@ -119,10 +118,6 @@ public class EventGenerator {
         ClassVo vo = new ClassVo();
         String fullClass = element.getAttributeValue("name");
 
-        if (element.getAttribute("initialisationEvent") != null && "true".equals(element.getAttributeValue("initialisationEvent"))) {
-            vo.initialisationEvent = true;
-        }
-
         int pos = fullClass.lastIndexOf(".");
 
         vo.packageName = fullClass.substring(0, pos);
@@ -217,10 +212,7 @@ public class EventGenerator {
                 .addModifiers(Modifier.PUBLIC);
 
         if (Type.EVENT == type) {
-            if (vo.initialisationEvent)
-                interfaceBuilder.addSuperinterface(AggregateInitialisedEvent.class);
-            else
-                interfaceBuilder.addSuperinterface(AggregateEvent.class);
+            interfaceBuilder.addSuperinterface(AggregateEvent.class);
         }
 
         ParameterizedTypeName stateEquals = ParameterizedTypeName.get(ClassName.get(StateEquals.class), interfaceClass);
@@ -961,7 +953,7 @@ public class EventGenerator {
 
         MethodSpec.Builder buildJournalableMethod = MethodSpec.methodBuilder("buildJournalable")
                 .addModifiers(Modifier.PUBLIC)
-                .returns(vo.initialisationEvent ? ClassName.get(AggregateInitialisedEvent.class) : interfaceClass);
+                .returns(interfaceClass);
 
 
         buildJournalableMethod.addStatement("$T journalable =  $T.newInstanceFactory().get()", journalableClass, journalableClass);
@@ -990,7 +982,7 @@ public class EventGenerator {
 
         MethodSpec.Builder buildImmutableMethod = MethodSpec.methodBuilder("buildImmutable")
                 .addModifiers(Modifier.PUBLIC)
-                .returns(vo.initialisationEvent ? ClassName.get(AggregateInitialisedEvent.class) : interfaceClass);
+                .returns(interfaceClass);
 
         CodeBlock.Builder immutableNew = CodeBlock.builder();
 
@@ -1118,7 +1110,6 @@ public class EventGenerator {
     private static class ClassVo {
         String packageName;
         String className;
-        boolean initialisationEvent;
         boolean updatable;
         String cacheKey;
 

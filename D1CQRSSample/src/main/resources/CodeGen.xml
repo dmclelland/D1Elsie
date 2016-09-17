@@ -29,9 +29,6 @@
         </class>
     </domain>
     <event>
-        <class name="com.dmc.d1.sample.event.TestAggregateInitialisedEvent" initialisationEvent="true">
-        </class>
-
         <class name="com.dmc.d1.sample.event.HandledByExternalHandlersEvent">
             <field name="nestedId" type="java.lang.String"/>
             <field name="str" type="java.lang.String"/>

@@ -19,9 +19,6 @@
 
     </domain>
     <event>
-        <class name="com.dmc.d1.algo.event.AlgoAggregateInitialisedEvent" initialisationEvent="true">
-        </class>
-
         <class name="com.dmc.d1.algo.event.WaveCreatedEvent">
             <field name="wave" type="com.dmc.d1.algo.domain.Wave"/>
         </class>

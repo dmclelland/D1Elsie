@@ -6,16 +6,14 @@ import com.dmc.d1.algo.aggregate.PairsAggregate;
 import com.dmc.d1.algo.aggregate.WaveAggregate;
 import com.dmc.d1.algo.commandhandler.PairsCommandHandler;
 import com.dmc.d1.algo.commandhandler.WaveCommandHandler;
-import com.dmc.d1.algo.event.AlgoAggregateInitialisedEventBuilder;
 import com.dmc.d1.cqrs.AbstractCommandHandler;
 import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
-import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
-import com.dmc.d1.cqrs.event.store.AggregateEventStore;
-import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
+import com.dmc.d1.cqrs.AggregateEventStore;
+import com.dmc.d1.cqrs.ChronicleAggregateEventStore;
 import com.dmc.d1.domain.InstrumentId;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,7 +21,6 @@ import org.springframework.context.annotation.Configuration;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * Created by davidclelland on 18/05/2016.
@@ -40,9 +37,6 @@ public class AlgoConfiguration {
     SimpleEventBus<com.dmc.d1.cqrs.event.AbstractEventHandler> eventBus() {
         return new SimpleEventBus<>();
     }
-
-    Function<String, AggregateInitialisedEvent> initialisationEventFactory =
-            (ID) -> AlgoAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
 
     @Bean
@@ -61,7 +55,6 @@ public class AlgoConfiguration {
 
     }
 
-
     @Bean
     AggregateEventStore aggregateEventStore() {
         try {
@@ -73,18 +66,12 @@ public class AlgoConfiguration {
 
     @Bean
     AggregateRepository<WaveAggregate> waveAggregateRepository(WaveAggregate.WaveSupplier waveSupplier) {
-        return new AggregateRepository<>(aggregateEventStore(), WaveAggregate.class, eventBus(), waveSupplier,
-                initialisationEventFactory
-        );
-
-
+        return new AggregateRepository<>(aggregateEventStore(), WaveAggregate.class, eventBus(), waveSupplier);
     }
 
     @Bean
     AggregateRepository<PairsAggregate> pairAggregateRepository() {
-        return new AggregateRepository<>(aggregateEventStore(), PairsAggregate.class, eventBus(), PairsAggregate.newInstanceFactory(),
-                initialisationEventFactory
-        );
+        return new AggregateRepository<>(aggregateEventStore(), PairsAggregate.class, eventBus(), PairsAggregate.newInstanceFactory());
     }
 
 
@@ -98,7 +85,6 @@ public class AlgoConfiguration {
         return new PairsCommandHandler(pairsAggregateRepository);
     }
 
-
     @Bean
     List<? super AbstractCommandHandler<? extends Aggregate>> commandHandlers(WaveCommandHandler waveCommandHandler, PairsCommandHandler pairsCommandHandler) {
 
@@ -108,7 +94,6 @@ public class AlgoConfiguration {
 
         return lst;
     }
-
 
     @Bean
     CommandBus commandBus(List<? extends AbstractCommandHandler<? extends Aggregate>> commandHandlers) {

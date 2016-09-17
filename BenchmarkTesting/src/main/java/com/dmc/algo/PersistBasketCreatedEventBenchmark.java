@@ -33,9 +33,9 @@ package com.dmc.algo;
 
 import com.dmc.algo.nostrings.BasketCreatedEventNoStringsJournalable;
 import com.dmc.algo.nostrings.BasketNoStringJournalable;
-import com.dmc.algo.nostrings.ChronicleAggregateEventStoreNoStrings;
-import com.dmc.d1.cqrs.event.store.AggregateEventStore;
-import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
+import com.dmc.d1.cqrs.ChronicleAggregateEventStoreNoStrings;
+import com.dmc.d1.cqrs.AggregateEventStore;
+import com.dmc.d1.cqrs.ChronicleAggregateEventStore;
 import com.dmc.d1.cqrs.sample.domain.MyId;
 import com.dmc.d1.domain.TradeDirection;
 import com.dmc.d1.sample.domain.Basket;

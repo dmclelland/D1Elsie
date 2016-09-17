@@ -4,10 +4,7 @@ import com.dmc.d1.algo.event.Configuration;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
 import com.dmc.d1.cqrs.event.AbstractEventHandler;
-import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
-import com.dmc.d1.cqrs.event.store.AggregateEventStore;
-import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
 import com.dmc.d1.cqrs.sample.aggregate.Aggregate1;
 import com.dmc.d1.cqrs.sample.aggregate.Aggregate2;
 import com.dmc.d1.cqrs.sample.aggregate.NestedAggregate1;
@@ -19,13 +16,14 @@ import com.dmc.d1.cqrs.sample.domain.MyId;
 import com.dmc.d1.cqrs.sample.domain.MyNestedId;
 import com.dmc.d1.cqrs.sample.event.Aggregate1EventHandler;
 import com.dmc.d1.cqrs.sample.event.Aggregate1EventHandler2;
-import com.dmc.d1.sample.event.TestAggregateInitialisedEventBuilder;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.util.*;
-import java.util.function.Function;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -47,8 +45,6 @@ public class CommandDirectInvokerTest {
 
     DeleteStatic deleteOnClose = DeleteStatic.INSTANCE;
 
-    Function<String, AggregateInitialisedEvent> initialisationFactory =
-            (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
     @Before
     public void setup() throws Exception {
@@ -57,17 +53,15 @@ public class CommandDirectInvokerTest {
 
         aes = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
-        repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, Aggregate1.newInstanceFactory(), initialisationFactory);
-        repo2 = new AggregateRepository(aes, Aggregate2.class, eventBus, Aggregate2.newInstanceFactory(), initialisationFactory);
-        repo3 = new AggregateRepository(aes, NestedAggregate1.class, eventBus, NestedAggregate1.newInstanceFactory(), initialisationFactory);
+        repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, Aggregate1.newInstanceFactory());
+        repo2 = new AggregateRepository(aes, Aggregate2.class, eventBus, Aggregate2.newInstanceFactory());
+        repo3 = new AggregateRepository(aes, NestedAggregate1.class, eventBus, NestedAggregate1.newInstanceFactory());
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
 
         lst.add(new MyCommandHandler1(repo1));
         lst.add(new MyCommandHandler2(repo2));
         lst.add(new MyNestedCommandHandler1(repo3));
-
-
 
         commandBus = new SimpleCommandBus(lst);
 

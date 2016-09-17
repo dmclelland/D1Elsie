@@ -3,10 +3,7 @@ package com.dmc.d1.cqrs;
 import com.dmc.d1.algo.event.Configuration;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
-import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
-import com.dmc.d1.cqrs.event.store.AggregateEventStore;
-import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
 import com.dmc.d1.cqrs.sample.aggregate.Aggregate1;
 import com.dmc.d1.cqrs.sample.aggregate.Aggregate2;
 import com.dmc.d1.cqrs.sample.command.CreateAggregate1Command;
@@ -16,14 +13,12 @@ import com.dmc.d1.cqrs.sample.command.UpdateAggregate2Command;
 import com.dmc.d1.cqrs.sample.commandhandler.MyCommandHandler1;
 import com.dmc.d1.cqrs.sample.commandhandler.MyCommandHandler2;
 import com.dmc.d1.cqrs.sample.domain.MyId;
-import com.dmc.d1.sample.event.TestAggregateInitialisedEventBuilder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.StopWatch;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -37,9 +32,6 @@ public class ChronicleReplayTest {
 
     CommandBus commandBus;
 
-    Function<String, AggregateInitialisedEvent> initialisationFactory =
-            (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
-
     AggregateEventStore chronicleAES;
     AggregateRepository<Aggregate1> repo1;
     AggregateRepository<Aggregate2> repo2;
@@ -52,8 +44,8 @@ public class ChronicleReplayTest {
 
         chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
-        repo1 = new AggregateRepository(chronicleAES, Aggregate1.class, eventBus, Aggregate1.newInstanceFactory(), initialisationFactory);
-        repo2 = new AggregateRepository(chronicleAES, Aggregate2.class, eventBus, Aggregate2.newInstanceFactory(), initialisationFactory);
+        repo1 = new AggregateRepository(chronicleAES, Aggregate1.class, eventBus, Aggregate1.newInstanceFactory());
+        repo2 = new AggregateRepository(chronicleAES, Aggregate2.class, eventBus, Aggregate2.newInstanceFactory());
 
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();

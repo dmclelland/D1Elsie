@@ -6,16 +6,12 @@ import com.dmc.d1.cqrs.command.Command;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.DisruptorCommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
-import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
-import com.dmc.d1.cqrs.event.store.AggregateEventStore;
-import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
 import com.dmc.d1.cqrs.sample.aggregate.ComplexAggregate;
 import com.dmc.d1.cqrs.sample.command.CreateComplexAggregateCommand;
 import com.dmc.d1.cqrs.sample.commandhandler.ComplexCommandHandler;
 import com.dmc.d1.cqrs.sample.domain.MyId;
 import com.dmc.d1.sample.domain.Basket;
-import com.dmc.d1.sample.event.TestAggregateInitialisedEventBuilder;
 import com.lmax.disruptor.*;
 import org.HdrHistogram.Histogram;
 import org.junit.Before;
@@ -26,7 +22,6 @@ import org.springframework.util.StopWatch;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.Function;
 
 import static com.lmax.disruptor.RingBuffer.createSingleProducer;
 import static junit.framework.Assert.assertNotSame;
@@ -43,13 +38,8 @@ public class ComplexAggregateTest {
 
     CommandBus commandBus;
 
-    Function<String, AggregateInitialisedEvent> initialisationFactory =
-            (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
-
-
     AggregateEventStore chronicleAES;
     AggregateRepository<ComplexAggregate> repo1;
-
 
     static ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     private static final int SENDER_THREAD_POOL_SIZE = 4;
@@ -73,7 +63,7 @@ public class ComplexAggregateTest {
         chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
         repo1 = new AggregateRepository(chronicleAES, ComplexAggregate.class, eventBus,
-                ComplexAggregate.newInstanceFactory(), initialisationFactory);
+                ComplexAggregate.newInstanceFactory());
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
         lst.add(new ComplexCommandHandler(repo1));

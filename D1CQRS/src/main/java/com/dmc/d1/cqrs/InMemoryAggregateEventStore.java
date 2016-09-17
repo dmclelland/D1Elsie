@@ -1,6 +1,5 @@
-package com.dmc.d1.cqrs.event.store;
+package com.dmc.d1.cqrs;
 
-import com.dmc.d1.cqrs.AggregateRepository;
 import com.dmc.d1.cqrs.event.AggregateEventAbstract;
 
 import java.util.ArrayList;

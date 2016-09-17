@@ -34,17 +34,17 @@ package com.dmc.algo;
 import com.dmc.d1.cqrs.AbstractCommandHandler;
 import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.AggregateRepository;
-import com.dmc.d1.cqrs.command.*;
-import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
+import com.dmc.d1.cqrs.command.Command;
+import com.dmc.d1.cqrs.command.CommandBus;
+import com.dmc.d1.cqrs.command.SimpleCommandBus;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
-import com.dmc.d1.cqrs.event.store.AggregateEventStore;
-import com.dmc.d1.cqrs.event.store.ChronicleAggregateEventStore;
+import com.dmc.d1.cqrs.AggregateEventStore;
+import com.dmc.d1.cqrs.ChronicleAggregateEventStore;
 import com.dmc.d1.cqrs.sample.aggregate.ComplexAggregate;
 import com.dmc.d1.cqrs.sample.command.CreateComplexAggregateCommand;
 import com.dmc.d1.cqrs.sample.commandhandler.ComplexCommandHandler;
 import com.dmc.d1.cqrs.sample.domain.MyId;
 import com.dmc.d1.sample.domain.Basket;
-import com.dmc.d1.sample.event.TestAggregateInitialisedEventBuilder;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.profile.GCProfiler;
 import org.openjdk.jmh.runner.RunnerException;
@@ -54,7 +54,6 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
@@ -65,9 +64,6 @@ import java.util.function.Function;
 public class CreateComplexAggregateCommandBenchmark {
 
     CommandBus commandBus;
-
-    Function<String, AggregateInitialisedEvent> initialisationFactory =
-            (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
 
     AggregateEventStore chronicleAES;
@@ -84,7 +80,7 @@ public class CreateComplexAggregateCommandBenchmark {
         chronicleAES = new ChronicleAggregateEventStore(chroniclePath);
 
         repo1 = new AggregateRepository(chronicleAES, ComplexAggregate.class, eventBus,
-                ComplexAggregate.newInstanceFactory(), initialisationFactory);
+                ComplexAggregate.newInstanceFactory());
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
         lst.add(new ComplexCommandHandler(repo1));
@@ -118,7 +114,7 @@ public class CreateComplexAggregateCommandBenchmark {
         return x;
     }
 
-//-Xmx3G -Xms3g -XX:NewRatio=1 -XX:+PrintGC -XX:+DoEscapeAnalysis -XX:=Inline
+    //-Xmx3G -Xms3g -XX:NewRatio=1 -XX:+PrintGC -XX:+DoEscapeAnalysis -XX:=Inline
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
                 .include(".*" + CreateComplexAggregateCommandBenchmark.class.getSimpleName() + ".*")

@@ -1,18 +1,11 @@
 package com.dmc.d1.cqrs;
 
 
-import com.dmc.d1.cqrs.AggregateRepository;
-import com.dmc.d1.cqrs.event.AggregateInitialisedEvent;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
-import com.dmc.d1.cqrs.event.store.AggregateEventStore;
-import com.dmc.d1.cqrs.event.store.InMemoryAggregateEventStore;
 import com.dmc.d1.cqrs.sample.aggregate.Aggregate1;
 import com.dmc.d1.cqrs.sample.aggregate.Aggregate2;
 import com.dmc.d1.cqrs.sample.domain.MyId;
-import com.dmc.d1.sample.event.TestAggregateInitialisedEventBuilder;
 import org.junit.Test;
-
-import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 
@@ -26,13 +19,11 @@ public class AggregateTest {
     AggregateEventStore eventStore = new InMemoryAggregateEventStore();
     //InitialisationEventFactory initialisationEventFactory = Configuration.initialisationEventFactoryBasic();
 
-    Function<String, AggregateInitialisedEvent> initialisationFactory =
-            (ID) -> TestAggregateInitialisedEventBuilder.startBuilding(ID).buildJournalable();
 
     AggregateRepository<Aggregate1> aggregate1Repo =
-            new AggregateRepository(eventStore, Aggregate1.class, bus, Aggregate1.newInstanceFactory(), initialisationFactory);
+            new AggregateRepository(eventStore, Aggregate1.class, bus, Aggregate1.newInstanceFactory());
     AggregateRepository<Aggregate2> aggregate2Repo =
-            new AggregateRepository(eventStore, Aggregate2.class, bus, Aggregate2.newInstanceFactory(), initialisationFactory);
+            new AggregateRepository(eventStore, Aggregate2.class, bus, Aggregate2.newInstanceFactory());
 
     MyId id1 = MyId.from("testId1");
     MyId id2 = MyId.from("testId1");
@@ -44,7 +35,6 @@ public class AggregateTest {
 
         Aggregate1 aggregate1 = aggregate1Repo.create(id1.asString());
         Aggregate2 aggregate2 = aggregate2Repo.create(id2.asString());
-
 
         aggregate1.doSomething(5, 12);
         aggregate2.doSomething("Hello", "Goodbye");
