@@ -17,8 +17,6 @@ public class AggregateTest {
     SimpleEventBus bus = new SimpleEventBus();
 
     AggregateEventStore eventStore = new InMemoryAggregateEventStore();
-    //InitialisationEventFactory initialisationEventFactory = Configuration.initialisationEventFactoryBasic();
-
 
     AggregateRepository<Aggregate1> aggregate1Repo =
             new AggregateRepository(eventStore, Aggregate1.class, bus, Aggregate1.newInstanceFactory());
