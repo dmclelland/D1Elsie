@@ -2,14 +2,13 @@ package com.dmc.d1.cqrs;
 
 import com.dmc.d1.algo.event.Configuration;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
-import com.dmc.d1.cqrs.sample.aggregate.ComplexAggregate;
-import com.dmc.d1.cqrs.sample.commandhandler.ComplexCommandHandler;
-import com.dmc.d1.sample.domain.Basket;
+import com.dmc.d1.cqrs.sample.aggregate.ComplexMutableAggregate;
+import com.dmc.d1.cqrs.sample.commandhandler.ComplexMutableCommandHandler;
+import com.dmc.d1.sample.domain.Basket2;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.util.StopWatch;
 
 import java.util.*;
 
@@ -23,10 +22,10 @@ import static org.junit.Assert.assertEquals;
  */
 
 @Ignore
-public class ComplexAggregateTest extends RoundTripBaseTest {
+public class ComplexMutableAggregateTest extends RoundTripBaseTest {
 
     AggregateEventStore chronicleAES;
-    AggregateRepository<ComplexAggregate> repo1;
+    AggregateRepository<ComplexMutableAggregate> repo1;
 
     final int senderPoolThreadSize = 1;
     final int bufferSize = 1024;
@@ -39,54 +38,58 @@ public class ComplexAggregateTest extends RoundTripBaseTest {
         SimpleEventBus eventBus = new SimpleEventBus();
         chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
-        repo1 = new AggregateRepository(chronicleAES, ComplexAggregate.class, eventBus,
-                ComplexAggregate.newInstanceFactory());
+        repo1 = new AggregateRepository(chronicleAES, ComplexMutableAggregate.class, eventBus,
+                ComplexMutableAggregate.newInstanceFactory());
 
-        this.commandBuilder = new CommandBuilders.CreateComplexAggregateCommandSupplier();
+        this.commandBuilder = new CommandBuilders.CreateMutableComplexAggregateCommandSupplier();
         super.setup();
     }
 
     @Override
     protected List<AbstractCommandHandler<? extends Aggregate>> getCommandHandlers() {
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
-        lst.add(new ComplexCommandHandler(repo1));
-
+        lst.add(new ComplexMutableCommandHandler(repo1));
         return lst;
     }
-
 
     @Test
     public void testCreateAndReplayComplexEvents() throws Exception {
 
-        int noOfCreateCommands = 10000;
         long t0 = System.currentTimeMillis();
+        int noOfCreateCommands = 10000;
         startSending(noOfCreateCommands);
-
+        Map<String, ComplexMutableAggregate> aggregate1Repo = (Map<String, ComplexMutableAggregate>) ReflectionTestUtils.getField(repo1, "cache");
         System.out.println("It took " + (System.currentTimeMillis() - t0) + " to process " + noOfCreateCommands * 2 + " commands");
+
+
+        this.commandBuilder = new CommandBuilders.UpdateBasketConstituentEventSupplier(new ArrayList<>(aggregate1Repo.values()));
+        t0 = System.currentTimeMillis();
+        int noOfUpdateCommands = 1000000;
+        startSending(noOfUpdateCommands);
+        System.out.println("It took " + (System.currentTimeMillis() - t0) + " to process " + noOfUpdateCommands * 2 + " commands");
+
+
         replayAndCompare();
     }
 
     private void replayAndCompare() {
-        Map<String, ComplexAggregate> aggregate1Repo = (Map<String, ComplexAggregate>) ReflectionTestUtils.getField(repo1, "cache");
-        Map<String, ComplexAggregate> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
+        Map<String, ComplexMutableAggregate> aggregate1Repo = (Map<String, ComplexMutableAggregate>) ReflectionTestUtils.getField(repo1, "cache");
+        Map<String, ComplexMutableAggregate> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
         aggregate1Repo.clear();
-
         chronicleAES.replay(Collections.singletonMap(repo1.getAggregateClassName(), repo1));
-
         assertEquals(aggregate1RepoCopy.size(), aggregate1Repo.size());
         checkAssertions(aggregate1Repo, aggregate1RepoCopy);
     }
 
-
-    private void checkAssertions(Map<String, ComplexAggregate> aggregate1Repo, Map<String, ComplexAggregate> aggregate1RepoCopy) {
+    private void checkAssertions(Map<String, ComplexMutableAggregate> aggregate1Repo, Map<String, ComplexMutableAggregate> aggregate1RepoCopy) {
         for (String key : aggregate1Repo.keySet()) {
-            ComplexAggregate agg = aggregate1Repo.get(key);
-            ComplexAggregate aggExpected = aggregate1RepoCopy.get(key);
+            ComplexMutableAggregate agg = aggregate1Repo.get(key);
+            ComplexMutableAggregate aggExpected = aggregate1RepoCopy.get(key);
             assertNotSame(aggExpected, agg);
             assertEquals(aggExpected.getId(), agg.getId());
 
-            Basket expectedBasket = aggExpected.getBasket();
-            Basket actualBasket = agg.getBasket();
+            Basket2 expectedBasket = aggExpected.getBasket();
+            Basket2 actualBasket = agg.getBasket();
 
             assertTrue(expectedBasket.getDivisor() > 0);
             assertEquals(expectedBasket.getDivisor(), actualBasket.getDivisor());

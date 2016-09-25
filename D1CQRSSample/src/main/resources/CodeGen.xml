@@ -27,6 +27,33 @@
                    parameterized-type="com.dmc.d1.sample.domain.BasketConstituent"/> -->
 
         </class>
+
+        <class name="com.dmc.d1.sample.domain.BasketConstituent2"  updatable="true">
+            <field name="ric" type="java.lang.String"/>
+            <field name="adjustedShares" type="java.lang.Integer" toPrimitive="true" updatable="true"/>
+            <field name="lastUpdated" type="java.time.LocalDate" updatable="true"/>
+        </class>
+
+        <class name="com.dmc.d1.sample.domain.Basket2" updatable="true">
+            <field name="ric" type="java.lang.String"/>
+            <field name="tradeDate" type="java.time.LocalDate"/>
+            <field name="divisor" type="java.lang.Integer" toPrimitive="true"/>
+            <field name="security" type="com.dmc.d1.sample.domain.Security"/>
+
+            <field name="basketConstituents" type="java.util.List" concrete-type="java.util.ArrayList"
+                   parameterized-type="com.dmc.d1.sample.domain.BasketConstituent2" updatable="true"/>
+
+            <field name="basketConstituents2" type="java.util.Map" concrete-type="java.util.HashMap"
+                   parameterized-type="com.dmc.d1.sample.domain.BasketConstituent2" key="ric" updatable="true"/>
+
+            <field name="lastUpdated" type="java.time.LocalDate" updatable="true"/>
+
+            <!--<field name="basketConstituents3" type="java.util.Set" concrete="java.util.HashSet"
+                   parameterized-type="com.dmc.d1.sample.domain.BasketConstituent"/> -->
+
+
+        </class>
+
     </domain>
     <event>
         <class name="com.dmc.d1.sample.event.HandledByExternalHandlersEvent">
@@ -59,6 +86,16 @@
 
         <class name="com.dmc.d1.sample.event.BasketCreatedEvent">
             <field name="basket" type="com.dmc.d1.sample.domain.Basket"/>
+        </class>
+
+        <class name="com.dmc.d1.sample.event.Basket2CreatedEvent">
+            <field name="basket" type="com.dmc.d1.sample.domain.Basket2"/>
+        </class>
+
+        <class name="com.dmc.d1.sample.event.UpdateBasketConstituentEvent">
+            <field name="ric" type="java.lang.String"/>
+            <field name="adjustedShares" type="java.lang.Integer"/>
+            <field name="lastUpdated" type="java.time.LocalDate"/>
         </class>
 
     </event>

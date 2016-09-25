@@ -7,6 +7,8 @@ import net.openhft.chronicle.queue.ExcerptAppender;
 import net.openhft.chronicle.queue.ExcerptTailer;
 import net.openhft.chronicle.wire.DocumentContext;
 import org.reflections.Reflections;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -17,8 +19,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Created by davidclelland on 17/05/2016.
  */
@@ -28,6 +28,8 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
     private final ExcerptAppender appender;
     private final ExcerptTailer tailer;
     private final String path;
+
+    private static Logger LOG = LoggerFactory.getLogger(ChronicleAggregateEventStore.class);
 
     public ChronicleAggregateEventStore(String path) throws IOException {
         chronicle = ChronicleQueueBuilder.single(path)
@@ -61,6 +63,8 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
         String classIdentifier;
         AggregateRepository repo;
         Aggregate agg;
+        int i = 0;
+        long t0 = System.currentTimeMillis();
         while ((classIdentifier = tailer.readText()) != null) {
             try (DocumentContext documentContext = tailer.readingDocument()) {
 
@@ -76,14 +80,17 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
                     agg.replay(e);
                 }
             }
+            ++i;
         }
+
+        LOG.info("It took {} millisecs to replay {} events", (System.currentTimeMillis() - t0), i);
     }
 
     public String getChroniclePath() {
         return path;
     }
 
-    private static Map<String,Supplier<? extends JournalableAggregateEvent>> NEW_INSTANCE_FACTORIES
+    private static Map<String, Supplier<? extends JournalableAggregateEvent>> NEW_INSTANCE_FACTORIES
             = new HashMap<>();
 
     static {
@@ -99,7 +106,7 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
 
                 }
             }
-        }catch(Exception e){
+        } catch (Exception e) {
             throw new RuntimeException("Unable to set up thread local object pool", e);
         }
     }

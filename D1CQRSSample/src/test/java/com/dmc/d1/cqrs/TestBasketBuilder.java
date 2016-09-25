@@ -5,6 +5,7 @@ import com.dmc.d1.sample.domain.*;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created By davidclelland on 29/06/2016.
@@ -21,6 +22,22 @@ class TestBasketBuilder {
                 .ric(ric)
                 .security(security(rnd))
                 .basketConstituents(constituents(ric))
+                .buildJournalable();
+    }
+
+    static Basket2 createBasket2(int rnd) {
+
+        String ric = securities[Math.abs(rnd) % 4];
+
+        return Basket2Builder.startBuilding()
+                .tradeDate(LocalDate.now())
+                .divisor(divisor(rnd))
+                .ric(ric)
+                .security(security(rnd))
+                .basketConstituents(constituents2(ric))
+                .basketConstituents2(constituents2(ric).stream().collect(
+                        Collectors.toMap(BasketConstituent2::getRic,b->b )))
+                .lastUpdated(LocalDate.now())
                 .buildJournalable();
     }
 
@@ -77,6 +94,8 @@ class TestBasketBuilder {
 
     static Map<String, List<BasketConstituent>> constituentsMap = new HashMap<>();
 
+    static Map<String, List<BasketConstituent2>> constituentsMap2 = new HashMap<>();
+
     static String[] constituents = new String[100];
 
     static{
@@ -97,6 +116,28 @@ class TestBasketBuilder {
         }
 
         constituentsMap.put(ric, lst);
+
+        return lst;
+
+    }
+
+    static List<BasketConstituent2> constituents2(String ric) {
+        if (constituentsMap2.containsKey(ric))
+            return constituentsMap2.get(ric);
+
+        LocalDate now = LocalDate.now();
+        int rnd = RANDOM.nextInt(99) + 1;
+        List<BasketConstituent2> lst = new ArrayList<>();
+        for (int i = 1; i <= rnd; i++) {
+            String constituentRic = constituents[i];
+            lst.add(BasketConstituent2Builder.startBuilding()
+                    .adjustedShares(i)
+                    .ric(constituentRic)
+                    .lastUpdated(now)
+                    .buildJournalable());
+        }
+
+        constituentsMap2.put(ric, lst);
 
         return lst;
 

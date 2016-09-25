@@ -73,7 +73,6 @@ public class EventGenerator {
 
         Element root = doc.getRootElement();
 
-
         //TODO apply ordering
         for (Element elem : root.getChild("domain").getChildren()) {
             ClassVo vo = parseClassElem(elem);
@@ -228,6 +227,18 @@ public class EventGenerator {
                             .returns(fieldData.type)
                             .build()
             );
+
+
+            if(fieldData.updatable){
+
+                MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder("set" + capitalize(key));
+                setterBuilder.addParameter(fieldData.type, key)
+                        .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                        .build();
+
+                interfaceBuilder.addMethod(setterBuilder.build());
+            }
+
         }
 
 //
@@ -315,6 +326,17 @@ public class EventGenerator {
             }
 
             eventBuilder.addMethod(accessorBuilder.build());
+
+            if(fieldData.updatable){
+
+                MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder("set" + capitalize(key));
+                setterBuilder.addParameter(fieldData.type, key)
+                        .addModifiers(Modifier.PUBLIC)
+                        .addAnnotation(Override.class)
+                        .addStatement("throw new $T()",UnsupportedOperationException.class);
+
+                eventBuilder.addMethod(setterBuilder.build());
+            }
         }
 
         eventBuilder.addMethod(constructorBuilder.build());
@@ -406,6 +428,18 @@ public class EventGenerator {
             }
 
             eventBuilder.addMethod(accessorBuilder.build());
+
+            if(fieldData.updatable){
+
+                MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder("set" + capitalize(key));
+                setterBuilder.addParameter(fieldData.type, key)
+                        .addModifiers(Modifier.PUBLIC)
+                        .addAnnotation(Override.class)
+                        .addStatement("this.$L = $L", key, key);
+
+                eventBuilder.addMethod(setterBuilder.build());
+            }
+
         }
 
         eventBuilder.addMethod(constructorBuilder.build());
@@ -590,7 +624,7 @@ public class EventGenerator {
 
 
         MethodSpec.Builder setBuilder = MethodSpec.methodBuilder("set");
-        MethodSpec.Builder resetBuilder = MethodSpec.methodBuilder("reset").addModifiers(Modifier.PUBLIC);
+        //MethodSpec.Builder resetBuilder = MethodSpec.methodBuilder("reset").addModifiers(Modifier.PUBLIC);
 
         if (Type.EVENT == type) {
             setBuilder.addParameter(String.class, "id");
@@ -715,21 +749,6 @@ public class EventGenerator {
             eventBuilder.addField(field.build());
 
 
-            if (Type.EVENT == type)
-                resetBuilder.addStatement("setAggregateId(null)");
-
-            if (fieldData.type.isPrimitive()) {
-                if (TypeName.BOOLEAN == fieldData.type)
-                    resetBuilder.addStatement("this.$N = false", key);
-                else
-                    resetBuilder.addStatement("this.$N = 0", key);
-            } else {
-                if ("sequence".equals(fieldData.chronicleType)) {
-                    resetBuilder.addStatement("this.$N.clear()", key);
-                } else {
-                    resetBuilder.addStatement("this.$N = null", key);
-                }
-            }
 
             eventBuilder.addMethod(
                     MethodSpec.methodBuilder("get" + capitalize(key))
@@ -739,6 +758,19 @@ public class EventGenerator {
                             .returns(fieldData.type)
                             .build()
             );
+
+
+            if(fieldData.updatable){
+
+                MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder("set" + capitalize(key));
+                setterBuilder.addParameter(fieldData.type, key)
+                        .addModifiers(Modifier.PUBLIC)
+                        .addAnnotation(Override.class)
+                        .addStatement("throw new $T()",UnsupportedOperationException.class);
+
+                eventBuilder.addMethod(setterBuilder.build());
+            }
+
         }
 
 
@@ -746,7 +778,7 @@ public class EventGenerator {
         eventBuilder.addMethod(writeMarshallableMethod.build());
 
         eventBuilder.addMethod(setBuilder.build());
-        eventBuilder.addMethod(resetBuilder.build());
+        //eventBuilder.addMethod(resetBuilder.build());
         //eventBuilder.addMethod(deepCloneBuilder(vo, journalableClass, type));
         eventBuilder.addMethod(stateEqualsBuilder(vo));
         eventBuilder.addMethod(equalsBuilder(vo, journalableClass, type));
