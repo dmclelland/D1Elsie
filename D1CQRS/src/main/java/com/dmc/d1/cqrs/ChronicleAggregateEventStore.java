@@ -33,7 +33,7 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
 
     public ChronicleAggregateEventStore(String path) throws IOException {
         chronicle = ChronicleQueueBuilder.single(path)
-                .blockSize(128 << 20)
+                .blockSize(128 << 22)
                 .build();
 
         appender = chronicle.createAppender();

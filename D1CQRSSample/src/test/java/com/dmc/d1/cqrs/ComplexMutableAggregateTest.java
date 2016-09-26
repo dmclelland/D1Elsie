@@ -58,9 +58,9 @@ public class ComplexMutableAggregateTest extends RoundTripBaseTest {
         long t0 = System.currentTimeMillis();
         int noOfCreateCommands = 10000;
         startSending(noOfCreateCommands);
-        Map<String, ComplexMutableAggregate> aggregate1Repo = (Map<String, ComplexMutableAggregate>) ReflectionTestUtils.getField(repo1, "cache");
         System.out.println("It took " + (System.currentTimeMillis() - t0) + " to process " + noOfCreateCommands * 2 + " commands");
 
+        Map<String, ComplexMutableAggregate> aggregate1Repo = (Map<String, ComplexMutableAggregate>) ReflectionTestUtils.getField(repo1, "cache");
 
         this.commandBuilder = new CommandBuilders.UpdateBasketConstituentEventSupplier(new ArrayList<>(aggregate1Repo.values()));
         t0 = System.currentTimeMillis();
