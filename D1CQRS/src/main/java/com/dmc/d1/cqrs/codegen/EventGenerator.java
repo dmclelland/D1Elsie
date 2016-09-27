@@ -501,19 +501,18 @@ public class EventGenerator {
         if ("object".equals(fieldData.chronicleType)) {
 
 
-            builder.addStatement("return $L instanceof $T ? " +
-                    "$L : $T.copyBuilder($L).buildMutable()", key, Immutable.class, key, builderClass, key);
+            builder.addStatement("return $T.copyBuilder($L).buildMutable()",   builderClass, key);
         } else if ("sequence".equals(fieldData.chronicleType)) {
 
 
             if ("java.util.Map".equals(fieldData.className)) {
 
                 builder.addStatement("$T newMap = new $T()", fieldData.type, fieldData.concreteType);
-                builder.addStatement("$L.forEach((key, val) -> newMap.put(key, val instanceof $T ? val : $T.copyBuilder(val).buildMutable()))", key, Mutable.class, builderClass);
+                builder.addStatement("$L.forEach((key, val) -> newMap.put(key,  $T.copyBuilder(val).buildMutable()))", key, builderClass);
                 builder.addStatement("return newMap");
             } else {
                 builder.addStatement("$T newList = new $T()", fieldData.type, fieldData.concreteType);
-                builder.addStatement("$L.forEach((val) -> newList.add(val instanceof $T ? val : $T.copyBuilder(val).buildMutable()))", key, Mutable.class, builderClass);
+                builder.addStatement("$L.forEach((val) -> newList.add( $T.copyBuilder(val).buildMutable()))", key, builderClass);
                 builder.addStatement("return newList");
 
             }
