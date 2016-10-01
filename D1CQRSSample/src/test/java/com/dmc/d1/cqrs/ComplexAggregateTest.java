@@ -42,7 +42,7 @@ public class ComplexAggregateTest extends RoundTripBaseTest {
         repo1 = new AggregateRepository(chronicleAES, ComplexAggregate.class, eventBus,
                 ComplexAggregate.newInstanceFactory());
 
-        this.commandBuilder = new CommandBuilders.CreateComplexAggregateCommandSupplier();
+        this.commandBuilder = new CommandBuilders.CreateComplexAggregateCommandSupplier(100);
         super.setup();
     }
 

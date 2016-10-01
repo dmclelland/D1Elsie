@@ -24,7 +24,7 @@ public class MarshallableTest {
         //ClassAliasPool.CLASS_ALIASES.addAlias(SecurityChronicle.class);
         //ClassAliasPool.CLASS_ALIASES.addAlias(BasketConstituentChronicle.class);
         Wire wire = new TextWire(Bytes.elasticByteBuffer());
-        Basket basket = TestBasketBuilder.createBasket(111);
+        Basket basket = TestBasketBuilder.createBasket(111, 100);
         ((Marshallable) basket).writeMarshallable(wire);
 
         System.out.println(wire);

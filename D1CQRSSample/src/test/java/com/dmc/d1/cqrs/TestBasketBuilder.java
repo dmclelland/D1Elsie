@@ -11,7 +11,10 @@ import java.util.*;
  */
 class TestBasketBuilder {
 
-    static Basket createBasket(int rnd) {
+    static Basket createBasket(int rnd, int maxNoOfConstituents) {
+
+        if(maxNoOfConstituents> 500)
+            maxNoOfConstituents = 500;
 
         String ric = securities[Math.abs(rnd) % 4];
 
@@ -20,11 +23,11 @@ class TestBasketBuilder {
                 .divisor(divisor(rnd))
                 .ric(ric)
                 .security(security(rnd))
-                .basketConstituents(constituents(ric))
+                .basketConstituents(constituents(ric, maxNoOfConstituents))
                 .buildJournalable();
     }
 
-    static Basket2 createBasket2(int rnd) {
+    static Basket2 createBasket2(int rnd, int maxNoOfConstituents) {
 
         String ric = securities[Math.abs(rnd) % 4];
 
@@ -33,7 +36,7 @@ class TestBasketBuilder {
                 .divisor(divisor(rnd))
                 .ric(ric)
                 .security(security(rnd))
-                .basketConstituents2(constituents2(ric))
+                .basketConstituents2(constituents2(ric, maxNoOfConstituents))
                 .lastUpdated(LocalDate.now())
                 .buildJournalable();
     }
@@ -95,7 +98,9 @@ class TestBasketBuilder {
     static Map<String, Map<String, BasketConstituent2>> constituentsMap2 = new HashMap<>();
 
 
-    static String[] constituents = new String[100];
+
+
+    static String[] constituents = new String[500];
 
     static {
         for (int i = 0; i < constituents.length; i++) {
@@ -103,11 +108,11 @@ class TestBasketBuilder {
         }
     }
 
-    static List<BasketConstituent> constituents(String ric) {
+    static List<BasketConstituent> constituents(String ric, int noOfConstituents) {
         if (constituentsMap.containsKey(ric))
             return constituentsMap.get(ric);
 
-        int rnd = RANDOM.nextInt(99) + 1;
+        int rnd = RANDOM.nextInt(noOfConstituents-1) + 1;
         List<BasketConstituent> lst = new ArrayList<>();
         for (int i = 1; i <= rnd; i++) {
             String constituentRic = constituents[i];
@@ -121,12 +126,12 @@ class TestBasketBuilder {
     }
 
 
-    static Map<String, BasketConstituent2> constituents2(String ric) {
+    static Map<String, BasketConstituent2> constituents2(String ric, int noOfConstituents) {
         if (constituentsMap2.containsKey(ric))
             return constituentsMap2.get(ric);
 
         LocalDate now = LocalDate.now();
-        int rnd = RANDOM.nextInt(99) + 1;
+        int rnd = RANDOM.nextInt(noOfConstituents-1) + 1;
         Map<String, BasketConstituent2> map = new HashMap<>();
         for (int i = 1; i <= rnd; i++) {
             String constituentRic = constituents[i];

@@ -29,11 +29,17 @@ class CommandBuilders {
     static class CreateComplexAggregateCommandSupplier implements Supplier<Command> {
         int rnd = ((this.hashCode() ^ (int) System.nanoTime()));
 
+        final int maxSizeOfBasket;
+
+        CreateComplexAggregateCommandSupplier(int maxSizeOfBasket){
+            this.maxSizeOfBasket = maxSizeOfBasket;
+        }
+
         @Override
         public Command get() {
             rnd = xorShift(rnd);
             MyId id = MyId.from("" + rnd);
-            Basket basket = TestBasketBuilder.createBasket(rnd);
+            Basket basket = TestBasketBuilder.createBasket(rnd, maxSizeOfBasket);
             Command command = new CreateComplexAggregateCommand(id, basket);
             return command;
         }
@@ -50,11 +56,18 @@ class CommandBuilders {
     static class CreateMutableComplexAggregateCommandSupplier implements Supplier<Command> {
         int rnd = ((this.hashCode() ^ (int) System.nanoTime()));
 
+        final int maxSizeOfBasket;
+
+        CreateMutableComplexAggregateCommandSupplier(int maxSizeOfBasket){
+            this.maxSizeOfBasket = maxSizeOfBasket;
+        }
+
+
         @Override
         public Command get() {
             rnd = xorShift(rnd);
             MyId id = MyId.from("" + rnd);
-            Basket2 basket = TestBasketBuilder.createBasket2(rnd);
+            Basket2 basket = TestBasketBuilder.createBasket2(rnd, maxSizeOfBasket);
             Command command = new CreateMutableComplexAggregateCommand(id, basket);
             return command;
         }
