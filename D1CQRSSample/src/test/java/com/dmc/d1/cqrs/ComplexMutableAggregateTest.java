@@ -5,6 +5,7 @@ import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.sample.aggregate.ComplexMutableAggregate;
 import com.dmc.d1.cqrs.sample.commandhandler.ComplexMutableCommandHandler;
 import com.dmc.d1.sample.domain.Basket2;
+import com.dmc.d1.sample.domain.BasketConstituent2;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -56,23 +57,88 @@ public class ComplexMutableAggregateTest extends RoundTripBaseTest {
     public void testCreateAndReplayComplexEvents() throws Exception {
 
         long t0 = System.currentTimeMillis();
-        int noOfCreateCommands = 10000;
+        int noOfCreateCommands = 20000;
+        startSending(noOfCreateCommands);
+        System.out.println("It took " + (System.currentTimeMillis() - t0) + " to process " + noOfCreateCommands * 2 + " commands");
+
+        Map<String, ComplexMutableAggregate> aggregate1Repo = (Map<String, ComplexMutableAggregate>) ReflectionTestUtils.getField(repo1, "cache");
+        this.commandBuilder = new CommandBuilders.UpdateBasketConstituentCommandSupplier(new ArrayList<>(aggregate1Repo.values()));
+
+        t0 = System.currentTimeMillis();
+        int noOfUpdateCommands = 500000;
+        startSending(noOfUpdateCommands);
+        System.out.println("It took " + (System.currentTimeMillis() - t0) + " to process " + noOfUpdateCommands * 2 + " commands");
+        replayAndCompare();
+    }
+
+
+    @Test
+    public void testRollback() throws Exception {
+
+        long t0 = System.currentTimeMillis();
+        int noOfCreateCommands = 500;
         startSending(noOfCreateCommands);
         System.out.println("It took " + (System.currentTimeMillis() - t0) + " to process " + noOfCreateCommands * 2 + " commands");
 
         Map<String, ComplexMutableAggregate> aggregate1Repo = (Map<String, ComplexMutableAggregate>) ReflectionTestUtils.getField(repo1, "cache");
 
-        this.commandBuilder = new CommandBuilders.UpdateBasketConstituentEventSupplier(new ArrayList<>(aggregate1Repo.values()));
+        this.commandBuilder = new CommandBuilders.UpdateBasketConstituentWithDeterministicExceptionCommandSupplier(
+                new ArrayList<>(aggregate1Repo.values()));
         t0 = System.currentTimeMillis();
-        int noOfUpdateCommands = 1000000;
+        int noOfUpdateCommands = 50000;
         startSending(noOfUpdateCommands);
+
+        System.out.println("No of exceptions " + ComplexMutableAggregate.noOfExceptions);
         System.out.println("It took " + (System.currentTimeMillis() - t0) + " to process " + noOfUpdateCommands * 2 + " commands");
+
+        //check all adjusted shares
+        for (ComplexMutableAggregate agg : aggregate1Repo.values()) {
+
+            for (BasketConstituent2 constituent : agg.getBasket().getBasketConstituents2().values()) {
+
+                //57 specified in updateBasketConstituentWithDeterministicException gets rolled back
+                if (constituent.getInitialAdjustedShares() % 57 == 0) {
+                    assertEquals(constituent.getInitialAdjustedShares(), constituent.getAdjustedShares());
+                }
+            }
+        }
+
+        replayAndCompare();
+    }
+
+    @Test
+    public void testRollbackFollowedByCommitsReplayCorrectly() throws Exception {
+
+        long t0 = System.currentTimeMillis();
+        int noOfCreateCommands = 500;
+        startSending(noOfCreateCommands);
+        System.out.println("It took " + (System.currentTimeMillis() - t0) + " to process " + noOfCreateCommands * 2 + " commands");
+
+        Map<String, ComplexMutableAggregate> aggregate1Repo = (Map<String, ComplexMutableAggregate>) ReflectionTestUtils.getField(repo1, "cache");
+
+        this.commandBuilder = new CommandBuilders.UpdateBasketConstituentWithDeterministicExceptionCommandSupplier(
+                new ArrayList<>(aggregate1Repo.values()));
+
+        int noOfUpdateCommands = 50000;
+        startSending(noOfUpdateCommands);
+
+        replayAndCompare();
+
+        this.commandBuilder = new CommandBuilders.UpdateBasketConstituentCommandSupplier(
+                new ArrayList<>(aggregate1Repo.values()));
+
+        noOfUpdateCommands = 50000;
+        startSending(noOfUpdateCommands);
 
 
         replayAndCompare();
     }
 
+
     private void replayAndCompare() {
+
+        //remove ponger from disruptor bus, then re-add at the end
+
         Map<String, ComplexMutableAggregate> aggregate1Repo = (Map<String, ComplexMutableAggregate>) ReflectionTestUtils.getField(repo1, "cache");
         Map<String, ComplexMutableAggregate> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
         aggregate1Repo.clear();
@@ -104,19 +170,19 @@ public class ComplexMutableAggregateTest extends RoundTripBaseTest {
             assertTrue(expectedBasket.getSecurity().getAssetType() != null);
             assertEquals(expectedBasket.getSecurity().getAssetType(), actualBasket.getSecurity().getAssetType());
 
-            assertTrue(actualBasket.getBasketConstituents().size() > 0);
-            assertEquals(expectedBasket.getBasketConstituents().size(), actualBasket.getBasketConstituents().size());
+            assertTrue(actualBasket.getBasketConstituents2().size() > 0);
+            assertEquals(expectedBasket.getBasketConstituents2().size(), actualBasket.getBasketConstituents2().size());
 
 
-            for (int i = 0; i < expectedBasket.getBasketConstituents().size(); i++) {
+            for (BasketConstituent2 constituent2 : expectedBasket.getBasketConstituents2().values()) {
+                String constituentRic = constituent2.getRic();
 
-                assertTrue(expectedBasket.getBasketConstituents().get(i).getRic().length() > 0);
-                assertEquals(expectedBasket.getBasketConstituents().get(i).getRic(),
-                        actualBasket.getBasketConstituents().get(i).getRic());
+                assertTrue(constituentRic.length() > 0);
 
-                assertTrue(expectedBasket.getBasketConstituents().get(i).getAdjustedShares() > 0);
-                assertEquals(expectedBasket.getBasketConstituents().get(i).getAdjustedShares(),
-                        actualBasket.getBasketConstituents().get(i).getAdjustedShares());
+
+                assertTrue(expectedBasket.getBasketConstituents2().get(constituentRic).getAdjustedShares() > 0);
+                assertEquals(expectedBasket.getBasketConstituents2().get(constituentRic).getAdjustedShares(),
+                        actualBasket.getBasketConstituents2().get(constituentRic).getAdjustedShares());
 
             }
         }

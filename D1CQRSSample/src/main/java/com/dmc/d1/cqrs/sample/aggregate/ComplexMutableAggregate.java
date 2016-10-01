@@ -6,12 +6,10 @@ import com.dmc.d1.sample.domain.Basket2;
 import com.dmc.d1.sample.domain.Basket2Builder;
 import com.dmc.d1.sample.domain.BasketConstituent;
 import com.dmc.d1.sample.domain.BasketConstituent2;
-import com.dmc.d1.sample.event.Basket2CreatedEvent;
-import com.dmc.d1.sample.event.Basket2CreatedEventBuilder;
-import com.dmc.d1.sample.event.UpdateBasketConstituentEvent;
-import com.dmc.d1.sample.event.UpdateBasketConstituentEventBuilder;
+import com.dmc.d1.sample.event.*;
 
 import java.time.LocalDate;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 /**
@@ -40,6 +38,24 @@ public class ComplexMutableAggregate extends Aggregate<ComplexMutableAggregate> 
                 .buildJournalable());
     }
 
+
+    public static int noOfExceptions =0;
+
+    public void updateBasketConstituentWithDeterministicException(String ric, int adjustedShares) {
+
+
+        apply(UpdateBasketConstituentEventWithExceptionBuilder.startBuilding(getId())
+                .ric(ric)
+                .adjustedShares(adjustedShares)
+                .lastUpdated(LocalDate.now())
+                .buildJournalable());
+
+        if(this.basket.getBasketConstituents2().get(ric).getInitialAdjustedShares()== 57 ) {
+            noOfExceptions++;
+            throw new RuntimeException("Adjusted shares 57!");
+        }
+    }
+
     @EventHandler
     public void handleEvent(Basket2CreatedEvent event) {
         this.basket = Basket2Builder.copyBuilder(event.getBasket()).buildMutable();
@@ -52,6 +68,15 @@ public class ComplexMutableAggregate extends Aggregate<ComplexMutableAggregate> 
         constituent2.setAdjustedShares(event.getAdjustedShares());
         constituent2.setLastUpdated(event.getLastUpdated());
     }
+
+    @EventHandler
+    public void handleEvent(UpdateBasketConstituentEventWithException event) {
+        BasketConstituent2 constituent2 = basket.getBasketConstituents2().get(event.getRic());
+
+        constituent2.setAdjustedShares(event.getAdjustedShares());
+        constituent2.setLastUpdated(event.getLastUpdated());
+    }
+
 
     public Basket2 getBasket() {
         return basket;

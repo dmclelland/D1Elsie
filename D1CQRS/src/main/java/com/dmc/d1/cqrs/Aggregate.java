@@ -40,7 +40,8 @@ public abstract class Aggregate<A extends Aggregate<A>> {
     }
 
     public final void replay(AggregateEvent event) {
-        applyAggregateEvent(event);
+        eventHandler.invoke(event, this);
+        eventHandler.invoke(event, this.old);
     }
 
     protected final String getId() {

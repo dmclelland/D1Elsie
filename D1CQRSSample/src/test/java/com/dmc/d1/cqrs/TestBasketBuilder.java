@@ -5,7 +5,6 @@ import com.dmc.d1.sample.domain.*;
 
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created By davidclelland on 29/06/2016.
@@ -34,8 +33,7 @@ class TestBasketBuilder {
                 .divisor(divisor(rnd))
                 .ric(ric)
                 .security(security(rnd))
-                .basketConstituents(constituents2(ric))
-                .basketConstituents2(constituents2_2(ric))
+                .basketConstituents2(constituents2(ric))
                 .lastUpdated(LocalDate.now())
                 .buildJournalable();
     }
@@ -93,15 +91,13 @@ class TestBasketBuilder {
 
     static Map<String, List<BasketConstituent>> constituentsMap = new HashMap<>();
 
-    static Map<String, List<BasketConstituent2>> constituentsMap2 = new HashMap<>();
 
-    static Map<String, Map<String, BasketConstituent2>> constituentsMap2_2 = new HashMap<>();
-
+    static Map<String, Map<String, BasketConstituent2>> constituentsMap2 = new HashMap<>();
 
 
     static String[] constituents = new String[100];
 
-    static{
+    static {
         for (int i = 0; i < constituents.length; i++) {
             constituents[i] = "ric" + i;
         }
@@ -124,42 +120,28 @@ class TestBasketBuilder {
 
     }
 
-    static List<BasketConstituent2> constituents2(String ric) {
+
+    static Map<String, BasketConstituent2> constituents2(String ric) {
         if (constituentsMap2.containsKey(ric))
             return constituentsMap2.get(ric);
 
         LocalDate now = LocalDate.now();
         int rnd = RANDOM.nextInt(99) + 1;
-        List<BasketConstituent2> lst = new ArrayList<>();
+        Map<String, BasketConstituent2> map = new HashMap<>();
         for (int i = 1; i <= rnd; i++) {
             String constituentRic = constituents[i];
-            lst.add(BasketConstituent2Builder.startBuilding()
+            map.put(constituentRic, BasketConstituent2Builder.startBuilding()
+                    .initialAdjustedShares(i)
                     .adjustedShares(i)
+                    .initialAdjustedShares(i)
                     .ric(constituentRic)
                     .lastUpdated(now)
                     .buildJournalable());
         }
 
-        constituentsMap2.put(ric, lst);
+        constituentsMap2.put(ric, map);
 
-        return lst;
-
-    }
-
-
-    static Map<String, BasketConstituent2> constituents2_2(String ric) {
-        if (constituentsMap2_2.containsKey(ric))
-            return constituentsMap2_2.get(ric);
-
-        if (constituentsMap2.containsKey(ric)){
-            Map<String,BasketConstituent2> constituents = constituents2(ric).stream().collect(
-                    Collectors.toMap(BasketConstituent2::getRic,b->b ));
-            constituentsMap2_2.put(ric, constituents);
-            return constituents;
-        }
-
-        throw new IllegalStateException("constituents not cached before attempt to return as map");
-
+        return map;
     }
 
 

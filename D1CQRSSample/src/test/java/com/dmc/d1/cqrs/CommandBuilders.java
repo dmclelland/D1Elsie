@@ -5,14 +5,19 @@ import com.dmc.d1.cqrs.sample.aggregate.ComplexMutableAggregate;
 import com.dmc.d1.cqrs.sample.command.CreateComplexAggregateCommand;
 import com.dmc.d1.cqrs.sample.command.CreateMutableComplexAggregateCommand;
 import com.dmc.d1.cqrs.sample.command.UpdateComplexAggregateCommand;
+import com.dmc.d1.cqrs.sample.command.UpdateComplexAggregateWithDeterministicExceptionCommand;
 import com.dmc.d1.cqrs.sample.domain.MyId;
 import com.dmc.d1.sample.domain.Basket;
 import com.dmc.d1.sample.domain.Basket2;
+import com.dmc.d1.sample.domain.BasketConstituent;
 import com.dmc.d1.sample.domain.BasketConstituent2;
 import com.dmc.d1.sample.event.UpdateBasketConstituentEventBuilder;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
@@ -62,12 +67,45 @@ class CommandBuilders {
         }
     }
 
-    static class UpdateBasketConstituentEventSupplier implements Supplier<Command> {
+    static class UpdateBasketConstituentCommandSupplier implements Supplier<Command> {
 
         List<ComplexMutableAggregate> aggregates;
         int pos = -1;
 
-        UpdateBasketConstituentEventSupplier(List<ComplexMutableAggregate> aggregates) {
+        UpdateBasketConstituentCommandSupplier(List<ComplexMutableAggregate> aggregates) {
+            this.aggregates = aggregates;
+        }
+
+        Map<String, List<BasketConstituent2>> constituentMap = new HashMap<>();
+
+        @Override
+        public Command get() {
+
+            pos = ++pos < aggregates.size() ? pos : 0;
+
+            ComplexMutableAggregate aggregate = aggregates.get(pos);
+
+            List<BasketConstituent2> lst = constituentMap.get(aggregate.getId());
+            if(lst == null){
+                lst = new ArrayList<>(aggregate.getBasket().getBasketConstituents2().values());
+                constituentMap.put(aggregate.getId(), lst);
+            }
+
+            BasketConstituent2 constituent2 = lst.get(ThreadLocalRandom.current().nextInt(lst.size()));
+
+            int adjustedShares = constituent2.getAdjustedShares()+1;
+
+            return new UpdateComplexAggregateCommand(MyId.from(aggregate.getId()),
+                    constituent2.getRic(),adjustedShares);
+        }
+    }
+
+    static class UpdateBasketConstituentWithDeterministicExceptionCommandSupplier implements Supplier<Command> {
+
+        List<ComplexMutableAggregate> aggregates;
+        int pos = -1;
+
+        UpdateBasketConstituentWithDeterministicExceptionCommandSupplier(List<ComplexMutableAggregate> aggregates) {
             this.aggregates = aggregates;
         }
 
@@ -78,15 +116,23 @@ class CommandBuilders {
 
             ComplexMutableAggregate aggregate = aggregates.get(pos);
 
-            Basket2 basket2 = aggregate.getBasket();
+            Map<String, List<BasketConstituent2>> constituentMap = new HashMap<>();
 
-            BasketConstituent2 constituent2 = basket2.getBasketConstituents().get(
-                    ThreadLocalRandom.current().nextInt(basket2.getBasketConstituents().size()));
+            List<BasketConstituent2> lst = constituentMap.get(aggregate.getId());
+            if(lst == null){
+                lst = new ArrayList<>(aggregate.getBasket().getBasketConstituents2().values());
+                constituentMap.put(aggregate.getId(), lst);
+
+            }
+
+            BasketConstituent2 constituent2 = lst.get(ThreadLocalRandom.current().nextInt(lst.size()));
+
 
             int adjustedShares = constituent2.getAdjustedShares()+1;
 
-            return new UpdateComplexAggregateCommand(MyId.from(aggregate.getId()),
+            return new UpdateComplexAggregateWithDeterministicExceptionCommand(MyId.from(aggregate.getId()),
                     constituent2.getRic(),adjustedShares);
         }
     }
+
 }

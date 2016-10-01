@@ -109,7 +109,9 @@ public abstract class RoundTripBaseTest {
                     System.out.println("Value " + (t1-t0) + " not recorded:" + e.getMessage());
                 }
             }
-            if (sequence < maxEvents * 2) {
+
+            //1 already sent in onStart
+            if (sequence < (maxEvents * 2)-1) {
                 while (pauseTimeNs > (System.nanoTime() - t1)) {
                     Thread.yield();
                 }
@@ -119,6 +121,7 @@ public abstract class RoundTripBaseTest {
                 HISTOGRAM.getHistogramData().outputPercentileDistribution(System.out, 1, 1000.0);
             }
         }
+
 
         void send() {
             if (multiThreaded) {
@@ -150,7 +153,7 @@ public abstract class RoundTripBaseTest {
 
         public void reset(final CyclicBarrier barrier, final CountDownLatch latch, int maxEvents) {
             HISTOGRAM.reset();
-            this.maxEvents = maxEvents;
+            this.maxEvents+=maxEvents;
             this.barrier = barrier;
             this.latch = latch;
         }
