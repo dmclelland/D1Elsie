@@ -7,7 +7,7 @@ package com.dmc.d1.algo.event;
 public class Configuration {
 
     public static final String getChroniclePath() {
-        return System.getProperty("java.io.tmpdir") + "/d1-events-" + System.currentTimeMillis();
+        return System.getProperty("java.io.tmpdir") + "/d1-events/d1-events-" + System.currentTimeMillis();
     }
 
 

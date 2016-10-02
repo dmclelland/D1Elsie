@@ -14,7 +14,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class AggregateRepository<A extends Aggregate> {
 
     private final AggregateEventStore aggregateEventStore;
-    private final Map<String, A> cache = new HashMap<>();
+
+    //allow for just
+    // over 1_000_000 aggregates
+    static int CACHE_CAPACITY = 2 << 19;
+
+    private final Map<String, A> cache = new HashMap<>(CACHE_CAPACITY);
     private final AnnotatedAggregateEventHandlerInvoker annotatedAggregateEventHandlerInvoker;
     private final EventBus eventBus;
     private final Class<A> aggregateClass;

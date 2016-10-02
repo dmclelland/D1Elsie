@@ -26,13 +26,12 @@ import static org.junit.Assert.assertEquals;
 public class ComplexAggregateTest extends RoundTripBaseTest {
 
     AggregateEventStore chronicleAES;
+
     AggregateRepository<ComplexAggregate> repo1;
 
     final int senderPoolThreadSize = 1;
     final int bufferSize = 1024;
-
     final long pauseInNanos = 1000;
-
 
     @Before
     public void setup() throws Exception {
@@ -123,6 +122,7 @@ public class ComplexAggregateTest extends RoundTripBaseTest {
     public int senderThreadPoolSize() {
         return senderPoolThreadSize;
     }
+
 
     @Override
     public int bufferSize() {

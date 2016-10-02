@@ -28,6 +28,7 @@ public abstract class RoundTripBaseTest {
             createSingleProducer(EmptyEvent.EVENT_FACTORY, bufferSize(), new BlockingWaitStrategy());
 
     private Pinger pinger;
+
     private BatchEventProcessor<EmptyEvent> pingProcessor;
 
     private Ponger ponger;
@@ -61,12 +62,10 @@ public abstract class RoundTripBaseTest {
         final CyclicBarrier barrier = new CyclicBarrier(2);
 
         pinger.reset(barrier, latch, noOfCommands);
-
         EXECUTOR.submit(pingProcessor);
 
         barrier.await();
         latch.await();
-
         pingProcessor.halt();
     }
 
@@ -89,7 +88,10 @@ public abstract class RoundTripBaseTest {
 
         private final boolean multiThreaded;
 
-        public Pinger(final CommandBus commandBus,final long pauseTimeNs) {
+        private volatile String currentId;
+        private volatile long currentThreadId;
+
+        public Pinger(final CommandBus commandBus, final long pauseTimeNs) {
             this.pauseTimeNs = pauseTimeNs;
             this.commandBus = commandBus;
             this.senderExecutor = Executors.newFixedThreadPool(senderThreadPoolSize());
@@ -100,18 +102,26 @@ public abstract class RoundTripBaseTest {
         public void onEvent(final EmptyEvent event, final long sequence, final boolean endOfBatch) throws Exception {
             final long t1 = System.nanoTime();
 
+            //System.out.println(event.getAggregateId() + "Round trip took " + ((t1 - t0) / 1000));
+
+            if (!event.getAggregateId().equals(this.currentId))
+                throw new IllegalStateException("Processing aggregate out of sequence");
+
+            if( this.currentThreadId  != Thread.currentThread().getId())
+                throw new IllegalStateException("Unexpected thread");
+
             //only store after warm up
             if (sequence > maxEvents) {
                 try {
                     //System.out.println((t1-t0)/1000);
                     HISTOGRAM.recordValueWithExpectedInterval(t1 - t0, pauseTimeNs);
-                }catch(Exception e){
-                    System.out.println("Value " + (t1-t0) + " not recorded:" + e.getMessage());
+                } catch (Exception e) {
+                    System.out.println("Value " + (t1 - t0) + " not recorded:" + e.getMessage());
                 }
             }
 
             //1 already sent in onStart
-            if (sequence < (maxEvents * 2)-1) {
+            if (sequence < (maxEvents * 2) - 1) {
                 while (pauseTimeNs > (System.nanoTime() - t1)) {
                     Thread.yield();
                 }
@@ -122,19 +132,26 @@ public abstract class RoundTripBaseTest {
             }
         }
 
-
         void send() {
+            Command command = RoundTripBaseTest.this.commandBuilder.get();
+            this.currentId = command.getAggregateId();
+
+            if(this.currentThreadId==0)
+                this.currentThreadId = Thread.currentThread().getId();
+            else{
+                if( this.currentThreadId  != Thread.currentThread().getId())
+                    throw new IllegalStateException("Unexpected thread");
+            }
             if (multiThreaded) {
                 senderExecutor.submit(() -> {
                     t0 = System.nanoTime();
-                    commandBus.dispatch(RoundTripBaseTest.this.commandBuilder.get());
+                    commandBus.dispatch(command);
                 });
             } else {
                 t0 = System.nanoTime();
-                commandBus.dispatch(RoundTripBaseTest.this.commandBuilder.get());
+                commandBus.dispatch(command);
             }
         }
-
 
         @Override
         public void onStart() {
@@ -153,16 +170,17 @@ public abstract class RoundTripBaseTest {
 
         public void reset(final CyclicBarrier barrier, final CountDownLatch latch, int maxEvents) {
             HISTOGRAM.reset();
-            this.maxEvents+=maxEvents;
+            this.maxEvents += maxEvents;
             this.barrier = barrier;
             this.latch = latch;
         }
     }
 
     //when disruptor command has completed handling he command this handler subsequently notifies the
-    //pinger that it is
-    // .
+    //pinger that it is done
+
     protected class Ponger implements EventHandler<DisruptorCommandBus.CommandHolder> {
+
         private final RingBuffer<EmptyEvent> exchangeBuffer;
 
         public Ponger(final RingBuffer<EmptyEvent> exchangeBuffer) {
@@ -173,7 +191,10 @@ public abstract class RoundTripBaseTest {
         public void onEvent(final DisruptorCommandBus.CommandHolder event,
                             final long sequence, final boolean endOfBatch) throws Exception {
 
-            exchangeBuffer.publish(exchangeBuffer.next());
+            EmptyEvent e = exchangeBuffer.get(sequence);
+            e.setAggregateId(event.getCommand().getAggregateId());
+
+            exchangeBuffer.publish(sequence);
         }
     }
 }

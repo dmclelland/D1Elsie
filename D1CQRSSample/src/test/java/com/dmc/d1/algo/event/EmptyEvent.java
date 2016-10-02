@@ -18,5 +18,16 @@ package com.dmc.d1.algo.event;
 import com.lmax.disruptor.EventFactory;
 
 public final class EmptyEvent {
+
+    private String aggregateId;
+
+    public String getAggregateId() {
+        return aggregateId;
+    }
+
+    public void setAggregateId(String aggregateId) {
+        this.aggregateId = aggregateId;
+    }
+
     public static final EventFactory<EmptyEvent> EVENT_FACTORY = () -> new EmptyEvent();
 }
