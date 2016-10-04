@@ -19,13 +19,13 @@ import com.lmax.disruptor.EventFactory;
 
 public final class EmptyEvent {
 
-    private String aggregateId;
+    private long aggregateId;
 
-    public String getAggregateId() {
+    public long getAggregateId() {
         return aggregateId;
     }
 
-    public void setAggregateId(String aggregateId) {
+    public void setAggregateId(long aggregateId) {
         this.aggregateId = aggregateId;
     }
 

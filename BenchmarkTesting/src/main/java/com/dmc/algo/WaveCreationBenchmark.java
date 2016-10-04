@@ -34,7 +34,10 @@ package com.dmc.algo;
 import com.dmc.d1.algo.domain.SecurityBuilder;
 import com.dmc.d1.algo.domain.Wave;
 import com.dmc.d1.algo.domain.WaveBuilder;
-import com.dmc.d1.domain.*;
+import com.dmc.d1.domain.AssetType;
+import com.dmc.d1.domain.OrderId;
+import com.dmc.d1.domain.TradeDirection;
+import com.dmc.d1.domain.UserId;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.profile.GCProfiler;
 import org.openjdk.jmh.runner.RunnerException;
@@ -101,9 +104,9 @@ public class WaveCreationBenchmark {
         LocalDate tradeDate = LocalDate.now();
         TradeDirection tradeDirection = TradeDirection.BUY;
         UserId userId = UserId.from("testUser");
-        WaveId waveId = WaveId.from("testWave");
+        long waveId = 121;
         AssetType assetType = AssetType.ETF;
-        InstrumentId instrumentId = InstrumentId.from("inst");
+        long instrumentId = 1342;
         String securityName = "test";
     }
 

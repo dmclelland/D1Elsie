@@ -6,14 +6,10 @@ import com.dmc.d1.cqrs.sample.command.CreateComplexAggregateCommand;
 import com.dmc.d1.cqrs.sample.command.CreateMutableComplexAggregateCommand;
 import com.dmc.d1.cqrs.sample.command.UpdateComplexAggregateCommand;
 import com.dmc.d1.cqrs.sample.command.UpdateComplexAggregateWithDeterministicExceptionCommand;
-import com.dmc.d1.cqrs.sample.domain.MyId;
 import com.dmc.d1.sample.domain.Basket;
 import com.dmc.d1.sample.domain.Basket2;
-import com.dmc.d1.sample.domain.BasketConstituent;
 import com.dmc.d1.sample.domain.BasketConstituent2;
-import com.dmc.d1.sample.event.UpdateBasketConstituentEventBuilder;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,16 +27,16 @@ class CommandBuilders {
 
         final int maxSizeOfBasket;
 
-        CreateComplexAggregateCommandSupplier(int maxSizeOfBasket){
+        CreateComplexAggregateCommandSupplier(int maxSizeOfBasket) {
             this.maxSizeOfBasket = maxSizeOfBasket;
         }
 
         @Override
         public Command get() {
             rnd = xorShift(rnd);
-            MyId id = MyId.from("" + rnd);
+
             Basket basket = TestBasketBuilder.createBasket(rnd, maxSizeOfBasket);
-            Command command = new CreateComplexAggregateCommand(id, basket);
+            Command command = new CreateComplexAggregateCommand(rnd, basket);
             return command;
         }
 
@@ -58,7 +54,7 @@ class CommandBuilders {
 
         final int maxSizeOfBasket;
 
-        CreateMutableComplexAggregateCommandSupplier(int maxSizeOfBasket){
+        CreateMutableComplexAggregateCommandSupplier(int maxSizeOfBasket) {
             this.maxSizeOfBasket = maxSizeOfBasket;
         }
 
@@ -66,9 +62,9 @@ class CommandBuilders {
         @Override
         public Command get() {
             rnd = xorShift(rnd);
-            MyId id = MyId.from("" + rnd);
+
             Basket2 basket = TestBasketBuilder.createBasket2(rnd, maxSizeOfBasket);
-            Command command = new CreateMutableComplexAggregateCommand(id, basket);
+            Command command = new CreateMutableComplexAggregateCommand(rnd, basket);
             return command;
         }
 
@@ -89,7 +85,7 @@ class CommandBuilders {
             this.aggregates = aggregates;
         }
 
-        Map<String, List<BasketConstituent2>> constituentMap = new HashMap<>();
+        Map<Long, List<BasketConstituent2>> constituentMap = new HashMap<>();
 
         @Override
         public Command get() {
@@ -99,17 +95,17 @@ class CommandBuilders {
             ComplexMutableAggregate aggregate = aggregates.get(pos);
 
             List<BasketConstituent2> lst = constituentMap.get(aggregate.getId());
-            if(lst == null){
+            if (lst == null) {
                 lst = new ArrayList<>(aggregate.getBasket().getBasketConstituents2().values());
                 constituentMap.put(aggregate.getId(), lst);
             }
 
             BasketConstituent2 constituent2 = lst.get(ThreadLocalRandom.current().nextInt(lst.size()));
 
-            int adjustedShares = constituent2.getAdjustedShares()+1;
+            int adjustedShares = constituent2.getAdjustedShares() + 1;
 
-            return new UpdateComplexAggregateCommand(MyId.from(aggregate.getId()),
-                    constituent2.getRic(),adjustedShares);
+            return new UpdateComplexAggregateCommand(aggregate.getId(),
+                    constituent2.getRic(), adjustedShares);
         }
     }
 
@@ -129,10 +125,10 @@ class CommandBuilders {
 
             ComplexMutableAggregate aggregate = aggregates.get(pos);
 
-            Map<String, List<BasketConstituent2>> constituentMap = new HashMap<>();
+            Map<Long, List<BasketConstituent2>> constituentMap = new HashMap<>();
 
             List<BasketConstituent2> lst = constituentMap.get(aggregate.getId());
-            if(lst == null){
+            if (lst == null) {
                 lst = new ArrayList<>(aggregate.getBasket().getBasketConstituents2().values());
                 constituentMap.put(aggregate.getId(), lst);
 
@@ -141,10 +137,10 @@ class CommandBuilders {
             BasketConstituent2 constituent2 = lst.get(ThreadLocalRandom.current().nextInt(lst.size()));
 
 
-            int adjustedShares = constituent2.getAdjustedShares()+1;
+            int adjustedShares = constituent2.getAdjustedShares() + 1;
 
-            return new UpdateComplexAggregateWithDeterministicExceptionCommand(MyId.from(aggregate.getId()),
-                    constituent2.getRic(),adjustedShares);
+            return new UpdateComplexAggregateWithDeterministicExceptionCommand(aggregate.getId(),
+                    constituent2.getRic(), adjustedShares);
         }
     }
 

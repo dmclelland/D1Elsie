@@ -10,21 +10,19 @@ public class NestedExceptionTriggeringAggregate1Command implements Command {
 
     private final static String CLASS_NAME = NestedExceptionTriggeringAggregate1Command.class.getName();
 
-    private MyId id;
+   private long id;
     private String str;
 
-    public NestedExceptionTriggeringAggregate1Command(MyId id, String str){
+    public NestedExceptionTriggeringAggregate1Command(long id, String str){
         this.id = id;
         this.str = str;
     }
 
-    public MyId getId() {
-        return id;
-    }
+
 
     @Override
-    public String getAggregateId() {
-        return id.asString();
+    public long getAggregateId() {
+        return id;
     }
 
     public String getStr() {

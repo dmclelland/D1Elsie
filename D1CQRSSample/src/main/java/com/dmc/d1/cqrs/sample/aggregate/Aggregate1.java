@@ -12,8 +12,6 @@ import java.util.function.Supplier;
 @com.dmc.d1.cqrs.annotations.Aggregate
 public class Aggregate1 extends Aggregate<Aggregate1> {
 
-    private static String CLASS_NAME = Aggregate1.class.getName();
-
     private int i1;
     private int i2;
     private String str;
@@ -29,7 +27,7 @@ public class Aggregate1 extends Aggregate<Aggregate1> {
 
     public void doSomething2(String str) {
 
-        String nestedId = generateNestedId(getId());
+        long nestedId = generateNestedId(getId());
         apply(HandledByExternalHandlersEventBuilder.startBuilding(getId())
                 .nestedId(nestedId).str(str).buildJournalable());
 
@@ -37,13 +35,13 @@ public class Aggregate1 extends Aggregate<Aggregate1> {
 
 
     public void triggerExceptionInNestedAggregate(String str) {
-        String nestedId = generateNestedId(getId());
+        long nestedId = generateNestedId(getId());
         apply(TriggerExceptionInNestedAggregateEventBuilder.startBuilding(getId())
                 .nestedId(nestedId).str(str).buildJournalable());
     }
 
-    private String generateNestedId(String id) {
-        return id + "Nested";
+    private long generateNestedId(long id) {
+        return id + 2;
     }
 
     @EventHandler

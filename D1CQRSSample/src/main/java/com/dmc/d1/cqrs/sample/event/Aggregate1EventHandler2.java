@@ -12,15 +12,15 @@ import java.util.Map;
  */
 public class Aggregate1EventHandler2 extends AbstractEventHandler {
 
-    private final Map<String, String> map = new HashMap<>();
+    private final Map<Long, String> map = new HashMap<>();
 
     @EventHandler
-    public void handle(HandledByExternalHandlersEvent event){
+    public void handle(HandledByExternalHandlersEvent event) {
         map.put(event.getAggregateId(), event.getStr());
     }
 
 
-    public String getString(String id){
+    public String getString(long id) {
         return map.get(id);
     }
 

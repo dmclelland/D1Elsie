@@ -53,7 +53,7 @@
     </domain>
     <event>
         <class name="com.dmc.d1.sample.event.HandledByExternalHandlersEvent">
-            <field name="nestedId" type="java.lang.String"/>
+            <field name="nestedId" type="java.lang.Long" toPrimitive="true"/>
             <field name="str" type="java.lang.String"/>
         </class>
         <class name="com.dmc.d1.sample.event.IntUpdatedEvent1">
@@ -76,7 +76,7 @@
         <class name="com.dmc.d1.sample.event.TriggerExceptionNestedEvent">
         </class>
         <class name="com.dmc.d1.sample.event.TriggerExceptionInNestedAggregateEvent">
-            <field name="nestedId" type="java.lang.String"/>
+            <field name="nestedId" type="java.lang.Long" toPrimitive="true"/>
             <field name="str" type="java.lang.String"/>
         </class>
 
@@ -90,13 +90,13 @@
 
         <class name="com.dmc.d1.sample.event.UpdateBasketConstituentEvent">
             <field name="ric" type="java.lang.String"/>
-            <field name="adjustedShares" type="java.lang.Integer"/>
+            <field name="adjustedShares" type="java.lang.Integer" toPrimitive="true"/>
             <field name="lastUpdated" type="java.time.LocalDate"/>
         </class>
 
         <class name="com.dmc.d1.sample.event.UpdateBasketConstituentEventWithException">
             <field name="ric" type="java.lang.String"/>
-            <field name="adjustedShares" type="java.lang.Integer"/>
+            <field name="adjustedShares" type="java.lang.Integer" toPrimitive="true"/>
             <field name="lastUpdated" type="java.time.LocalDate"/>
         </class>
 

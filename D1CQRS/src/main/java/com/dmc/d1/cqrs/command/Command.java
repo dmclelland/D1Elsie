@@ -8,7 +8,7 @@ import java.util.Map;
  */
 public interface Command {
 
-    String getAggregateId();
+    long getAggregateId();
 
     String getClassName();
 

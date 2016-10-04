@@ -68,7 +68,7 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
         while ((classIdentifier = tailer.readText()) != null) {
             try (DocumentContext documentContext = tailer.readingDocument()) {
 
-                JournalableAggregateEvent e = NEW_INSTANCE_FACTORIES.get(classIdentifier).get();
+                JournalableAggregateEvent e = JOURNALABLE_EVENT_INSTANCES.get(classIdentifier);
 
                 e.readMarshallable(documentContext.wire());
 
@@ -90,7 +90,7 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
         return path;
     }
 
-    private static Map<String, Supplier<? extends JournalableAggregateEvent>> NEW_INSTANCE_FACTORIES
+    private static Map<String, JournalableAggregateEvent> JOURNALABLE_EVENT_INSTANCES
             = new HashMap<>();
 
     static {
@@ -101,8 +101,8 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
                 if (!(Modifier.isAbstract(journalable.getModifiers()) || Modifier.isInterface(journalable.getModifiers()))) {
                     Method m = journalable.getDeclaredMethod("newInstanceFactory", null);
                     m.setAccessible(true);
-                    Supplier<? extends JournalableAggregateEvent> newInstanceFactory = (Supplier<? extends JournalableAggregateEvent>) m.invoke(null);
-                    NEW_INSTANCE_FACTORIES.put(newInstanceFactory.get().getClassName(), newInstanceFactory);
+                    Supplier<JournalableAggregateEvent> newInstanceFactory = (Supplier<JournalableAggregateEvent>) m.invoke(null);
+                    JOURNALABLE_EVENT_INSTANCES.put(newInstanceFactory.get().getClassName(), newInstanceFactory.get());
 
                 }
             }

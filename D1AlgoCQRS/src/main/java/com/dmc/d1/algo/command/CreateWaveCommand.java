@@ -10,19 +10,15 @@ public class CreateWaveCommand implements Command {
 
     private static String CLASS_NAME = CreateWaveCommand.class.getName();
 
-    private final WaveId waveId;
+    private final long waveId;
 
-    public CreateWaveCommand(WaveId waveId){
+    public CreateWaveCommand(long waveId){
         this.waveId = waveId;
     }
 
-    public WaveId getWaveId() {
-        return waveId;
-    }
-
     @Override
-    public String getAggregateId() {
-        return waveId.asString();
+    public long getAggregateId() {
+        return waveId;
     }
 
     @Override

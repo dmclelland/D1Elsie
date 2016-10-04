@@ -10,19 +10,15 @@ public class ResumeWaveCommand implements Command {
 
     private static String CLASS_NAME = ResumeWaveCommand.class.getName();
 
-    private final WaveId waveId;
+    private final long waveId;
 
-    public ResumeWaveCommand(WaveId waveId) {
+    public ResumeWaveCommand(long waveId) {
         this.waveId = waveId;
     }
 
-    public WaveId getWaveId() {
-        return waveId;
-    }
-
     @Override
-    public String getAggregateId() {
-        return waveId.asString();
+    public long getAggregateId() {
+        return waveId;
     }
 
     @Override

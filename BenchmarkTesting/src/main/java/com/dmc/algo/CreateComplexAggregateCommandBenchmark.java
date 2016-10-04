@@ -31,19 +31,14 @@
 
 package com.dmc.algo;
 
-import com.dmc.d1.cqrs.AbstractCommandHandler;
-import com.dmc.d1.cqrs.Aggregate;
-import com.dmc.d1.cqrs.AggregateRepository;
+import com.dmc.d1.cqrs.*;
 import com.dmc.d1.cqrs.command.Command;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
-import com.dmc.d1.cqrs.AggregateEventStore;
-import com.dmc.d1.cqrs.ChronicleAggregateEventStore;
 import com.dmc.d1.cqrs.sample.aggregate.ComplexAggregate;
 import com.dmc.d1.cqrs.sample.command.CreateComplexAggregateCommand;
 import com.dmc.d1.cqrs.sample.commandhandler.ComplexCommandHandler;
-import com.dmc.d1.cqrs.sample.domain.MyId;
 import com.dmc.d1.sample.domain.Basket;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.profile.GCProfiler;
@@ -97,9 +92,9 @@ public class CreateComplexAggregateCommandBenchmark {
 
 
         rnd = xorShift(rnd);
-        MyId id = MyId.from("" + rnd);
+
         Basket basket = TestBasketBuilder.createBasket(rnd, 100);
-        Command command = new CreateComplexAggregateCommand(id, basket);
+        Command command = new CreateComplexAggregateCommand(rnd, basket);
 
         commandBus.dispatch(command);
 

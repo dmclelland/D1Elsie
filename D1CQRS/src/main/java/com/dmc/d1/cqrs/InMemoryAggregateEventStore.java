@@ -14,7 +14,7 @@ public class InMemoryAggregateEventStore implements AggregateEventStore<Aggregat
 
     List<AggregateEventAbstract> events = new ArrayList<>();
 
-    Map<String, List<AggregateEventAbstract>> eventsById = new HashMap<>();
+    Map<Long, List<AggregateEventAbstract>> eventsById = new HashMap<>();
 
     @Override
     public void add(AggregateEventAbstract event) {

@@ -139,16 +139,16 @@ public class ComplexMutableAggregateTest extends RoundTripBaseTest {
 
         //remove ponger from disruptor bus, then re-add at the end
 
-        Map<String, ComplexMutableAggregate> aggregate1Repo = (Map<String, ComplexMutableAggregate>) ReflectionTestUtils.getField(repo1, "cache");
-        Map<String, ComplexMutableAggregate> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
+        Map<Long, ComplexMutableAggregate> aggregate1Repo = (Map<Long, ComplexMutableAggregate>) ReflectionTestUtils.getField(repo1, "cache");
+        Map<Long, ComplexMutableAggregate> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
         aggregate1Repo.clear();
         chronicleAES.replay(Collections.singletonMap(repo1.getAggregateClassName(), repo1));
         assertEquals(aggregate1RepoCopy.size(), aggregate1Repo.size());
         checkAssertions(aggregate1Repo, aggregate1RepoCopy);
     }
 
-    private void checkAssertions(Map<String, ComplexMutableAggregate> aggregate1Repo, Map<String, ComplexMutableAggregate> aggregate1RepoCopy) {
-        for (String key : aggregate1Repo.keySet()) {
+    private void checkAssertions(Map<Long, ComplexMutableAggregate> aggregate1Repo, Map<Long, ComplexMutableAggregate> aggregate1RepoCopy) {
+        for (Long key : aggregate1Repo.keySet()) {
             ComplexMutableAggregate agg = aggregate1Repo.get(key);
             ComplexMutableAggregate aggExpected = aggregate1RepoCopy.get(key);
             assertNotSame(aggExpected, agg);

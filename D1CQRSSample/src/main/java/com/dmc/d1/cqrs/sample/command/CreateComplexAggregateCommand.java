@@ -12,20 +12,15 @@ public class CreateComplexAggregateCommand implements Command {
     private final static String CLASS_NAME = CreateComplexAggregateCommand.class.getName();
 
     private Basket basket;
-    private MyId id;
+   private long id;
 
-    public CreateComplexAggregateCommand(MyId id, Basket basket){
+    public CreateComplexAggregateCommand(long id, Basket basket){
         this.id = id;
         this.basket = basket;
     }
-
-    public MyId getId() {
-        return id;
-    }
-
     @Override
-    public String getAggregateId() {
-        return id.asString();
+    public long getAggregateId() {
+        return id;
     }
 
     public Basket getBasket() {

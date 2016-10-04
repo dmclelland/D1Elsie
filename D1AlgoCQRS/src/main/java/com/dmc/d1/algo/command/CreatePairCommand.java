@@ -10,19 +10,16 @@ public class CreatePairCommand implements Command {
 
     private static String CLASS_NAME = CreatePairCommand.class.getName();
 
-    private final PairId pairId;
+    private final long pairId;
 
-    public CreatePairCommand(PairId pairId){
+    public CreatePairCommand(long pairId){
         this.pairId = pairId;
     }
 
-    public PairId getPairId() {
-        return pairId;
-    }
 
     @Override
-    public String getAggregateId() {
-        return pairId.asString();
+    public long getAggregateId() {
+        return pairId;
     }
 
     @Override

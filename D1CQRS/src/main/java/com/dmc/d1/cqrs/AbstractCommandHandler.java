@@ -27,7 +27,7 @@ public abstract class AbstractCommandHandler<A extends Aggregate> {
         this.annotatedCommandHandlerInvoker = commandHandlerInvoker;
     }
 
-    private A getAggregate(String id) {
+    private A getAggregate(long id) {
 
         A aggregate = repository.find(id);
         if(aggregate==null)
@@ -37,7 +37,7 @@ public abstract class AbstractCommandHandler<A extends Aggregate> {
         return aggregate;
     }
 
-    private A initialiseAggregate(String id) {
+    private A initialiseAggregate(long id) {
         if(repository.find(id)!=null)
             throw new IllegalStateException("An aggregate with ID " + id + " already exists");
 

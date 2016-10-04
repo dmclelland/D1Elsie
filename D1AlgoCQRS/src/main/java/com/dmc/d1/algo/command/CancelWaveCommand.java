@@ -10,19 +10,15 @@ public class CancelWaveCommand implements Command {
 
     private static String CLASS_NAME = CancelWaveCommand.class.getName();
 
-    private final WaveId waveId;
+    private final long waveId;
 
-    public CancelWaveCommand(WaveId waveId) {
+    public CancelWaveCommand(long waveId) {
         this.waveId = waveId;
     }
 
-    public WaveId getWaveId() {
-        return waveId;
-    }
-
     @Override
-    public String getAggregateId() {
-        return waveId.asString();
+    public long getAggregateId() {
+        return waveId;
     }
 
     @Override

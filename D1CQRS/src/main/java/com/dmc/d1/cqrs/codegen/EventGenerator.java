@@ -278,7 +278,7 @@ public class EventGenerator {
         MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PUBLIC);
         if (Type.EVENT == type) {
-            constructorBuilder.addParameter(String.class, "id")
+            constructorBuilder.addParameter(long.class, "id")
                     .addStatement("setAggregateId(id)")
                     .addStatement("setClassName(CLASS_NAME)");
         }
@@ -626,17 +626,17 @@ public class EventGenerator {
         //MethodSpec.Builder resetBuilder = MethodSpec.methodBuilder("reset").addModifiers(Modifier.PUBLIC);
 
         if (Type.EVENT == type) {
-            setBuilder.addParameter(String.class, "id");
+            setBuilder.addParameter(long.class, "id");
             setBuilder.addStatement("setAggregateId(id)");
             setBuilder.addStatement("setClassName(CLASS_NAME)");
         }
 
 
         if (Type.EVENT == type) {
-            readMarshallableMethod.addStatement("wireIn.read(()-> \"aggregateId\").text(this, (o, b) -> o.setAggregateId(b))");
+            readMarshallableMethod.addStatement("wireIn.read(()-> \"aggregateId\").int64(this, (o, b) -> o.setAggregateId(b))");
             readMarshallableMethod.addStatement("setClassName(CLASS_NAME)");
             readMarshallableMethod.addStatement("wireIn.read(() -> \"aggregateClassName\").text(this, (o, b) -> o.setAggregateClassName(b))");
-            writeMarshallableMethod.addStatement("wireOut.write(()-> \"aggregateId\").text(getAggregateId())");
+            writeMarshallableMethod.addStatement("wireOut.write(()-> \"aggregateId\").int64(getAggregateId())");
             writeMarshallableMethod.addStatement("wireOut.write(() -> \"aggregateClassName\").text(getAggregateClassName())");
 
         }
@@ -805,7 +805,7 @@ public class EventGenerator {
 
         if (Type.EVENT == type) {
 
-            equalsBuilder.addStatement("if (getAggregateId() != null ? !getAggregateId().equals(that.getAggregateId()) : that.getAggregateId() != null) return false");
+            equalsBuilder.addStatement("if (getAggregateId() != that.getAggregateId())return false");
             equalsBuilder.addStatement("if (getClassName() != null ? !getClassName().equals(that.getClassName()) : that.getClassName() != null) return false");
             equalsBuilder.addStatement("if (getAggregateClassName() != null ? !getAggregateClassName().equals(that.getAggregateClassName()) : that.getAggregateClassName() != null) return false");
         }
@@ -893,7 +893,7 @@ public class EventGenerator {
                 .returns(TypeName.INT);
 
         if (Type.EVENT == type) {
-            hashCodeBuilder.addStatement("int result = getAggregateId() != null ? getAggregateId().hashCode() : 0");
+            hashCodeBuilder.addStatement("int result = (int)getAggregateId()");
             hashCodeBuilder.addStatement("result = 31 * result +  (getClassName() != null ? getClassName().hashCode() : 0)");
             hashCodeBuilder.addStatement("result = 31 * result +  (getAggregateClassName() != null ? getAggregateClassName().hashCode() : 0)");
         }
@@ -905,13 +905,13 @@ public class EventGenerator {
             FieldDataVo fieldData = vo.instanceVariables.get(key);
             if (count == 0 && Type.EVENT != type) {
                 if (fieldData.type.isPrimitive()) {
-                    hashCodeBuilder.addStatement("int result = $L", key);
+                    hashCodeBuilder.addStatement("int result = (int)$L", key);
                 } else {
                     hashCodeBuilder.addStatement("int result = $L != null ? $L.hashCode() : 0", key, key);
                 }
             } else {
                 if (fieldData.type.isPrimitive()) {
-                    hashCodeBuilder.addStatement("result = 31 * result + $L", key);
+                    hashCodeBuilder.addStatement("result = 31 * result + (int)$L", key);
                 } else {
                     hashCodeBuilder.addStatement("result = 31 * result + ($L != null ? $L.hashCode() : 0)", key, key);
                 }
@@ -967,7 +967,7 @@ public class EventGenerator {
                 .returns(builderName);
 
         if (Type.EVENT == type)
-            startBuilding.addParameter(String.class, "id");
+            startBuilding.addParameter(long.class, "id");
 
         startBuilding.beginControlFlow("if (THREAD_LOCAL.get() == null)");
         startBuilding.addStatement("THREAD_LOCAL.set(new $T())", builderName);
@@ -1047,7 +1047,7 @@ public class EventGenerator {
 
         int i = 1;
         if (Type.EVENT == type) {
-            builderBuilder.addField(String.class, "id", Modifier.PRIVATE);
+            builderBuilder.addField(long.class, "id", Modifier.PRIVATE);
         }
 
 

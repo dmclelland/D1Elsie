@@ -10,19 +10,15 @@ public class PauseWaveCommand implements Command {
 
     private static String CLASS_NAME = PauseWaveCommand.class.getName();
 
-    private final WaveId waveId;
+    private final long waveId;
 
-    public PauseWaveCommand(WaveId waveId) {
+    public PauseWaveCommand(long waveId) {
         this.waveId = waveId;
     }
 
-    public WaveId getWaveId() {
-        return waveId;
-    }
-
     @Override
-    public String getAggregateId() {
-        return waveId.asString();
+    public long getAggregateId() {
+        return waveId;
     }
 
     @Override

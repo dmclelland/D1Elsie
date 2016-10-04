@@ -10,23 +10,20 @@ public class CreateAggregate1Command implements Command {
 
     private final static String CLASS_NAME = CreateAggregate1Command.class.getName();
 
-    private MyId id;
+    private long id;
     private int i1;
     private int i2;
 
-    public CreateAggregate1Command(MyId id, int i, int i2){
+    public CreateAggregate1Command(long id, int i, int i2){
         this.id = id;
         this.i1 = i;
         this.i2 = i2;
     }
 
-    public MyId getId() {
-        return id;
-    }
 
     @Override
-    public String getAggregateId() {
-        return id.asString();
+    public long getAggregateId() {
+        return id;
     }
 
     public int getI1() {

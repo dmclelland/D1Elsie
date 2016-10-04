@@ -5,15 +5,15 @@ package com.dmc.d1.cqrs.event;
  */
 public abstract class AggregateEventAbstract implements AggregateEvent {
 
-    private String aggregateId;
+    private long aggregateId;
     private String className;
     private String aggregateClassName;
 
-    public final String getAggregateId() {
+    public final long getAggregateId() {
         return aggregateId;
     }
 
-    public final void setAggregateId(String aggregateId) {
+    public final void setAggregateId(long aggregateId) {
         this.aggregateId = aggregateId;
     }
 

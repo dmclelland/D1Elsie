@@ -1,7 +1,6 @@
 package com.dmc.d1.cqrs.sample.command;
 
 import com.dmc.d1.cqrs.command.Command;
-import com.dmc.d1.cqrs.sample.domain.MyId;
 
 /**
  * Created by davidclelland on 17/05/2016.
@@ -10,18 +9,14 @@ public class UpdateComplexAggregateWithDeterministicExceptionCommand implements 
 
     private final static String CLASS_NAME = UpdateComplexAggregateWithDeterministicExceptionCommand.class.getName();
 
-    private final MyId id;
+    private final long id;
     private final String ric;
     private final int adjustedShares;
 
-    public UpdateComplexAggregateWithDeterministicExceptionCommand(MyId id, String ric, int adjustedShares){
+    public UpdateComplexAggregateWithDeterministicExceptionCommand(long id, String ric, int adjustedShares) {
         this.id = id;
         this.ric = ric;
         this.adjustedShares = adjustedShares;
-    }
-
-    public MyId getId() {
-        return id;
     }
 
     public String getRic() {
@@ -34,8 +29,8 @@ public class UpdateComplexAggregateWithDeterministicExceptionCommand implements 
     }
 
     @Override
-    public String getAggregateId() {
-        return id.asString();
+    public long getAggregateId() {
+        return id;
     }
 
 
@@ -48,7 +43,6 @@ public class UpdateComplexAggregateWithDeterministicExceptionCommand implements 
     public CommandType getCommandType() {
         return CommandType.PROCESS_STARTER;
     }
-
 
 
 }

@@ -75,9 +75,9 @@ public class PersistBasketCreatedEventBenchmark {
     @Benchmark
     public BasketCreatedEvent persistBasketCreatedAvgSize10Event() {
         rnd = xorShift(rnd);
-        MyId id = MyId.from("" + rnd);
+
         Basket basket = TestBasketBuilder.createBasket(rnd, 10);
-        BasketCreatedEvent event = BasketCreatedEventBuilder.startBuilding(id.asString()).basket(basket).buildJournalable();
+        BasketCreatedEvent event = BasketCreatedEventBuilder.startBuilding(rnd).basket(basket).buildJournalable();
         chronicleAES.add(event);
         return event;
     }
@@ -102,9 +102,9 @@ public class PersistBasketCreatedEventBenchmark {
     @Benchmark
     public BasketCreatedEvent persistBasketCreatedAvgSize100Event() {
         rnd = xorShift(rnd);
-        MyId id = MyId.from("" + rnd);
+
         Basket basket = TestBasketBuilder.createBasket(rnd, 100);
-        BasketCreatedEvent event = BasketCreatedEventBuilder.startBuilding(id.asString()).basket(basket).buildJournalable();
+        BasketCreatedEvent event = BasketCreatedEventBuilder.startBuilding(rnd).basket(basket).buildJournalable();
         chronicleAES.add(event);
         return event;
     }
@@ -129,9 +129,9 @@ public class PersistBasketCreatedEventBenchmark {
     @Benchmark
     public BasketCreatedEvent persistBasketCreatedAvgSize500Event() {
         rnd = xorShift(rnd);
-        MyId id = MyId.from("" + rnd);
+
         Basket basket = TestBasketBuilder.createBasket(rnd, 500);
-        BasketCreatedEvent event = BasketCreatedEventBuilder.startBuilding(id.asString()).basket(basket).buildJournalable();
+        BasketCreatedEvent event = BasketCreatedEventBuilder.startBuilding(rnd).basket(basket).buildJournalable();
         chronicleAES.add(event);
         return event;
     }

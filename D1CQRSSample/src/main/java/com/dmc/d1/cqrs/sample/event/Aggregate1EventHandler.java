@@ -5,7 +5,6 @@ import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.event.AbstractEventHandler;
 import com.dmc.d1.cqrs.sample.command.CreateNestedAggregate1Command;
 import com.dmc.d1.cqrs.sample.command.ExceptionTriggeringNestedAggregateCommand;
-import com.dmc.d1.cqrs.sample.domain.MyNestedId;
 import com.dmc.d1.sample.event.HandledByExternalHandlersEvent;
 import com.dmc.d1.sample.event.TriggerExceptionInNestedAggregateEvent;
 
@@ -18,17 +17,17 @@ public class Aggregate1EventHandler extends AbstractEventHandler {
 
     private final CommandBus bus;
 
-    public Aggregate1EventHandler(CommandBus bus){
+    public Aggregate1EventHandler(CommandBus bus) {
         this.bus = checkNotNull(bus);
     }
 
     @EventHandler
-    public void handle(HandledByExternalHandlersEvent event){
-        bus.dispatch(new CreateNestedAggregate1Command( MyNestedId.from(event.getNestedId()), event.getStr()));
+    public void handle(HandledByExternalHandlersEvent event) {
+        bus.dispatch(new CreateNestedAggregate1Command(event.getNestedId(), event.getStr()));
     }
 
     @EventHandler
-    public void handle(TriggerExceptionInNestedAggregateEvent event){
-        bus.dispatch(new ExceptionTriggeringNestedAggregateCommand(MyNestedId.from(event.getNestedId()),event.getStr()));
+    public void handle(TriggerExceptionInNestedAggregateEvent event) {
+        bus.dispatch(new ExceptionTriggeringNestedAggregateCommand(event.getNestedId(), event.getStr()));
     }
 }

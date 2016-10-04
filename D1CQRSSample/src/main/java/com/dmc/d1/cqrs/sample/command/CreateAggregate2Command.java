@@ -1,7 +1,6 @@
 package com.dmc.d1.cqrs.sample.command;
 
 import com.dmc.d1.cqrs.command.Command;
-import com.dmc.d1.cqrs.sample.domain.MyId;
 
 /**
  * Created by davidclelland on 17/05/2016.
@@ -10,18 +9,14 @@ public class CreateAggregate2Command implements Command {
 
     private final static String CLASS_NAME = CreateAggregate2Command.class.getName();
 
-    private MyId id;
+    private long id;
     private String str1;
     private String str2;
 
-    public CreateAggregate2Command(MyId id, String str1, String str2){
+    public CreateAggregate2Command(long id, String str1, String str2) {
         this.id = id;
         this.str1 = str1;
         this.str2 = str2;
-    }
-
-    public MyId getId() {
-        return id;
     }
 
     @Override
@@ -35,8 +30,8 @@ public class CreateAggregate2Command implements Command {
     }
 
     @Override
-    public String getAggregateId() {
-        return id.asString();
+    public long getAggregateId() {
+        return id;
     }
 
     public String getStr1() {

@@ -19,7 +19,7 @@ public class AggregateRepository<A extends Aggregate> {
     // over 1_000_000 aggregates
     static int CACHE_CAPACITY = 2 << 19;
 
-    private final Map<String, A> cache = new HashMap<>(CACHE_CAPACITY);
+    private final Map<Long, A> cache = new HashMap<>(CACHE_CAPACITY);
     private final AnnotatedAggregateEventHandlerInvoker annotatedAggregateEventHandlerInvoker;
     private final EventBus eventBus;
     private final Class<A> aggregateClass;
@@ -42,7 +42,7 @@ public class AggregateRepository<A extends Aggregate> {
     }
 
 
-    final A create(String id) {
+    final A create(long id) {
         //initialized event used for replays - the event is a marker to indicate
         //that a new aggregate of the specified type needs to be created
         AggregateInitialisedEvent initialisationEvent = new AggregateInitialisedEvent();
@@ -98,7 +98,7 @@ public class AggregateRepository<A extends Aggregate> {
         aggregate.setRepository(this);
     }
 
-    public final A find(String id) {
+    public final A find(long id) {
         return cache.get(id);
     }
 

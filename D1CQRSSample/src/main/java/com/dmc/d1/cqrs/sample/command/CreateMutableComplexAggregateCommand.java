@@ -13,20 +13,17 @@ public class CreateMutableComplexAggregateCommand implements Command {
     private final static String CLASS_NAME = CreateMutableComplexAggregateCommand.class.getName();
 
     private Basket2 basket;
-    private MyId id;
+    private long id;
 
-    public CreateMutableComplexAggregateCommand(MyId id, Basket2 basket){
+    public CreateMutableComplexAggregateCommand(long id, Basket2 basket) {
         this.id = id;
         this.basket = basket;
     }
 
-    public MyId getId() {
-        return id;
-    }
 
     @Override
-    public String getAggregateId() {
-        return id.asString();
+    public long getAggregateId() {
+        return id;
     }
 
     public Basket2 getBasket() {

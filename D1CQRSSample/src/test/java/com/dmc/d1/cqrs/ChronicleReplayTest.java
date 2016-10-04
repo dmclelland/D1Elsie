@@ -12,7 +12,6 @@ import com.dmc.d1.cqrs.sample.command.UpdateAggregate1Command;
 import com.dmc.d1.cqrs.sample.command.UpdateAggregate2Command;
 import com.dmc.d1.cqrs.sample.commandhandler.MyCommandHandler1;
 import com.dmc.d1.cqrs.sample.commandhandler.MyCommandHandler2;
-import com.dmc.d1.cqrs.sample.domain.MyId;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -65,7 +64,7 @@ public class ChronicleReplayTest {
         setup();
         int rnd = ((this.hashCode() ^ (int) System.nanoTime()));
 
-        List<MyId> ids = new ArrayList<>();
+        List<Integer> ids = new ArrayList<>();
         List<Aggregate> aggregates = new ArrayList<>();
         rnd = createAggregates(commandBus, rnd, ids, aggregates, noOfCreates);
         rnd = updateAggregates(commandBus, rnd, ids, noOfUpdates);
@@ -113,21 +112,21 @@ public class ChronicleReplayTest {
     }
 
 
-    private int updateAggregates(CommandBus commandBus, int rnd, List<MyId> ids, int iterations) {
+    private int updateAggregates(CommandBus commandBus, int rnd, List<Integer> ids, int iterations) {
         Random randomSelect = new Random();
         //send a whole bunch of updates
         for (int i = 0; i < iterations; i++) {
             busyWaitMicros(50);
 
-            MyId id = ids.get(randomSelect.nextInt(1000));
+            Integer id = ids.get(randomSelect.nextInt(1000));
             rnd = xorShift(rnd);
 
-            if (Integer.parseInt(id.asString()) % 2 == 0) {
+            if (id % 2 == 0) {
 
                 UpdateAggregate1Command command = new UpdateAggregate1Command(id, rnd - 5, rnd - 7);
                 commandBus.dispatch(command);
 
-                Aggregate1 aggregate = repo1.find(id.asString());
+                Aggregate1 aggregate = repo1.find(id);
 
                 assertEquals(aggregate.getI1(), rnd - 5);
                 assertEquals(aggregate.getI2(), rnd - 7);
@@ -137,7 +136,7 @@ public class ChronicleReplayTest {
 
                 commandBus.dispatch(command);
 
-                Aggregate2 aggregate = repo2.find(id.asString());
+                Aggregate2 aggregate = repo2.find(id);
 
                 assertEquals(aggregate.getS1(), "" + (rnd - 5));
                 assertEquals(aggregate.getS2(), "" + (rnd - 7));
@@ -149,22 +148,22 @@ public class ChronicleReplayTest {
         return rnd;
     }
 
-    private int createAggregates(CommandBus commandBus, int rnd, List<MyId> ids, List<Aggregate> aggregates, int iterations) {
+    private int createAggregates(CommandBus commandBus, int rnd, List<Integer> ids, List<Aggregate> aggregates, int iterations) {
         //create 1000 different aggregates
         for (int i = 0; i < iterations; i++) {
             busyWaitMicros(50);
             rnd = xorShift(rnd);
-            MyId id = MyId.from("" + rnd);
-            ids.add(id);
+
+            ids.add(rnd);
 
 
             Aggregate aggregate = null;
             if (rnd % 2 == 0) {
-                commandBus.dispatch(new CreateAggregate1Command(id, rnd, rnd + 2));
-                aggregate = repo1.find(id.asString());
+                commandBus.dispatch(new CreateAggregate1Command(rnd, rnd, rnd + 2));
+                aggregate = repo1.find(rnd);
             } else if (Math.abs(rnd % 2) == 1) {
-                commandBus.dispatch(new CreateAggregate2Command(id, "" + rnd, "" + (rnd + 2)));
-                aggregate = repo2.find(id.asString());
+                commandBus.dispatch(new CreateAggregate2Command(rnd, "" + rnd, "" + (rnd + 2)));
+                aggregate = repo2.find(rnd);
             }
             aggregates.add(aggregate);
         }

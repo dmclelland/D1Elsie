@@ -26,14 +26,14 @@ class AggregateInitialisedEvent extends JournalableAggregateEvent {
 
     @Override
     public void readMarshallable(WireIn wireIn) throws IORuntimeException {
-        wireIn.read(() -> "aggregateId").text(this, (o, b) -> o.setAggregateId(b));
+        wireIn.read(() -> "aggregateId").int64(this, (o, b) -> o.setAggregateId(b));
         setClassName(CLASS_NAME);
         wireIn.read(() -> "aggregateClassName").text(this, (o, b) -> o.setAggregateClassName(b));
     }
 
     @Override
     public void writeMarshallable(WireOut wireOut) {
-        wireOut.write(() -> "aggregateId").text(getAggregateId());
+        wireOut.write(() -> "aggregateId").int64(getAggregateId());
         wireOut.write(() -> "aggregateClassName").text(getAggregateClassName());
     }
 

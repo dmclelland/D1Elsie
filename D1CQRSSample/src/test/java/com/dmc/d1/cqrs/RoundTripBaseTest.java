@@ -88,7 +88,7 @@ public abstract class RoundTripBaseTest {
 
         private final boolean multiThreaded;
 
-        private volatile String currentId;
+        private volatile long currentId;
         private volatile long currentThreadId;
 
         public Pinger(final CommandBus commandBus, final long pauseTimeNs) {
@@ -104,10 +104,10 @@ public abstract class RoundTripBaseTest {
 
             //System.out.println(event.getAggregateId() + "Round trip took " + ((t1 - t0) / 1000));
 
-            if (!event.getAggregateId().equals(this.currentId))
+            if (event.getAggregateId() != this.currentId)
                 throw new IllegalStateException("Processing aggregate out of sequence");
 
-            if( this.currentThreadId  != Thread.currentThread().getId())
+            if (this.currentThreadId != Thread.currentThread().getId())
                 throw new IllegalStateException("Unexpected thread");
 
             //only store after warm up
@@ -136,10 +136,10 @@ public abstract class RoundTripBaseTest {
             Command command = RoundTripBaseTest.this.commandBuilder.get();
             this.currentId = command.getAggregateId();
 
-            if(this.currentThreadId==0)
+            if (this.currentThreadId == 0)
                 this.currentThreadId = Thread.currentThread().getId();
-            else{
-                if( this.currentThreadId  != Thread.currentThread().getId())
+            else {
+                if (this.currentThreadId != Thread.currentThread().getId())
                     throw new IllegalStateException("Unexpected thread");
             }
             if (multiThreaded) {

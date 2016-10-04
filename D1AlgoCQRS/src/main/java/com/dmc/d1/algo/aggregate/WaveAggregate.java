@@ -25,7 +25,7 @@ public class WaveAggregate extends Aggregate<WaveAggregate> {
 
     private Wave wave;
 
-    public void createWave(WaveId waveId, OrderId orderId, InstrumentId instrumentId,
+    public void createWave(long waveId, OrderId orderId, InstrumentId instrumentId,
                            int quantity, TradeDirection tradeDirection, LocalDate tradeDate, UserId userId) {
 
         Wave wave = WaveBuilder.startBuilding()
@@ -37,7 +37,7 @@ public class WaveAggregate extends Aggregate<WaveAggregate> {
                 .userId(userId)
                 .buildJournalable();
 
-        apply(WaveCreatedEventBuilder.startBuilding(waveId.asString())
+        apply(WaveCreatedEventBuilder.startBuilding(waveId)
                 .wave(wave).buildJournalable());
 
         Basket theoretical = basketService.createBasket(instrumentId, quantity);

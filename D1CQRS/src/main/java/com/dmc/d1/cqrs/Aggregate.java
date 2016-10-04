@@ -23,7 +23,7 @@ public abstract class Aggregate<A extends Aggregate<A>> {
     private EventBus eventBus;
     private AggregateEventStore<AggregateEvent> aggregateEventStore;
     private AggregateRepository<A> repository;
-    private String id;
+    private long id;
 
     //concrete class name of this aggregate
     private String aggregateClassName;
@@ -44,7 +44,7 @@ public abstract class Aggregate<A extends Aggregate<A>> {
         eventHandler.invoke(event, this.old);
     }
 
-    protected final String getId() {
+    protected final long getId() {
         return id;
     }
 
@@ -80,7 +80,7 @@ public abstract class Aggregate<A extends Aggregate<A>> {
         this.aggregateEventStore = checkNotNull(aggregateEventStore);
     }
 
-    final void setId(String id) {
+    final void setId(long id) {
         this.id = id;
     }
 
