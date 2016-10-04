@@ -69,11 +69,11 @@ public class ChronicleReplayTest {
         rnd = createAggregates(commandBus, rnd, ids, aggregates, noOfCreates);
         rnd = updateAggregates(commandBus, rnd, ids, noOfUpdates);
 
-        Map<String, Aggregate1> aggregate1Repo = (Map<String, Aggregate1>) ReflectionTestUtils.getField(repo1, "cache");
-        Map<String, Aggregate2> aggregate2Repo = (Map<String, Aggregate2>) ReflectionTestUtils.getField(repo2, "cache");
+        Map<Long, Aggregate1> aggregate1Repo = (Map<Long, Aggregate1>) ReflectionTestUtils.getField(repo1, "cache");
+        Map<Long, Aggregate2> aggregate2Repo = (Map<Long, Aggregate2>) ReflectionTestUtils.getField(repo2, "cache");
 
-        Map<String, Aggregate1> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
-        Map<String, Aggregate2> aggregate2RepoCopy = new HashMap<>(aggregate2Repo);
+        Map<Long, Aggregate1> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
+        Map<Long, Aggregate2> aggregate2RepoCopy = new HashMap<>(aggregate2Repo);
 
         aggregate1Repo.clear();
         aggregate2Repo.clear();
@@ -89,7 +89,7 @@ public class ChronicleReplayTest {
         assertEquals(aggregate1RepoCopy.size(), aggregate1Repo.size());
         assertEquals(aggregate2RepoCopy.size(), aggregate2Repo.size());
 
-        for (String key : aggregate1Repo.keySet()) {
+        for (Long key : aggregate1Repo.keySet()) {
             Aggregate1 agg = aggregate1Repo.get(key);
             Aggregate1 aggExpected = aggregate1RepoCopy.get(key);
 
@@ -99,7 +99,7 @@ public class ChronicleReplayTest {
             assertEquals(aggExpected.getId(), agg.getId());
         }
 
-        for (String key : aggregate2Repo.keySet()) {
+        for (Long key : aggregate2Repo.keySet()) {
             Aggregate2 agg = aggregate2Repo.get(key);
             Aggregate2 aggExpected = aggregate2RepoCopy.get(key);
 
