@@ -36,7 +36,7 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
                 .blockSize(128 << 22)
                 .build();
 
-        appender = chronicle.createAppender();
+        appender = chronicle.acquireAppender();
         tailer = chronicle.createTailer();
         this.path = path;
     }
