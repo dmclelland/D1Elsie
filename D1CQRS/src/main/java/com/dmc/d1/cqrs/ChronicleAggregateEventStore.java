@@ -6,18 +6,12 @@ import net.openhft.chronicle.queue.ChronicleQueueBuilder;
 import net.openhft.chronicle.queue.ExcerptAppender;
 import net.openhft.chronicle.queue.ExcerptTailer;
 import net.openhft.chronicle.wire.DocumentContext;
-import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
 
 /**
  * Created by davidclelland on 17/05/2016.
@@ -58,7 +52,6 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
     public void replay(Map<String, AggregateRepository> repos) {
         tailer.toStart();
 
-
         AggregateRepository repo;
         Aggregate agg;
         int i = 0;
@@ -67,6 +60,8 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
             try (DocumentContext dc = tailer.readingDocument()) {
                 if (!dc.isPresent())
                     break;
+
+                //wireIn.read(() -> "basket").object(Basket2.class, this, (o,b) -> o.basket = b);
 
                 JournalableAggregateEvent e = (JournalableAggregateEvent) dc.wire().read().object();
 

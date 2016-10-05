@@ -4,6 +4,7 @@ import com.dmc.d1.algo.event.Configuration;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.sample.aggregate.ComplexMutableAggregate;
 import com.dmc.d1.cqrs.sample.commandhandler.ComplexMutableCommandHandler;
+import com.dmc.d1.domain.Ric;
 import com.dmc.d1.sample.domain.Basket2;
 import com.dmc.d1.sample.domain.BasketConstituent2;
 import org.junit.Before;
@@ -13,6 +14,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.*;
 
+import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNotSame;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -160,10 +162,10 @@ public class ComplexMutableAggregateTest extends RoundTripBaseTest {
             assertTrue(expectedBasket.getDivisor() > 0);
             assertEquals(expectedBasket.getDivisor(), actualBasket.getDivisor());
 
-            assertTrue(expectedBasket.getRic().length() > 0);
+            assertNotNull(expectedBasket.getRic());
             assertEquals(expectedBasket.getRic(), actualBasket.getRic());
 
-            assertTrue(expectedBasket.getSecurity().getName().length() > 0);
+            assertNotNull(expectedBasket.getSecurity().getName());
             assertEquals(expectedBasket.getSecurity().getName(), actualBasket.getSecurity().getName());
             assertEquals(expectedBasket.getSecurity().getAdv20Day(), actualBasket.getSecurity().getAdv20Day());
 
@@ -175,9 +177,9 @@ public class ComplexMutableAggregateTest extends RoundTripBaseTest {
 
 
             for (BasketConstituent2 constituent2 : expectedBasket.getBasketConstituents2().values()) {
-                String constituentRic = constituent2.getRic();
+                Ric constituentRic = constituent2.getRic();
 
-                assertTrue(constituentRic.length() > 0);
+                assertNotNull(constituentRic);
 
 
                 assertTrue(expectedBasket.getBasketConstituents2().get(constituentRic).getAdjustedShares() > 0);

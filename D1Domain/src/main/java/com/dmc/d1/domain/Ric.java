@@ -1,9 +1,10 @@
-package com.dmc.algo;
+package com.dmc.d1.domain;
 
 /**
  * Created By davidclelland on 30/07/2016.
  */
 public enum Ric {
+    X8PS, X5PS, X6PS, X7PS,
     RIC1, RIC2, RIC3, RIC4, RIC5, RIC6, RIC7, RIC8, RIC9,RIC10,
     RIC11, RIC12, RIC13, RIC14, RIC15, RIC16, RIC17, RIC18, RIC19,RIC20,
     RIC21, RIC22, RIC23, RIC24, RIC25, RIC26, RIC27, RIC28, RIC29,RIC30,

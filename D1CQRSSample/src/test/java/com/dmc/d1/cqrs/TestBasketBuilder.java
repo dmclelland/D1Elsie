@@ -1,6 +1,7 @@
 package com.dmc.d1.cqrs;
 
 import com.dmc.d1.domain.AssetType;
+import com.dmc.d1.domain.Ric;
 import com.dmc.d1.sample.domain.*;
 
 import java.time.LocalDate;
@@ -13,10 +14,10 @@ class TestBasketBuilder {
 
     static Basket createBasket(int rnd, int maxNoOfConstituents) {
 
-        if(maxNoOfConstituents> 500)
+        if (maxNoOfConstituents > 500)
             maxNoOfConstituents = 500;
 
-        String ric = securities[Math.abs(rnd) % 4];
+        Ric ric = securities[Math.abs(rnd) % 4];
 
         return BasketBuilder.startBuilding()
                 .tradeDate(LocalDate.now())
@@ -29,7 +30,7 @@ class TestBasketBuilder {
 
     static Basket2 createBasket2(int rnd, int maxNoOfConstituents) {
 
-        String ric = securities[Math.abs(rnd) % 4];
+        Ric ric = securities[Math.abs(rnd) % 4];
 
         return Basket2Builder.startBuilding()
                 .tradeDate(LocalDate.now())
@@ -53,13 +54,13 @@ class TestBasketBuilder {
     }
 
 
-    static String[] securities = new String[4];
+    static Ric[] securities = new Ric[4];
 
     static {
-        securities[0] = "X8PS.DE";
-        securities[1] = "X5PS.DE";
-        securities[2] = "X6PS.DE";
-        securities[3] = "X7PS.DE";
+        securities[0] = Ric.X8PS;
+        securities[1] = Ric.X5PS;
+        securities[2] = Ric.X6PS;
+        securities[3] = Ric.X7PS;
     }
 
     static int noOfAssetTypes = AssetType.values().length;
@@ -70,7 +71,7 @@ class TestBasketBuilder {
     }
 
 
-    static String ric(int rnd) {
+    static Ric ric(int rnd) {
 
         return securities[Math.abs(rnd) % 4];
     }
@@ -92,30 +93,23 @@ class TestBasketBuilder {
 
     static Random RANDOM = new Random();
 
-    static Map<String, List<BasketConstituent>> constituentsMap = new HashMap<>();
+    static Map<Ric, List<BasketConstituent>> constituentsMap = new HashMap<>();
 
 
-    static Map<String, Map<String, BasketConstituent2>> constituentsMap2 = new HashMap<>();
+    static Map<Ric, Map<Ric, BasketConstituent2>> constituentsMap2 = new HashMap<>();
 
 
+    static Ric[] constituents = Ric.values();
 
 
-    static String[] constituents = new String[500];
-
-    static {
-        for (int i = 0; i < constituents.length; i++) {
-            constituents[i] = "ric" + i;
-        }
-    }
-
-    static List<BasketConstituent> constituents(String ric, int noOfConstituents) {
+    static List<BasketConstituent> constituents(Ric ric, int noOfConstituents) {
         if (constituentsMap.containsKey(ric))
             return constituentsMap.get(ric);
 
-        int rnd = RANDOM.nextInt(noOfConstituents-1) + 1;
+        int rnd = RANDOM.nextInt(noOfConstituents - 1) + 1;
         List<BasketConstituent> lst = new ArrayList<>();
         for (int i = 1; i <= rnd; i++) {
-            String constituentRic = constituents[i];
+            Ric constituentRic = constituents[i];
             lst.add(BasketConstituentBuilder.startBuilding().adjustedShares(i).ric(constituentRic).buildJournalable());
         }
 
@@ -126,15 +120,15 @@ class TestBasketBuilder {
     }
 
 
-    static Map<String, BasketConstituent2> constituents2(String ric, int noOfConstituents) {
+    static Map<Ric, BasketConstituent2> constituents2(Ric ric, int noOfConstituents) {
         if (constituentsMap2.containsKey(ric))
             return constituentsMap2.get(ric);
 
         LocalDate now = LocalDate.now();
-        int rnd = RANDOM.nextInt(noOfConstituents-1) + 1;
-        Map<String, BasketConstituent2> map = new HashMap<>();
+        int rnd = RANDOM.nextInt(noOfConstituents - 1) + 1;
+        Map<Ric, BasketConstituent2> map = new HashMap<>();
         for (int i = 1; i <= rnd; i++) {
-            String constituentRic = constituents[i];
+            Ric constituentRic = constituents[i];
             map.put(constituentRic, BasketConstituent2Builder.startBuilding()
                     .initialAdjustedShares(i)
                     .adjustedShares(i)

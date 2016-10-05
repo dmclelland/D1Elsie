@@ -7,6 +7,7 @@ import com.dmc.d1.cqrs.util.StateEquals;
 import com.dmc.d1.domain.Id;
 import com.squareup.javapoet.*;
 import net.openhft.chronicle.core.io.IORuntimeException;
+import net.openhft.chronicle.core.pool.ClassAliasPool;
 import net.openhft.chronicle.wire.Marshallable;
 import net.openhft.chronicle.wire.WireIn;
 import net.openhft.chronicle.wire.WireOut;
@@ -229,7 +230,7 @@ public class EventGenerator {
             );
 
 
-            if(fieldData.updatable){
+            if (fieldData.updatable) {
 
                 MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder("set" + capitalize(key));
                 setterBuilder.addParameter(fieldData.type, key)
@@ -327,13 +328,13 @@ public class EventGenerator {
 
             eventBuilder.addMethod(accessorBuilder.build());
 
-            if(fieldData.updatable){
+            if (fieldData.updatable) {
 
                 MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder("set" + capitalize(key));
                 setterBuilder.addParameter(fieldData.type, key)
                         .addModifiers(Modifier.PUBLIC)
                         .addAnnotation(Override.class)
-                        .addStatement("throw new $T()",UnsupportedOperationException.class);
+                        .addStatement("throw new $T()", UnsupportedOperationException.class);
 
                 eventBuilder.addMethod(setterBuilder.build());
             }
@@ -429,7 +430,7 @@ public class EventGenerator {
 
             eventBuilder.addMethod(accessorBuilder.build());
 
-            if(fieldData.updatable){
+            if (fieldData.updatable) {
 
                 MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder("set" + capitalize(key));
                 setterBuilder.addParameter(fieldData.type, key)
@@ -501,7 +502,7 @@ public class EventGenerator {
         if ("object".equals(fieldData.chronicleType)) {
 
 
-            builder.addStatement("return $T.copyBuilder($L).buildMutable()",   builderClass, key);
+            builder.addStatement("return $T.copyBuilder($L).buildMutable()", builderClass, key);
         } else if ("sequence".equals(fieldData.chronicleType)) {
 
 
@@ -602,11 +603,14 @@ public class EventGenerator {
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC);
 
+        CodeBlock addToAliasPool = CodeBlock.builder().add("$T.CLASS_ALIASES.addAlias($T.class);", ClassAliasPool.class, journalableClass).build();
+
         TypeSpec.Builder eventBuilder = TypeSpec.classBuilder(className)
                 .addSuperinterface(interfaceClass)
                 .addSuperinterface(Journalable.class)
                 .addField(CLASS_NAME)
                 .addField(SUPPLIER)
+                .addStaticBlock(addToAliasPool)
                 .addMethod(newInstanceFactoryMethod);
 
         if (Type.EVENT == type) {
@@ -748,7 +752,6 @@ public class EventGenerator {
             eventBuilder.addField(field.build());
 
 
-
             eventBuilder.addMethod(
                     MethodSpec.methodBuilder("get" + capitalize(key))
                             .addModifiers(Modifier.PUBLIC)
@@ -759,13 +762,13 @@ public class EventGenerator {
             );
 
 
-            if(fieldData.updatable){
+            if (fieldData.updatable) {
 
                 MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder("set" + capitalize(key));
                 setterBuilder.addParameter(fieldData.type, key)
                         .addModifiers(Modifier.PUBLIC)
                         .addAnnotation(Override.class)
-                        .addStatement("throw new $T()",UnsupportedOperationException.class);
+                        .addStatement("throw new $T()", UnsupportedOperationException.class);
 
                 eventBuilder.addMethod(setterBuilder.build());
             }

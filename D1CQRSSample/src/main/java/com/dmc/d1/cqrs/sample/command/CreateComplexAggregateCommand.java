@@ -1,7 +1,6 @@
 package com.dmc.d1.cqrs.sample.command;
 
 import com.dmc.d1.cqrs.command.Command;
-import com.dmc.d1.cqrs.sample.domain.MyId;
 import com.dmc.d1.sample.domain.Basket;
 
 /**
@@ -12,12 +11,13 @@ public class CreateComplexAggregateCommand implements Command {
     private final static String CLASS_NAME = CreateComplexAggregateCommand.class.getName();
 
     private Basket basket;
-   private long id;
+    private long id;
 
-    public CreateComplexAggregateCommand(long id, Basket basket){
+    public CreateComplexAggregateCommand(long id, Basket basket) {
         this.id = id;
         this.basket = basket;
     }
+
     @Override
     public long getAggregateId() {
         return id;

@@ -9,11 +9,11 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.util.StopWatch;
 
 import java.util.*;
 
 import static junit.framework.Assert.assertNotSame;
+import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
@@ -90,10 +90,10 @@ public class ComplexAggregateTest extends RoundTripBaseTest {
             assertTrue(expectedBasket.getDivisor() > 0);
             assertEquals(expectedBasket.getDivisor(), actualBasket.getDivisor());
 
-            assertTrue(expectedBasket.getRic().length() > 0);
+            assertNotNull(expectedBasket.getRic());
             assertEquals(expectedBasket.getRic(), actualBasket.getRic());
 
-            assertTrue(expectedBasket.getSecurity().getName().length() > 0);
+            assertNotNull(expectedBasket.getSecurity().getName());
             assertEquals(expectedBasket.getSecurity().getName(), actualBasket.getSecurity().getName());
             assertEquals(expectedBasket.getSecurity().getAdv20Day(), actualBasket.getSecurity().getAdv20Day());
 
@@ -106,7 +106,7 @@ public class ComplexAggregateTest extends RoundTripBaseTest {
 
             for (int i = 0; i < expectedBasket.getBasketConstituents().size(); i++) {
 
-                assertTrue(expectedBasket.getBasketConstituents().get(i).getRic().length() > 0);
+                assertNotNull(expectedBasket.getBasketConstituents().get(i).getRic());
                 assertEquals(expectedBasket.getBasketConstituents().get(i).getRic(),
                         actualBasket.getBasketConstituents().get(i).getRic());
 

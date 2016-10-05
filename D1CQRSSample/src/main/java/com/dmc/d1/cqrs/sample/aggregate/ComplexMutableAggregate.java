@@ -2,6 +2,7 @@ package com.dmc.d1.cqrs.sample.aggregate;
 
 import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.annotations.EventHandler;
+import com.dmc.d1.domain.Ric;
 import com.dmc.d1.sample.domain.Basket2;
 import com.dmc.d1.sample.domain.Basket2Builder;
 import com.dmc.d1.sample.domain.BasketConstituent;
@@ -30,7 +31,7 @@ public class ComplexMutableAggregate extends Aggregate<ComplexMutableAggregate> 
     }
 
 
-    public void updateBasketConstituent(String ric, int adjustedShares) {
+    public void updateBasketConstituent(Ric ric, int adjustedShares) {
         apply(UpdateBasketConstituentEventBuilder.startBuilding(getId())
                 .ric(ric)
                 .adjustedShares(adjustedShares)
@@ -41,7 +42,7 @@ public class ComplexMutableAggregate extends Aggregate<ComplexMutableAggregate> 
 
     public static int noOfExceptions =0;
 
-    public void updateBasketConstituentWithDeterministicException(String ric, int adjustedShares) {
+    public void updateBasketConstituentWithDeterministicException(Ric ric, int adjustedShares) {
 
 
         apply(UpdateBasketConstituentEventWithExceptionBuilder.startBuilding(getId())
