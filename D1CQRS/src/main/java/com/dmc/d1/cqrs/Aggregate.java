@@ -25,15 +25,10 @@ public abstract class Aggregate<A extends Aggregate<A>> {
     private AggregateRepository<A> repository;
     private long id;
 
-    //concrete class name of this aggregate
-    private String aggregateClassName;
-
     private A old;
 
     protected final <E extends AggregateEvent> void apply(E event) {
-        //assign the aggregate class that raised the event
-        //this is used if events need to be replayed
-        event.setAggregateClassName(aggregateClassName);
+
         applyAggregateEvent(event);
         addToUncommitted(event);
         eventBus.publish(event);
@@ -88,10 +83,6 @@ public abstract class Aggregate<A extends Aggregate<A>> {
         this.repository = repository;
     }
 
-    final void setAggregateClassName(String aggregateClassName) {
-        this.aggregateClassName = aggregateClassName;
-    }
-
     final void setOld(Aggregate old) {
         this.old = (A) old;
     }
@@ -103,4 +94,5 @@ public abstract class Aggregate<A extends Aggregate<A>> {
     private void clearUncommittedEvents() {
         uncommittedEvents.clear();
     }
+
 }

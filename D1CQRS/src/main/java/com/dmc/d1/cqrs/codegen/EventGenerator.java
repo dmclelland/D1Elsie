@@ -1,5 +1,8 @@
 package com.dmc.d1.cqrs.codegen;
 
+import com.dmc.d1.cqrs.Aggregate;
+import com.dmc.d1.cqrs.Utils;
+import com.dmc.d1.cqrs.annotations.EventHandler;
 import com.dmc.d1.cqrs.event.AggregateEvent;
 import com.dmc.d1.cqrs.event.AggregateEventAbstract;
 import com.dmc.d1.cqrs.event.JournalableAggregateEvent;
@@ -15,12 +18,15 @@ import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
 import org.jetbrains.annotations.NotNull;
+import org.reflections.Reflections;
 
 import javax.lang.model.element.Modifier;
 import java.io.File;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -31,6 +37,16 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class EventGenerator {
 
+    private final String generatedSourceDirectory;
+    private final String configFilePath;
+
+
+    EventGenerator(String configFilePath, String generatedSourceDirectory) {
+
+        this.configFilePath = checkNotNull(configFilePath);
+        this.generatedSourceDirectory = checkNotNull(generatedSourceDirectory);
+    }
+
 
     public static void main(String[] args) {
         checkState(args.length == 2);
@@ -39,30 +55,19 @@ public class EventGenerator {
         String generatedSourceDirectory = args[1];
 
         try {
-
-            EventGenerator generator = new EventGenerator(configFilePath,
+            EventGenerator generator = new EventGenerator( configFilePath,
                     generatedSourceDirectory);
-
             generator.generate();
-
         } catch (Exception e) {
             throw new RuntimeException("Unable to generate code", e);
         }
     }
 
+
     enum Type {
         EVENT, DOMAIN
     }
 
-    private final String generatedSourceDirectory;
-    private final String configFilePath;
-
-
-    EventGenerator(
-            String configFilePath, String generatedSourceDirectory) {
-        this.configFilePath = checkNotNull(configFilePath);
-        this.generatedSourceDirectory = checkNotNull(generatedSourceDirectory);
-    }
 
     private Map<String, ClassVo> vos = new HashMap<>();
 
@@ -193,9 +198,7 @@ public class EventGenerator {
             fieldData.keyName = keyName;
             fieldData.keyType = keyType;
 
-
             vo.instanceVariables.put(name, fieldData);
-
         }
 
         return vo;
@@ -229,7 +232,6 @@ public class EventGenerator {
                             .build()
             );
 
-
             if (fieldData.updatable) {
 
                 MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder("set" + capitalize(key));
@@ -239,14 +241,7 @@ public class EventGenerator {
 
                 interfaceBuilder.addMethod(setterBuilder.build());
             }
-
         }
-
-//
-//        interfaceBuilder.addMethod(MethodSpec.methodBuilder("deepClone")
-//                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-//                .returns(interfaceClass)
-//                .build());
 
         JavaFile javaFile = JavaFile.builder(vo.packageName, interfaceBuilder.build())
                 .build();
@@ -567,6 +562,8 @@ public class EventGenerator {
 
     }
 
+    int i = 0;
+
     private void generateJournalableClass(ClassVo vo, ClassName interfaceClass, Type type) throws Exception {
 
         String className = vo.className + "Journalable";
@@ -583,14 +580,12 @@ public class EventGenerator {
 
         ParameterizedTypeName supplierInterface = ParameterizedTypeName.get(supplier, journalableClass);
 
-
         FieldSpec SUPPLIER = FieldSpec.builder(supplierInterface, "SUPPLIER", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
                 .initializer("$T::new", journalableClass).build();
 
         MethodSpec newInstanceFactoryMethod = MethodSpec.methodBuilder("newInstanceFactory")
                 .returns(supplierInterface).addModifiers(Modifier.STATIC)
                 .addStatement("return SUPPLIER").build();
-
 
         MethodSpec.Builder readMarshallableMethod = MethodSpec.methodBuilder("readMarshallable")
                 .addParameter(WireIn.class, "wireIn")
@@ -603,7 +598,9 @@ public class EventGenerator {
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC);
 
-        CodeBlock addToAliasPool = CodeBlock.builder().add("$T.CLASS_ALIASES.addAlias($T.class);", ClassAliasPool.class, journalableClass).build();
+
+        //CodeBlock addToAliasPool = CodeBlock.builder().add("$T.CLASS_ALIASES.addAlias($T.class);", ClassAliasPool.class, journalableClass).build();
+        CodeBlock addToAliasPool = CodeBlock.builder().add("$T.CLASS_ALIASES.addAlias($T.class, $S);", ClassAliasPool.class, journalableClass, Integer.toString(i++)).build();
 
         TypeSpec.Builder eventBuilder = TypeSpec.classBuilder(className)
                 .addSuperinterface(interfaceClass)
@@ -615,6 +612,26 @@ public class EventGenerator {
 
         if (Type.EVENT == type) {
             eventBuilder.superclass(JournalableAggregateEvent.class);
+
+            FieldSpec aggregateClassName = FieldSpec.builder(String.class, "aggregateClassName",Modifier.STATIC)
+                    .build();
+
+            MethodSpec setAggregateClassName = MethodSpec.methodBuilder("setAggregateClassName")
+                    .addModifiers(Modifier.STATIC)
+                    .addParameter(String.class, "aggregateClassName")
+                    .addStatement("$T.aggregateClassName=aggregateClassName", journalableClass).build();
+
+            MethodSpec getAggregateClassName = MethodSpec.methodBuilder("getAggregateClassName")
+                    .addModifiers(Modifier.PUBLIC)
+                    .returns(String.class)
+                    .addStatement("return aggregateClassName").build();
+
+
+            eventBuilder.addField(aggregateClassName);
+            eventBuilder.addMethod(setAggregateClassName);
+            eventBuilder.addMethod(getAggregateClassName);
+
+
         } else if (Type.DOMAIN == type) {
             eventBuilder.addSuperinterface(Marshallable.class);
         }
@@ -639,10 +656,7 @@ public class EventGenerator {
         if (Type.EVENT == type) {
             readMarshallableMethod.addStatement("wireIn.read(()-> \"aggregateId\").int64(this, (o, b) -> o.setAggregateId(b))");
             readMarshallableMethod.addStatement("setClassName(CLASS_NAME)");
-            readMarshallableMethod.addStatement("wireIn.read(() -> \"aggregateClassName\").text(this, (o, b) -> o.setAggregateClassName(b))");
             writeMarshallableMethod.addStatement("wireOut.write(()-> \"aggregateId\").int64(getAggregateId())");
-            writeMarshallableMethod.addStatement("wireOut.write(() -> \"aggregateClassName\").text(getAggregateClassName())");
-
         }
 //
 //
@@ -810,7 +824,6 @@ public class EventGenerator {
 
             equalsBuilder.addStatement("if (getAggregateId() != that.getAggregateId())return false");
             equalsBuilder.addStatement("if (getClassName() != null ? !getClassName().equals(that.getClassName()) : that.getClassName() != null) return false");
-            equalsBuilder.addStatement("if (getAggregateClassName() != null ? !getAggregateClassName().equals(that.getAggregateClassName()) : that.getAggregateClassName() != null) return false");
         }
 
 
@@ -898,7 +911,6 @@ public class EventGenerator {
         if (Type.EVENT == type) {
             hashCodeBuilder.addStatement("int result = (int)getAggregateId()");
             hashCodeBuilder.addStatement("result = 31 * result +  (getClassName() != null ? getClassName().hashCode() : 0)");
-            hashCodeBuilder.addStatement("result = 31 * result +  (getAggregateClassName() != null ? getAggregateClassName().hashCode() : 0)");
         }
 
 

@@ -66,8 +66,8 @@ public class ComplexAggregateTest extends RoundTripBaseTest {
     }
 
     private void replayAndCompare() {
-        Map<String, ComplexAggregate> aggregate1Repo = (Map<String, ComplexAggregate>) ReflectionTestUtils.getField(repo1, "cache");
-        Map<String, ComplexAggregate> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
+        Map<Long, ComplexAggregate> aggregate1Repo = (Map<Long, ComplexAggregate>) ReflectionTestUtils.getField(repo1, "cache");
+        Map<Long, ComplexAggregate> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
         aggregate1Repo.clear();
 
         chronicleAES.replay(Collections.singletonMap(repo1.getAggregateClassName(), repo1));
@@ -77,8 +77,8 @@ public class ComplexAggregateTest extends RoundTripBaseTest {
     }
 
 
-    private void checkAssertions(Map<String, ComplexAggregate> aggregate1Repo, Map<String, ComplexAggregate> aggregate1RepoCopy) {
-        for (String key : aggregate1Repo.keySet()) {
+    private void checkAssertions(Map<Long, ComplexAggregate> aggregate1Repo, Map<Long, ComplexAggregate> aggregate1RepoCopy) {
+        for (Long key : aggregate1Repo.keySet()) {
             ComplexAggregate agg = aggregate1Repo.get(key);
             ComplexAggregate aggExpected = aggregate1RepoCopy.get(key);
             assertNotSame(aggExpected, agg);

@@ -7,7 +7,6 @@ public abstract class AggregateEventAbstract implements AggregateEvent {
 
     private long aggregateId;
     private String className;
-    private String aggregateClassName;
 
     public final long getAggregateId() {
         return aggregateId;
@@ -25,11 +24,4 @@ public abstract class AggregateEventAbstract implements AggregateEvent {
         this.className = className;
     }
 
-    public final String getAggregateClassName() {
-        return aggregateClassName;
-    }
-
-    public final void setAggregateClassName(String aggregateClassName) {
-        this.aggregateClassName = aggregateClassName;
-    }
 }

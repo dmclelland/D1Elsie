@@ -90,7 +90,6 @@ public class AggregateRepository<A extends Aggregate> {
 
     private void initialise(A aggregate, AggregateInitialisedEvent event) {
         aggregate.setId(event.getAggregateId());
-        aggregate.setAggregateClassName(event.getAggregateClassName());
 
         aggregate.setEventHandler(annotatedAggregateEventHandlerInvoker);
         aggregate.setEventBus(eventBus);

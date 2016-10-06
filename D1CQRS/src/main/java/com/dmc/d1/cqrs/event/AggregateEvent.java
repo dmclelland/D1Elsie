@@ -7,6 +7,5 @@ public interface AggregateEvent {
 
     long getAggregateId();
     String getClassName();
-    String getAggregateClassName();
-    void setAggregateClassName(String aggregateClassName);
+
 }
