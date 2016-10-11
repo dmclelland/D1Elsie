@@ -2,15 +2,13 @@ package com.dmc.d1.cqrs.sample.aggregate;
 
 import com.dmc.d1.cqrs.Aggregate;
 import com.dmc.d1.cqrs.annotations.EventHandler;
-import com.dmc.d1.domain.Ric;
+import com.dmc.d1.domain.StockRic;
 import com.dmc.d1.sample.domain.Basket2;
 import com.dmc.d1.sample.domain.Basket2Builder;
-import com.dmc.d1.sample.domain.BasketConstituent;
 import com.dmc.d1.sample.domain.BasketConstituent2;
 import com.dmc.d1.sample.event.*;
 
 import java.time.LocalDate;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 /**
@@ -25,13 +23,14 @@ public class ComplexMutableAggregate extends Aggregate<ComplexMutableAggregate> 
     }
 
     public void createBasket2(Basket2 basket) {
+
         apply(Basket2CreatedEventBuilder.startBuilding(getId())
                 .basket(basket)
                 .buildJournalable());
     }
 
 
-    public void updateBasketConstituent(Ric ric, int adjustedShares) {
+    public void updateBasketConstituent(StockRic ric, int adjustedShares) {
         apply(UpdateBasketConstituentEventBuilder.startBuilding(getId())
                 .ric(ric)
                 .adjustedShares(adjustedShares)
@@ -42,8 +41,7 @@ public class ComplexMutableAggregate extends Aggregate<ComplexMutableAggregate> 
 
     public static int noOfExceptions =0;
 
-    public void updateBasketConstituentWithDeterministicException(Ric ric, int adjustedShares) {
-
+    public void updateBasketConstituentWithDeterministicException(StockRic ric, int adjustedShares, int rollbackTrigger) {
 
         apply(UpdateBasketConstituentEventWithExceptionBuilder.startBuilding(getId())
                 .ric(ric)
@@ -51,9 +49,9 @@ public class ComplexMutableAggregate extends Aggregate<ComplexMutableAggregate> 
                 .lastUpdated(LocalDate.now())
                 .buildJournalable());
 
-        if(this.basket.getBasketConstituents2().get(ric).getInitialAdjustedShares()== 57 ) {
+        if(this.basket.getBasketConstituents2().get(ric).getInitialAdjustedShares()== rollbackTrigger ) {
             noOfExceptions++;
-            throw new RuntimeException("Adjusted shares 57!");
+            throw new RuntimeException("Adjusted shares " + rollbackTrigger + "!");
         }
     }
 

@@ -31,7 +31,7 @@ public class ComplexMutableCommandHandler extends AbstractCommandHandler<Complex
 
     @CommandHandler
     public void handle(UpdateComplexAggregateWithDeterministicExceptionCommand command, ComplexMutableAggregate aggregate) {
-        aggregate.updateBasketConstituentWithDeterministicException(command.getRic(), command.getAdjustedShares());
+        aggregate.updateBasketConstituentWithDeterministicException(command.getRic(), command.getAdjustedShares(), command.getRollbackTrigger());
     }
 
 }

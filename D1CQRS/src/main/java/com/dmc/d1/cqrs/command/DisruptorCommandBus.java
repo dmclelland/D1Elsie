@@ -10,6 +10,7 @@ import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.EventHandlerGroup;
 import com.lmax.disruptor.dsl.ProducerType;
 
+import java.io.Closeable;
 import java.util.Collections;
 import java.util.List;
 
@@ -18,7 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Created by davidclelland on 16/05/2016.
  */
-public class DisruptorCommandBus<T extends AbstractCommandHandler<? extends Aggregate>> implements CommandBus {
+public class DisruptorCommandBus<T extends AbstractCommandHandler<? extends Aggregate>> implements CommandBus, Closeable {
 
 
     private final Disruptor<CommandHolder> disruptor;
@@ -48,6 +49,11 @@ public class DisruptorCommandBus<T extends AbstractCommandHandler<? extends Aggr
         // Start the Disruptor, starts all threads running
         disruptor.start();
 
+    }
+
+
+    public void close(){
+        disruptor.shutdown();
     }
 
     private static class DisruptorCommandHandler<T extends AbstractCommandHandler<? extends Aggregate>> implements EventHandler<CommandHolder> {

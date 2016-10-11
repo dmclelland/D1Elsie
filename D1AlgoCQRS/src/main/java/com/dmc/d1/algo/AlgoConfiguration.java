@@ -59,7 +59,7 @@ public class AlgoConfiguration {
     AggregateEventStore aggregateEventStore() {
         try {
             return new ChronicleAggregateEventStore(getChroniclePath());
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException("Unable to configure chronicle event store", e);
         }
     }

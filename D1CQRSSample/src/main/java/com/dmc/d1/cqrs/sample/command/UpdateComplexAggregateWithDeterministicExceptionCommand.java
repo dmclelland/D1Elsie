@@ -1,7 +1,7 @@
 package com.dmc.d1.cqrs.sample.command;
 
 import com.dmc.d1.cqrs.command.Command;
-import com.dmc.d1.domain.Ric;
+import com.dmc.d1.domain.StockRic;
 
 /**
  * Created by davidclelland on 17/05/2016.
@@ -11,16 +11,18 @@ public class UpdateComplexAggregateWithDeterministicExceptionCommand implements 
     private final static String CLASS_NAME = UpdateComplexAggregateWithDeterministicExceptionCommand.class.getName();
 
     private final long id;
-    private final Ric ric;
+    private final StockRic ric;
     private final int adjustedShares;
+    private final int rollbackTrigger;
 
-    public UpdateComplexAggregateWithDeterministicExceptionCommand(long id, Ric ric, int adjustedShares) {
+    public UpdateComplexAggregateWithDeterministicExceptionCommand(long id, StockRic ric, int adjustedShares, int rollbackTrigger) {
         this.id = id;
         this.ric = ric;
         this.adjustedShares = adjustedShares;
+        this.rollbackTrigger = rollbackTrigger;
     }
 
-    public Ric getRic() {
+    public StockRic getRic() {
         return ric;
     }
 
@@ -34,6 +36,9 @@ public class UpdateComplexAggregateWithDeterministicExceptionCommand implements 
         return id;
     }
 
+    public int getRollbackTrigger() {
+        return rollbackTrigger;
+    }
 
     @Override
     public String getClassName() {

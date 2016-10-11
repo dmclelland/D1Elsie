@@ -29,7 +29,7 @@
         <module>D1Oms</module>
         <module>D1AlgoCQRS</module>
         <module>D1CQRSSample</module>
-        <module>BenchmarkTesting</module>
+        <!--<module>BenchmarkTesting</module>-->
     </modules>
 
     <dependencies>

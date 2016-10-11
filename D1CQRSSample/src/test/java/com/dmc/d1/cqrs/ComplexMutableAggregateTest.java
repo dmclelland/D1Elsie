@@ -4,15 +4,18 @@ import com.dmc.d1.algo.event.Configuration;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.sample.aggregate.ComplexMutableAggregate;
 import com.dmc.d1.cqrs.sample.commandhandler.ComplexMutableCommandHandler;
-import com.dmc.d1.domain.Ric;
+import com.dmc.d1.domain.StockRic;
 import com.dmc.d1.sample.domain.Basket2;
 import com.dmc.d1.sample.domain.BasketConstituent2;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.Closeable;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNotSame;
@@ -35,6 +38,10 @@ public class ComplexMutableAggregateTest extends RoundTripBaseTest {
 
     final long pauseInNanos = 1000;
 
+    final static int MAX_BASKET_SIZE = 50;
+
+    final static int ROLLBACK_TRIGGER = 1+ThreadLocalRandom.current().nextInt(MAX_BASKET_SIZE-1);
+
 
     @Before
     public void setup() throws Exception {
@@ -44,8 +51,14 @@ public class ComplexMutableAggregateTest extends RoundTripBaseTest {
         repo1 = new AggregateRepository(chronicleAES, ComplexMutableAggregate.class, eventBus,
                 ComplexMutableAggregate.newInstanceFactory());
 
-        this.commandBuilder = new CommandBuilders.CreateMutableComplexAggregateCommandSupplier(50);
+        this.commandBuilder = new CommandBuilders.CreateMutableComplexAggregateCommandSupplier(MAX_BASKET_SIZE);
         super.setup();
+    }
+
+    @After
+    public void tearDown() throws Exception{
+        ((Closeable)chronicleAES).close();
+        ((Closeable)commandBus).close();
     }
 
     @Override
@@ -85,7 +98,7 @@ public class ComplexMutableAggregateTest extends RoundTripBaseTest {
         Map<String, ComplexMutableAggregate> aggregate1Repo = (Map<String, ComplexMutableAggregate>) ReflectionTestUtils.getField(repo1, "cache");
 
         this.commandBuilder = new CommandBuilders.UpdateBasketConstituentWithDeterministicExceptionCommandSupplier(
-                new ArrayList<>(aggregate1Repo.values()));
+                new ArrayList<>(aggregate1Repo.values()), ROLLBACK_TRIGGER);
         t0 = System.currentTimeMillis();
         int noOfUpdateCommands = 50000;
         startSending(noOfUpdateCommands);
@@ -99,12 +112,11 @@ public class ComplexMutableAggregateTest extends RoundTripBaseTest {
             for (BasketConstituent2 constituent : agg.getBasket().getBasketConstituents2().values()) {
 
                 //57 specified in updateBasketConstituentWithDeterministicException gets rolled back
-                if (constituent.getInitialAdjustedShares() % 57 == 0) {
+                if (constituent.getInitialAdjustedShares() == ROLLBACK_TRIGGER) {
                     assertEquals(constituent.getInitialAdjustedShares(), constituent.getAdjustedShares());
                 }
             }
         }
-
         replayAndCompare();
     }
 
@@ -119,7 +131,7 @@ public class ComplexMutableAggregateTest extends RoundTripBaseTest {
         Map<String, ComplexMutableAggregate> aggregate1Repo = (Map<String, ComplexMutableAggregate>) ReflectionTestUtils.getField(repo1, "cache");
 
         this.commandBuilder = new CommandBuilders.UpdateBasketConstituentWithDeterministicExceptionCommandSupplier(
-                new ArrayList<>(aggregate1Repo.values()));
+                new ArrayList<>(aggregate1Repo.values()), ROLLBACK_TRIGGER);
 
         int noOfUpdateCommands = 50000;
         startSending(noOfUpdateCommands);
@@ -132,14 +144,11 @@ public class ComplexMutableAggregateTest extends RoundTripBaseTest {
         noOfUpdateCommands = 50000;
         startSending(noOfUpdateCommands);
 
-
         replayAndCompare();
     }
 
 
     private void replayAndCompare() {
-
-        //remove ponger from disruptor bus, then re-add at the end
 
         Map<Long, ComplexMutableAggregate> aggregate1Repo = (Map<Long, ComplexMutableAggregate>) ReflectionTestUtils.getField(repo1, "cache");
         Map<Long, ComplexMutableAggregate> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
@@ -177,7 +186,7 @@ public class ComplexMutableAggregateTest extends RoundTripBaseTest {
 
 
             for (BasketConstituent2 constituent2 : expectedBasket.getBasketConstituents2().values()) {
-                Ric constituentRic = constituent2.getRic();
+                StockRic constituentRic = constituent2.getRic();
 
                 assertNotNull(constituentRic);
 

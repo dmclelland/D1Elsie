@@ -1,18 +1,18 @@
 <classes>
     <domain>
         <class name="com.dmc.d1.sample.domain.Security" cache-key="name">
-            <field name="name" type="com.dmc.d1.domain.Ric"/>
+            <field name="name" type="com.dmc.d1.domain.IndexRic"/>
             <field name="adv20Day" type="java.lang.Integer" toPrimitive="true"/>
             <field name="assetType" type="com.dmc.d1.domain.AssetType"/>
         </class>
 
         <class name="com.dmc.d1.sample.domain.BasketConstituent" cache-key="ric">
-            <field name="ric" type="com.dmc.d1.domain.Ric"/>
+            <field name="ric" type="com.dmc.d1.domain.StockRic"/>
             <field name="adjustedShares" type="java.lang.Integer" toPrimitive="true"/>
         </class>
 
         <class name="com.dmc.d1.sample.domain.Basket" cache-key="ric">
-            <field name="ric" type="com.dmc.d1.domain.Ric"/>
+            <field name="ric" type="com.dmc.d1.domain.IndexRic"/>
             <field name="tradeDate" type="java.time.LocalDate"/>
             <field name="divisor" type="java.lang.Integer" toPrimitive="true"/>
             <field name="security" type="com.dmc.d1.sample.domain.Security"/>
@@ -26,7 +26,7 @@
         </class>
 
         <class name="com.dmc.d1.sample.domain.BasketConstituent2"  updatable="true">
-            <field name="ric" type="com.dmc.d1.domain.Ric"/>
+            <field name="ric" type="com.dmc.d1.domain.StockRic"/>
 
             <field name="adjustedShares" type="java.lang.Integer" toPrimitive="true" updatable="true"/>
             <field name="initialAdjustedShares" type="java.lang.Integer" toPrimitive="true"/>
@@ -34,7 +34,7 @@
         </class>
 
         <class name="com.dmc.d1.sample.domain.Basket2" updatable="true">
-            <field name="ric" type="com.dmc.d1.domain.Ric"/>
+            <field name="ric" type="com.dmc.d1.domain.IndexRic"/>
             <field name="tradeDate" type="java.time.LocalDate"/>
             <field name="divisor" type="java.lang.Integer" toPrimitive="true"/>
             <field name="security" type="com.dmc.d1.sample.domain.Security"/>
@@ -89,13 +89,13 @@
         </class>
 
         <class name="com.dmc.d1.sample.event.UpdateBasketConstituentEvent">
-            <field name="ric" type="com.dmc.d1.domain.Ric"/>
+            <field name="ric" type="com.dmc.d1.domain.StockRic"/>
             <field name="adjustedShares" type="java.lang.Integer" toPrimitive="true"/>
             <field name="lastUpdated" type="java.time.LocalDate"/>
         </class>
 
         <class name="com.dmc.d1.sample.event.UpdateBasketConstituentEventWithException">
-            <field name="ric" type="com.dmc.d1.domain.Ric"/>
+            <field name="ric" type="com.dmc.d1.domain.StockRic"/>
             <field name="adjustedShares" type="java.lang.Integer" toPrimitive="true"/>
             <field name="lastUpdated" type="java.time.LocalDate"/>
         </class>

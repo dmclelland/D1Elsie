@@ -13,6 +13,7 @@ import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -24,7 +25,7 @@ import java.util.Set;
 /**
  * Created by davidclelland on 17/05/2016.
  */
-public class ChronicleAggregateEventStore implements AggregateEventStore<JournalableAggregateEvent> {
+public class ChronicleAggregateEventStore implements AggregateEventStore<JournalableAggregateEvent>, Closeable {
 
     private final ChronicleQueue chronicle;
     private final ExcerptAppender appender;
@@ -41,6 +42,10 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
         tailer = chronicle.createTailer();
         this.path = path;
         addAggregatesToEvents();
+    }
+
+    public void close(){
+        chronicle.close();
     }
 
 

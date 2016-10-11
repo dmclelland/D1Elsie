@@ -76,6 +76,7 @@ class CommandBuilders {
         }
     }
 
+
     static class UpdateBasketConstituentCommandSupplier implements Supplier<Command> {
 
         List<ComplexMutableAggregate> aggregates;
@@ -111,11 +112,13 @@ class CommandBuilders {
 
     static class UpdateBasketConstituentWithDeterministicExceptionCommandSupplier implements Supplier<Command> {
 
-        List<ComplexMutableAggregate> aggregates;
+        final List<ComplexMutableAggregate> aggregates;
+        final int rollbackTrigger;
         int pos = -1;
 
-        UpdateBasketConstituentWithDeterministicExceptionCommandSupplier(List<ComplexMutableAggregate> aggregates) {
+        UpdateBasketConstituentWithDeterministicExceptionCommandSupplier(List<ComplexMutableAggregate> aggregates, int rollbackTrigger) {
             this.aggregates = aggregates;
+            this.rollbackTrigger = rollbackTrigger;
         }
 
         @Override
@@ -131,16 +134,14 @@ class CommandBuilders {
             if (lst == null) {
                 lst = new ArrayList<>(aggregate.getBasket().getBasketConstituents2().values());
                 constituentMap.put(aggregate.getId(), lst);
-
             }
 
             BasketConstituent2 constituent2 = lst.get(ThreadLocalRandom.current().nextInt(lst.size()));
 
-
             int adjustedShares = constituent2.getAdjustedShares() + 1;
 
             return new UpdateComplexAggregateWithDeterministicExceptionCommand(aggregate.getId(),
-                    constituent2.getRic(), adjustedShares);
+                    constituent2.getRic(), adjustedShares, rollbackTrigger);
         }
     }
 

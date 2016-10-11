@@ -1,7 +1,8 @@
 package com.dmc.d1.cqrs;
 
 import com.dmc.d1.domain.AssetType;
-import com.dmc.d1.domain.Ric;
+import com.dmc.d1.domain.IndexRic;
+import com.dmc.d1.domain.StockRic;
 import com.dmc.d1.sample.domain.*;
 
 import java.time.LocalDate;
@@ -17,7 +18,7 @@ class TestBasketBuilder {
         if (maxNoOfConstituents > 500)
             maxNoOfConstituents = 500;
 
-        Ric ric = securities[Math.abs(rnd) % 4];
+        IndexRic ric = securities[Math.abs(rnd) % 4];
 
         return BasketBuilder.startBuilding()
                 .tradeDate(LocalDate.now())
@@ -30,7 +31,7 @@ class TestBasketBuilder {
 
     static Basket2 createBasket2(int rnd, int maxNoOfConstituents) {
 
-        Ric ric = securities[Math.abs(rnd) % 4];
+        IndexRic ric = securities[Math.abs(rnd) % 4];
 
         return Basket2Builder.startBuilding()
                 .tradeDate(LocalDate.now())
@@ -54,13 +55,13 @@ class TestBasketBuilder {
     }
 
 
-    static Ric[] securities = new Ric[4];
+    static IndexRic[] securities = new IndexRic[4];
 
     static {
-        securities[0] = Ric.X8PS;
-        securities[1] = Ric.X5PS;
-        securities[2] = Ric.X6PS;
-        securities[3] = Ric.X7PS;
+        securities[0] = IndexRic.X8PS;
+        securities[1] = IndexRic.X5PS;
+        securities[2] = IndexRic.X6PS;
+        securities[3] = IndexRic.X7PS;
     }
 
     static int noOfAssetTypes = AssetType.values().length;
@@ -71,7 +72,7 @@ class TestBasketBuilder {
     }
 
 
-    static Ric ric(int rnd) {
+    static IndexRic ric(int rnd) {
 
         return securities[Math.abs(rnd) % 4];
     }
@@ -93,42 +94,42 @@ class TestBasketBuilder {
 
     static Random RANDOM = new Random();
 
-    static Map<Ric, List<BasketConstituent>> constituentsMap = new HashMap<>();
+    //static Map<IndexRic, List<BasketConstituent>> constituentsMap = new HashMap<>();
 
 
-    static Map<Ric, Map<Ric, BasketConstituent2>> constituentsMap2 = new HashMap<>();
+    //static Map<IndexRic, Map<StockRic, BasketConstituent2>> constituentsMap2 = new HashMap<>();
 
 
-    static Ric[] constituents = Ric.values();
+    static StockRic[] constituents = StockRic.values();
 
 
-    static List<BasketConstituent> constituents(Ric ric, int noOfConstituents) {
-        if (constituentsMap.containsKey(ric))
-            return constituentsMap.get(ric);
+    static List<BasketConstituent> constituents(IndexRic ric, int noOfConstituents) {
+        //if (constituentsMap.containsKey(ric))
+        //return constituentsMap.get(ric);
 
         int rnd = RANDOM.nextInt(noOfConstituents - 1) + 1;
         List<BasketConstituent> lst = new ArrayList<>();
         for (int i = 1; i <= rnd; i++) {
-            Ric constituentRic = constituents[i];
+            StockRic constituentRic = constituents[i];
             lst.add(BasketConstituentBuilder.startBuilding().adjustedShares(i).ric(constituentRic).buildJournalable());
         }
 
-        constituentsMap.put(ric, lst);
+        //constituentsMap.put(ric, lst);
 
         return lst;
 
     }
 
 
-    static Map<Ric, BasketConstituent2> constituents2(Ric ric, int noOfConstituents) {
-        if (constituentsMap2.containsKey(ric))
-            return constituentsMap2.get(ric);
+    static Map<StockRic, BasketConstituent2> constituents2(IndexRic ric, int noOfConstituents) {
+//        if (constituentsMap2.containsKey(ric))
+//            return constituentsMap2.get(ric);
 
         LocalDate now = LocalDate.now();
         int rnd = RANDOM.nextInt(noOfConstituents - 1) + 1;
-        Map<Ric, BasketConstituent2> map = new HashMap<>();
+        Map<StockRic, BasketConstituent2> map = new HashMap<>();
         for (int i = 1; i <= rnd; i++) {
-            Ric constituentRic = constituents[i];
+            StockRic constituentRic = constituents[i];
             map.put(constituentRic, BasketConstituent2Builder.startBuilding()
                     .initialAdjustedShares(i)
                     .adjustedShares(i)
@@ -138,7 +139,7 @@ class TestBasketBuilder {
                     .buildJournalable());
         }
 
-        constituentsMap2.put(ric, map);
+        //constituentsMap2.put(ric, map);
 
         return map;
     }

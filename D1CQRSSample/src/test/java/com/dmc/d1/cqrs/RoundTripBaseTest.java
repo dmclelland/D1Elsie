@@ -33,7 +33,7 @@ public abstract class RoundTripBaseTest {
 
     private Ponger ponger;
 
-    private CommandBus commandBus;
+    protected CommandBus commandBus;
 
     protected volatile Supplier<Command> commandBuilder;
 
@@ -47,6 +47,9 @@ public abstract class RoundTripBaseTest {
         this.pingProcessor =
                 new BatchEventProcessor<>(exchangeBuffer, exchangeBuffer.newBarrier(), pinger);
     }
+
+
+
 
     protected abstract List<AbstractCommandHandler<? extends Aggregate>> getCommandHandlers();
 
@@ -76,8 +79,7 @@ public abstract class RoundTripBaseTest {
         private CyclicBarrier barrier;
         private CountDownLatch latch;
 
-        private final Histogram HISTOGRAM =
-                new Histogram(TimeUnit.SECONDS.toNanos(1), 1);
+        private volatile Histogram HISTOGRAM;
 
         private volatile long maxEvents;
         private volatile long t0;
@@ -102,13 +104,11 @@ public abstract class RoundTripBaseTest {
         public void onEvent(final EmptyEvent event, final long sequence, final boolean endOfBatch) throws Exception {
             final long t1 = System.nanoTime();
 
-            //System.out.println(event.getAggregateId() + "Round trip took " + ((t1 - t0) / 1000));
-
             if (event.getAggregateId() != this.currentId)
                 throw new IllegalStateException("Processing aggregate out of sequence");
 
             if (this.currentThreadId != Thread.currentThread().getId())
-                throw new IllegalStateException("Unexpected thread");
+                throw new IllegalStateException("Unexpected thread, expected "+ this.currentThreadId + " but was " + Thread.currentThread().getId());
 
             //only store after warm up
             if (sequence > maxEvents) {
@@ -129,6 +129,7 @@ public abstract class RoundTripBaseTest {
             } else {
                 latch.countDown();
                 HISTOGRAM.getHistogramData().outputPercentileDistribution(System.out, 1, 1000.0);
+                this.currentThreadId = 0;
             }
         }
 
@@ -140,7 +141,7 @@ public abstract class RoundTripBaseTest {
                 this.currentThreadId = Thread.currentThread().getId();
             else {
                 if (this.currentThreadId != Thread.currentThread().getId())
-                    throw new IllegalStateException("Unexpected thread");
+                    throw new IllegalStateException("Unexpected thread, expected "+ this.currentThreadId + " but was " + Thread.currentThread().getId());
             }
             if (multiThreaded) {
                 senderExecutor.submit(() -> {
@@ -169,7 +170,7 @@ public abstract class RoundTripBaseTest {
         }
 
         public void reset(final CyclicBarrier barrier, final CountDownLatch latch, int maxEvents) {
-            HISTOGRAM.reset();
+           this.HISTOGRAM = new Histogram(TimeUnit.SECONDS.toNanos(1), 1);
             this.maxEvents += maxEvents;
             this.barrier = barrier;
             this.latch = latch;

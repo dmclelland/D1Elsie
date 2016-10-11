@@ -6,4 +6,5 @@ package com.dmc.d1.cqrs.command;
 public interface CommandBus {
 
     void dispatch(Command command);
+
 }

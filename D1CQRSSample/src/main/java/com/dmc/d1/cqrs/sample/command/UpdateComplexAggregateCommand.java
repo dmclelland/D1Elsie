@@ -1,7 +1,7 @@
 package com.dmc.d1.cqrs.sample.command;
 
 import com.dmc.d1.cqrs.command.Command;
-import com.dmc.d1.domain.Ric;
+import com.dmc.d1.domain.StockRic;
 
 /**
  * Created by davidclelland on 17/05/2016.
@@ -11,17 +11,17 @@ public class UpdateComplexAggregateCommand implements Command {
     private final static String CLASS_NAME = UpdateComplexAggregateCommand.class.getName();
 
     private final long id;
-    private final Ric ric;
+    private final StockRic ric;
     private final int adjustedShares;
 
-    public UpdateComplexAggregateCommand(long id, Ric ric, int adjustedShares) {
+    public UpdateComplexAggregateCommand(long id, StockRic ric, int adjustedShares) {
         this.id = id;
         this.ric = ric;
         this.adjustedShares = adjustedShares;
     }
 
 
-    public Ric getRic() {
+    public StockRic getRic() {
         return ric;
     }
 
