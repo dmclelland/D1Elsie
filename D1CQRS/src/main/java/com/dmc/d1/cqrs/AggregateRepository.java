@@ -1,9 +1,9 @@
 package com.dmc.d1.cqrs;
 
 import com.dmc.d1.cqrs.event.EventBus;
+import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -19,9 +19,10 @@ public class AggregateRepository<A extends Aggregate> {
     // over 1_000_000 aggregates
     static int CACHE_CAPACITY = 2 << 19;
 
-    private final Map<Long, A> cache = new HashMap<>(CACHE_CAPACITY);
+    private final Long2ObjectMap<A> cache = new Long2ObjectLinkedOpenHashMap<>(CACHE_CAPACITY);
     private final AnnotatedAggregateEventHandlerInvoker annotatedAggregateEventHandlerInvoker;
     private final EventBus eventBus;
+
     private final Class<A> aggregateClass;
     private final String aggregateClassName;
 
@@ -29,16 +30,18 @@ public class AggregateRepository<A extends Aggregate> {
 
 
     public AggregateRepository(AggregateEventStore aggregateEventStore,
-                               Class<A> aggregateClass,
                                EventBus eventBus,
                                Supplier<A> aggregateInstanceFactory
     ) {
         this.aggregateEventStore = checkNotNull(aggregateEventStore);
-        this.aggregateClass = checkNotNull(aggregateClass);
-        this.aggregateClassName = aggregateClass.getName();
-        this.annotatedAggregateEventHandlerInvoker = checkNotNull(getEventHandler());
         this.eventBus = checkNotNull(eventBus);
+        this.aggregateClass = (Class<A>) aggregateInstanceFactory.get().getClass();
+        this.aggregateClassName = this.aggregateClass.getName();
         this.aggregateInstanceFactory = checkNotNull(aggregateInstanceFactory);
+        this.annotatedAggregateEventHandlerInvoker = checkNotNull(getEventHandler());
+
+
+        cache.defaultReturnValue(null);
     }
 
 
@@ -101,17 +104,18 @@ public class AggregateRepository<A extends Aggregate> {
         return cache.get(id);
     }
 
+    public final String getAggregateClassName() {
+        return aggregateClassName;
+    }
+
     private AnnotatedAggregateEventHandlerInvoker getEventHandler() {
+
         try {
-            String className = aggregateClass.getSimpleName() + "AnnotatedMethodInvoker";
+            String className = this.aggregateClass.getSimpleName() + "AnnotatedMethodInvoker";
             Class<?> clazz = Class.forName("com.dmc.d1.algo.eventhandler." + className);
             return (AnnotatedAggregateEventHandlerInvoker) clazz.newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException("Unable to resolve annotated method invoker for " + aggregateClassName, e);
+            throw new RuntimeException("Unable to resolve annotated method invoker for " + this.aggregateClass.getName(), e);
         }
-    }
-
-    public final String getAggregateClassName() {
-        return aggregateClassName;
     }
 }

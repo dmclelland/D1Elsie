@@ -4,7 +4,6 @@ package com.dmc.d1.cqrs;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
 import com.dmc.d1.cqrs.sample.aggregate.Aggregate1;
 import com.dmc.d1.cqrs.sample.aggregate.Aggregate2;
-import com.dmc.d1.cqrs.sample.domain.MyId;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -19,13 +18,12 @@ public class AggregateTest {
     AggregateEventStore eventStore = new InMemoryAggregateEventStore();
 
     AggregateRepository<Aggregate1> aggregate1Repo =
-            new AggregateRepository(eventStore, Aggregate1.class, bus, Aggregate1.newInstanceFactory());
+            new AggregateRepository(eventStore, bus, Aggregate1.newInstanceFactory());
     AggregateRepository<Aggregate2> aggregate2Repo =
-            new AggregateRepository(eventStore, Aggregate2.class, bus, Aggregate2.newInstanceFactory());
+            new AggregateRepository(eventStore, bus, Aggregate2.newInstanceFactory());
 
     long id1 = 1;
     long id2 = 2;
-
 
 
     @Test

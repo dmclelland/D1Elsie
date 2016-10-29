@@ -18,7 +18,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.StopWatch;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -43,8 +42,8 @@ public class ChronicleReplayTest {
 
         chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
-        repo1 = new AggregateRepository(chronicleAES, Aggregate1.class, eventBus, Aggregate1.newInstanceFactory());
-        repo2 = new AggregateRepository(chronicleAES, Aggregate2.class, eventBus, Aggregate2.newInstanceFactory());
+        repo1 = new AggregateRepository(chronicleAES, eventBus, Aggregate1.newInstanceFactory());
+        repo2 = new AggregateRepository(chronicleAES, eventBus, Aggregate2.newInstanceFactory());
 
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
@@ -82,7 +81,7 @@ public class ChronicleReplayTest {
         watch.start();
 
         List<AggregateRepository> repos = Arrays.asList(repo1, repo2);
-        chronicleAES.replay(repos.stream().collect(Collectors.toMap(a -> a.getAggregateClassName(), a -> a)));
+        chronicleAES.replay(repos);
         watch.stop();
         System.out.println("It took " + watch.getTotalTimeSeconds() + " to replay");
 

@@ -14,13 +14,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Created by davidclelland on 17/05/2016.
@@ -41,13 +40,12 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
         appender = chronicle.acquireAppender();
         tailer = chronicle.createTailer();
         this.path = path;
-        addAggregatesToEvents();
+        addAggregateClassNameToEvents();
     }
 
-    public void close(){
+    public void close() {
         chronicle.close();
     }
-
 
     @Override
     public void add(JournalableAggregateEvent event) {
@@ -62,8 +60,10 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
     }
 
     @Override
-    public void replay(Map<String, AggregateRepository> repos) {
+    public void replay(List<AggregateRepository> repos) {
         tailer.toStart();
+
+        Map<String, AggregateRepository> map = repos.stream().collect(Collectors.toMap(a -> a.getAggregateClassName(), a -> a));
 
         AggregateRepository repo;
         Aggregate agg;
@@ -74,11 +74,12 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
                 if (!dc.isPresent())
                     break;
 
-                //wireIn.read(() -> "basket").object(Basket2.class, this, (o,b) -> o.basket = b);
-
+                //Class clazz = dc.wire().read().typePrefix();
+                //JournalableAggregateEvent e = JOURNALABLE_EVENT_INSTANCES.get(clazz);
+                //dc.wire().read().object(e,clazz);
                 JournalableAggregateEvent e = (JournalableAggregateEvent) dc.wire().read().object();
 
-                repo = repos.get(e.getAggregateClassName());
+                repo = map.get(e.getAggregateClassName());
                 if (e instanceof AggregateInitialisedEvent) {
                     repo.handleAggregateInitialisedEvent((AggregateInitialisedEvent) e);
                 } else {
@@ -95,14 +96,11 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
         return path;
     }
 
-
-    private void addAggregatesToEvents() throws Exception{
+    private void addAggregateClassNameToEvents() throws Exception {
         //get aggregate event handlers so we can associate events with their aggregates
 
         Reflections reflections = new Reflections("com.dmc.d1");
-
         Set<Class<? extends Aggregate>> aggregates = reflections.getSubTypesOf(Aggregate.class);
-
 
         for (Class<? extends Aggregate> aggregateClass : aggregates) {
             for (Method m : Utils.methodsOf(aggregateClass)) {
@@ -115,8 +113,8 @@ public class ChronicleAggregateEventStore implements AggregateEventStore<Journal
                         Class eventInterface = m.getParameterTypes()[0];
                         Set<Class<? extends AggregateEvent>> eventImplementations = reflections.getSubTypesOf(eventInterface);
 
-                        for(Class<? extends AggregateEvent> event : eventImplementations){
-                            if(Journalable.class.isAssignableFrom(event)){
+                        for (Class<? extends AggregateEvent> event : eventImplementations) {
+                            if (Journalable.class.isAssignableFrom(event)) {
 
                                 Field field = event.getDeclaredField("aggregateClassName");
                                 field.setAccessible(true);

@@ -5,6 +5,8 @@ import net.openhft.chronicle.core.io.IORuntimeException;
 import net.openhft.chronicle.wire.WireIn;
 import net.openhft.chronicle.wire.WireOut;
 
+import java.util.function.Supplier;
+
 /**
  * Created By davidclelland on 14/06/2016.
  */
@@ -18,6 +20,13 @@ class AggregateInitialisedEvent extends JournalableAggregateEvent {
     public AggregateInitialisedEvent() {
         setClassName(CLASS_NAME);
     }
+
+    private static final Supplier<AggregateInitialisedEvent> SUPPLIER = AggregateInitialisedEvent::new;
+
+    static Supplier<AggregateInitialisedEvent> newInstanceFactory() {
+        return SUPPLIER;
+    }
+
 
 
     @Override

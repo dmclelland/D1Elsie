@@ -34,7 +34,7 @@ public class InMemoryAggregateEventStore implements AggregateEventStore<Aggregat
     }
 
     @Override
-    public void replay(Map<String,AggregateRepository> repo) {
+    public void replay(List<AggregateRepository> repo) {
 
     }
 

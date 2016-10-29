@@ -38,7 +38,7 @@ public class ComplexAggregateTest extends RoundTripBaseTest {
         SimpleEventBus eventBus = new SimpleEventBus();
         chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
-        repo1 = new AggregateRepository(chronicleAES, ComplexAggregate.class, eventBus,
+        repo1 = new AggregateRepository(chronicleAES, eventBus,
                 ComplexAggregate.newInstanceFactory());
 
         this.commandBuilder = new CommandBuilders.CreateComplexAggregateCommandSupplier(100);
@@ -70,7 +70,7 @@ public class ComplexAggregateTest extends RoundTripBaseTest {
         Map<Long, ComplexAggregate> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
         aggregate1Repo.clear();
 
-        chronicleAES.replay(Collections.singletonMap(repo1.getAggregateClassName(), repo1));
+        chronicleAES.replay(Collections.singletonList(repo1));
 
         assertEquals(aggregate1RepoCopy.size(), aggregate1Repo.size());
         checkAssertions(aggregate1Repo, aggregate1RepoCopy);

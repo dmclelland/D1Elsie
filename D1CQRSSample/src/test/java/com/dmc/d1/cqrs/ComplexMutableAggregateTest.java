@@ -40,7 +40,7 @@ public class ComplexMutableAggregateTest extends RoundTripBaseTest {
 
     final static int MAX_BASKET_SIZE = 50;
 
-    final static int ROLLBACK_TRIGGER = 1+ThreadLocalRandom.current().nextInt(MAX_BASKET_SIZE-1);
+    final static int ROLLBACK_TRIGGER = 1 + ThreadLocalRandom.current().nextInt(MAX_BASKET_SIZE - 1);
 
 
     @Before
@@ -48,7 +48,7 @@ public class ComplexMutableAggregateTest extends RoundTripBaseTest {
         SimpleEventBus eventBus = new SimpleEventBus();
         chronicleAES = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
-        repo1 = new AggregateRepository(chronicleAES, ComplexMutableAggregate.class, eventBus,
+        repo1 = new AggregateRepository(chronicleAES, eventBus,
                 ComplexMutableAggregate.newInstanceFactory());
 
         this.commandBuilder = new CommandBuilders.CreateMutableComplexAggregateCommandSupplier(MAX_BASKET_SIZE);
@@ -56,9 +56,9 @@ public class ComplexMutableAggregateTest extends RoundTripBaseTest {
     }
 
     @After
-    public void tearDown() throws Exception{
-        ((Closeable)chronicleAES).close();
-        ((Closeable)commandBus).close();
+    public void tearDown() throws Exception {
+        ((Closeable) chronicleAES).close();
+        ((Closeable) commandBus).close();
     }
 
     @Override
@@ -153,7 +153,7 @@ public class ComplexMutableAggregateTest extends RoundTripBaseTest {
         Map<Long, ComplexMutableAggregate> aggregate1Repo = (Map<Long, ComplexMutableAggregate>) ReflectionTestUtils.getField(repo1, "cache");
         Map<Long, ComplexMutableAggregate> aggregate1RepoCopy = new HashMap<>(aggregate1Repo);
         aggregate1Repo.clear();
-        chronicleAES.replay(Collections.singletonMap(repo1.getAggregateClassName(), repo1));
+        chronicleAES.replay(Collections.singletonList(repo1));
         assertEquals(aggregate1RepoCopy.size(), aggregate1Repo.size());
         checkAssertions(aggregate1Repo, aggregate1RepoCopy);
     }

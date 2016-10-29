@@ -6,19 +6,14 @@ import com.dmc.d1.algo.aggregate.PairsAggregate;
 import com.dmc.d1.algo.aggregate.WaveAggregate;
 import com.dmc.d1.algo.commandhandler.PairsCommandHandler;
 import com.dmc.d1.algo.commandhandler.WaveCommandHandler;
-import com.dmc.d1.cqrs.AbstractCommandHandler;
-import com.dmc.d1.cqrs.Aggregate;
-import com.dmc.d1.cqrs.AggregateRepository;
+import com.dmc.d1.cqrs.*;
 import com.dmc.d1.cqrs.command.CommandBus;
 import com.dmc.d1.cqrs.command.SimpleCommandBus;
 import com.dmc.d1.cqrs.event.SimpleEventBus;
-import com.dmc.d1.cqrs.AggregateEventStore;
-import com.dmc.d1.cqrs.ChronicleAggregateEventStore;
 import com.dmc.d1.domain.InstrumentId;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -66,12 +61,12 @@ public class AlgoConfiguration {
 
     @Bean
     AggregateRepository<WaveAggregate> waveAggregateRepository(WaveAggregate.WaveSupplier waveSupplier) {
-        return new AggregateRepository<>(aggregateEventStore(), WaveAggregate.class, eventBus(), waveSupplier);
+        return new AggregateRepository<>(aggregateEventStore(), eventBus(), waveSupplier);
     }
 
     @Bean
     AggregateRepository<PairsAggregate> pairAggregateRepository() {
-        return new AggregateRepository<>(aggregateEventStore(), PairsAggregate.class, eventBus(), PairsAggregate.newInstanceFactory());
+        return new AggregateRepository<>(aggregateEventStore(), eventBus(), PairsAggregate.newInstanceFactory());
     }
 
 

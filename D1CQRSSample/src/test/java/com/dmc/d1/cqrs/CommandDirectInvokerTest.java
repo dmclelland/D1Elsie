@@ -51,9 +51,9 @@ public class CommandDirectInvokerTest {
 
         aes = new ChronicleAggregateEventStore(Configuration.getChroniclePath());
 
-        repo1 = new AggregateRepository(aes, Aggregate1.class, eventBus, Aggregate1.newInstanceFactory());
-        repo2 = new AggregateRepository(aes, Aggregate2.class, eventBus, Aggregate2.newInstanceFactory());
-        repo3 = new AggregateRepository(aes, NestedAggregate1.class, eventBus, NestedAggregate1.newInstanceFactory());
+        repo1 = new AggregateRepository(aes, eventBus, Aggregate1.newInstanceFactory());
+        repo2 = new AggregateRepository(aes, eventBus, Aggregate2.newInstanceFactory());
+        repo3 = new AggregateRepository(aes, eventBus, NestedAggregate1.newInstanceFactory());
 
         List<AbstractCommandHandler<? extends Aggregate>> lst = new ArrayList<>();
 
@@ -124,7 +124,7 @@ public class CommandDirectInvokerTest {
         assertEquals(3, aggregate.getI1());
         assertEquals(5, aggregate.getI2());
 
-        long nestedId =3;
+        long nestedId = 3;
 
         NestedAggregate1 nested = repo3.find(nestedId);
 
@@ -161,7 +161,7 @@ public class CommandDirectInvokerTest {
     public void parentAggregateRollsBackWithNestedAggregateFailure() {
 
         long id = 1;
-        long nestedId =3;
+        long nestedId = 3;
 
         CreateAggregate1Command command = new CreateAggregate1Command(id, 3, 5);
         commandBus.dispatch(command);

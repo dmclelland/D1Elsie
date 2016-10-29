@@ -31,6 +31,7 @@ public abstract class Aggregate<A extends Aggregate<A>> {
 
         applyAggregateEvent(event);
         addToUncommitted(event);
+        //TODO only publish if there are any event handlers
         eventBus.publish(event);
     }
 

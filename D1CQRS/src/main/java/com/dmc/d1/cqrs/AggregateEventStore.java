@@ -14,5 +14,5 @@ public interface AggregateEventStore<E extends AggregateEvent> {
 
     void add(List<E> events);
 
-    void replay(Map<String, AggregateRepository> repos);
+    void replay(List<AggregateRepository> repos);
 }
